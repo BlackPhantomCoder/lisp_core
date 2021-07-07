@@ -141,10 +141,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Cell.cpp" />
+    <ClCompile Include="FuncCell.cpp" />
+    <ClCompile Include="Funcs.cpp" />
+    <ClCompile Include="Interpritator.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="test_runner.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Cell.h" />
+    <ClInclude Include="FuncCell.h" />
+    <ClInclude Include="Funcs.h" />
+    <ClInclude Include="Interprintator.h" />
     <ClInclude Include="profile.h" />
     <ClInclude Include="test_runner.h" />
   </ItemGroup>
