@@ -784,31 +784,6 @@ Cell CoreEnvironment::eval_atom(const Cell& atom, CoreEnvironment::CellEnv& sub_
     return atom;
 }
 
-//std::string to_string2(const Cell& exp)
-//{
-//    if (exp.is_list()) {
-//        const auto& lst = exp.to_list();
-//        if (lst.empty()) return "nil";
-//        std::string s("(");
-//        for (auto e = begin(lst); e != end(lst); ++e) {
-//            s += to_string2(*e);
-//            s += ' ';
-//        }
-//
-//        if (s[s.length() - 1] == ' ') {
-//            s.erase(s.length() - 1);
-//        }
-//        s += ')';
-//        return s;
-//    }
-//    else if (is_symbol(exp.to_atom().c_str())) {
-//        return exp.to_atom();
-//    }
-//    else {
-//        return exp.to_atom();
-//    }
-//}
-
 Cell CoreEnvironment::eval(const Cell& arg, CoreEnvironment::CellEnv& sub_env) {
     if (t_stop_flag->get()) throw throwhelper{};
     if (arg.is_list()) {
