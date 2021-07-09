@@ -13,16 +13,10 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="tests">
-      <UniqueIdentifier>{3076c9e9-4c1f-4070-90f5-9db4d429e15c}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp">
       <Filter>Исходные файлы</Filter>
-    </ClCompile>
-    <ClCompile Include="test_runner.cpp">
-      <Filter>tests</Filter>
     </ClCompile>
     <ClCompile Include="Cell.cpp">
       <Filter>Исходные файлы</Filter>
@@ -53,12 +47,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="test_runner.h">
-      <Filter>tests</Filter>
-    </ClInclude>
-    <ClInclude Include="profile.h">
-      <Filter>tests</Filter>
-    </ClInclude>
     <ClInclude Include="Funcs.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
