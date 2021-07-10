@@ -1,6 +1,7 @@
 #include "CoreEnv.h"
 
 #include "BigInt.h"
+#include "Funcs.h"
 
 #include <list>
 #include <iostream>
@@ -26,7 +27,7 @@ Cell CoreEnvironment::execute_one(const Cell& c, const Mutexted<bool>& stop_flag
     try {
         result = eval(c, t_env);
     }
-    catch (const throwhelper&) {
+    catch (const throwhelper&e) {
         
     }
     return result; 
@@ -714,6 +715,62 @@ Cell CoreEnvironment::bifunc_list(const std::vector<Cell>& c, CoreEnvironment::C
     return make_list(std::move(lst));
 }
 
+Cell CoreEnvironment::bifunc_getf(const std::vector<Cell>& c, CellEnv& sub_env)
+{
+    if (c.size() < 2) throw "bifunc_getf error";
+
+    if(!is_symbol_c(c[1])) throw "bifunc_getf error";
+
+    Cell result;
+
+    if (is_bifunc(c[1].to_atom().to_symbol())) {
+        result = nil;
+    }
+    else {
+        if (t_lambdas.find(c[1].to_atom().to_symbol()) != end(t_lambdas)) {
+            const auto& fnc = t_lambdas.at(c[1].to_atom().to_symbol());
+
+            if (fnc.is_lambda()) {
+                const auto& lambda = fnc.get();
+                string str = "(lambda (";
+
+                if (!lambda.params.empty()){
+                    for (const auto& name : lambda.params) {
+                        str += name.to_atom().to_symbol() + " ";
+                    }
+                    str.erase(str.size() - 1);
+                }
+                str += ") ";
+                str += to_string(lambda.body);
+                result = make_atom(Atom(move(str)));
+            }
+            else {
+                const auto& lambda = fnc.get();
+                string str = "(nlambda (";
+
+                if (!lambda.params.empty()) {
+                    for (const auto& name : lambda.params) {
+                        str += name.to_atom().to_symbol() + " ";
+                    }
+                    str.erase(str.size() - 1);
+                }
+                str += ") ";
+                str += to_string(lambda.body);
+                result = make_atom(Atom(move(str)));
+            }
+        }
+        else {
+            result = nil;
+        }
+    }
+
+
+    for (auto it = begin(c) + 2; it != end(c); ++it) {
+        eval(*it, sub_env);
+    }
+    return  result;
+}
+
 Cell CoreEnvironment::nbifunc_quote(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env)
 {
     if (c.size() < 2) throw "bifunc_quote error";
@@ -777,6 +834,74 @@ Cell CoreEnvironment::eval_atom(const Cell& atom, CoreEnvironment::CellEnv& sub_
     return atom;
 }
 
+std::pair<bool, Cell> CoreEnvironment::try_bifunc(const std::string& str, const std::vector<Cell>& v, CellEnv& env)
+{
+    if (str == "append") {return { true, bifunc_append(v, env)};};
+    if (str == "car") { return { true, bifunc_car(v, env)};};
+    if (str == "cdr") {return { true, bifunc_cdr(v, env)};};
+    if (str == "cons") {return { true, bifunc_cons(v, env)};};
+    if (str == "list") {return { true, bifunc_list(v, env)};};
+    if (str == "null") {return { true, bifunc_null(v, env)};};
+    if (str == "numberp") {return { true, bifunc_numberp(v, env)};};
+    if (str == "symbolp") {return { true, bifunc_symbolp(v, env)};};
+    if (str == "listp") {return { true, bifunc_listp(v, env)};};
+    if (str == "atomp") {return { true, bifunc_atomp(v, env)};};
+
+    if (str == "+") {return { true, bifunc_add(v, env)};};
+    if (str == "-") {return { true, bifunc_sub(v, env)};};
+    if (str == "*") {return { true, bifunc_mul(v, env)};};
+    if (str == "/") {return { true, bifunc_div(v, env)};};
+    if (str == ">") {return { true, bifunc_greater(v, env)};};
+    if (str == "<") {return { true, bifunc_less(v, env)};};
+    if (str == "<=") {return { true, bifunc_less_equal(v, env)};};
+    if (str == "=") {return { true, bifunc_equal(v, env)};};
+    if (str == "getf") { return { true, bifunc_getf(v, env) }; };
+
+    if (str == "eval") { return { true, nbifunc_eval(v, env)};};
+    if (str == "defun") { return { true, nbifunc_defun(v, env)};};
+    if (str == "quote") { return { true, nbifunc_quote(v, env)};};
+    if (str == "cond") { return { true, nbifunc_cond(v, env)};};
+    if (str == "if") { return { true, nbifunc_if(v, env)};};
+    if (str == "progn") { return { true, nbifunc_progn(v, env)};};
+    if (str == "setq") { return { true, nbifunc_setq(v,env) }; }
+
+    return { false, Cell() };
+}
+
+bool CoreEnvironment::is_bifunc(const std::string& str)
+{
+    if (str == "append") return true;
+    if (str == "car") return true;
+    if (str == "cdr") return true;
+    if (str == "cons") return true;
+    if (str == "list") return true;
+    if (str == "null") return true;
+    if (str == "numberp") return true;
+    if (str == "symbolp") return true;
+    if (str == "listp") return true;
+    if (str == "atomp") return true;
+
+    if (str == "+") return true;
+    if (str == "-") return true;
+    if (str == "*") return true;
+    if (str == "/") return true;
+    if (str == ">") return true;
+    if (str == "<") return true;
+    if (str == "<=") return true;
+    if (str == "=")return true;
+    if (str == "getf") return true;
+
+    if (str == "eval") return true;
+    if (str == "defun") return true;
+    if (str == "quote") return true;
+    if (str == "cond")return true;
+    if (str == "if") return true;
+    if (str == "progn") return true;
+    if (str == "setq") return true;
+    return false;
+}
+
+
 Cell CoreEnvironment::eval(const Cell& arg, CoreEnvironment::CellEnv& sub_env) {
     if (t_stop_flag->get()) throw throwhelper{};
     if (arg.is_list()) {
@@ -784,9 +909,9 @@ Cell CoreEnvironment::eval(const Cell& arg, CoreEnvironment::CellEnv& sub_env) {
         if (!is_symbol_c(lst[0])) throw "eval error";
 
         {
-            auto func = find_bifunc(lst[0].to_atom().to_symbol());
-            if (!func.empty()) {
-                return func.get()(lst, sub_env);
+            auto [reason, result] = try_bifunc(lst[0].to_atom().to_symbol(), lst, sub_env);
+            if (reason) {
+                return result;
             }
         }
 
@@ -917,36 +1042,36 @@ Cell CoreEnvironment::nbifunc_setq(const std::vector<Cell>& c, CoreEnvironment::
 Cell CoreEnvironment::nbifunc_eval(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env) {
     return eval(c[1], sub_env);
 }
-
-BIFuncCell CoreEnvironment::find_bifunc(const std::string& str)
-{
-    if (str == "append") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_append(v, env);}); }
-    if (str == "car") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env) {return bifunc_car(v, env);}); }
-    if (str == "cdr") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_cdr(v, env);}); }
-    if (str == "cons") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_cons(v, env);}); }
-    if (str == "list") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_list(v, env);}); }
-    if (str == "null") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_null(v, env);}); }
-    if (str == "numberp") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_numberp(v, env);}); }
-    if (str == "symbolp") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_symbolp(v, env);}); }
-    if (str == "listp") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_listp(v, env);}); }
-    if (str == "atomp") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_atomp(v, env);}); }
-
-    if (str == "+") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_add(v, env);}); }
-    if (str == "-") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_sub(v, env);}); }
-    if (str == "*") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_mul(v, env);}); }
-    if (str == "/") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_div(v, env);}); }
-    if (str == ">") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_greater(v, env);}); }
-    if (str == "<") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_less(v, env);}); }
-    if (str == "<=") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_less_equal(v, env);}); }
-    if (str == "=") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_equal(v, env);}); }
-
-    if (str == "eval") { return  make_nbifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return nbifunc_eval(v, env);}); }
-    if (str == "defun") { return  make_nbifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return nbifunc_defun(v, env);}); }
-    if (str == "quote") { return  make_nbifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return nbifunc_quote(v, env);}); }
-    if (str == "cond") { return  make_nbifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return nbifunc_cond(v, env);}); }
-    if (str == "if") { return  make_nbifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return nbifunc_if(v, env);}); }
-    if (str == "progn") { return  make_nbifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return nbifunc_progn(v, env);}); }
-    if (str == "setq") { return  make_nbifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return nbifunc_setq(v, env);}); }
-
-    return  {};
-}
+//
+//BIFuncCell CoreEnvironment::find_bifunc(const std::string& str)
+//{
+//    if (str == "append") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_append(v, env);}); }
+//    if (str == "car") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env) {return bifunc_car(v, env);}); }
+//    if (str == "cdr") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_cdr(v, env);}); }
+//    if (str == "cons") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_cons(v, env);}); }
+//    if (str == "list") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_list(v, env);}); }
+//    if (str == "null") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_null(v, env);}); }
+//    if (str == "numberp") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_numberp(v, env);}); }
+//    if (str == "symbolp") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_symbolp(v, env);}); }
+//    if (str == "listp") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_listp(v, env);}); }
+//    if (str == "atomp") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_atomp(v, env);}); }
+//
+//    if (str == "+") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_add(v, env);}); }
+//    if (str == "-") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_sub(v, env);}); }
+//    if (str == "*") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_mul(v, env);}); }
+//    if (str == "/") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_div(v, env);}); }
+//    if (str == ">") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_greater(v, env);}); }
+//    if (str == "<") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_less(v, env);}); }
+//    if (str == "<=") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_less_equal(v, env);}); }
+//    if (str == "=") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_equal(v, env);}); }
+//
+//    if (str == "eval") { return  make_nbifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return nbifunc_eval(v, env);}); }
+//    if (str == "defun") { return  make_nbifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return nbifunc_defun(v, env);}); }
+//    if (str == "quote") { return  make_nbifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return nbifunc_quote(v, env);}); }
+//    if (str == "cond") { return  make_nbifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return nbifunc_cond(v, env);}); }
+//    if (str == "if") { return  make_nbifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return nbifunc_if(v, env);}); }
+//    if (str == "progn") { return  make_nbifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return nbifunc_progn(v, env);}); }
+//    if (str == "setq") { return  make_nbifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return nbifunc_setq(v, env);}); }
+//
+//    return  {};
+//}

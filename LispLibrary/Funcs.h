@@ -2,6 +2,7 @@
 #include "Cell.h"
 #include <list>
 #include <string>
+#include <iostream>
 
 // convert given string to list of tokens
 std::list<std::string> tokenize(const std::string& str);
@@ -12,5 +13,8 @@ Cell read(const std::string& s);
 // convert given Cell to a Lisp-readable string
 std::string to_string(const Cell& exp);
 
-// convert given Cell to a Lisp-readable string
-std::vector<std::string> expressions_from_file(const std::string& path);
+
+std::vector<Cell> listp_expressions_from_string(const std::string& str);
+
+
+std::vector<Cell> listp_expressions_from_stream(std::istream& in, bool skip_comments = false);

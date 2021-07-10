@@ -24,6 +24,12 @@
     <ClCompile Include="test_runner.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="BIFuncsTest.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="TestsList.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="test_runner.h">
@@ -31,6 +37,12 @@
     </ClInclude>
     <ClInclude Include="profile.h">
       <Filter>tests</Filter>
+    </ClInclude>
+    <ClInclude Include="TestsList.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="BIFuncsTest.h">
+      <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

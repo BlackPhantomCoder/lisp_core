@@ -218,7 +218,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Atom.h" />
-    <ClInclude Include="BIFuncCell.h" />
     <ClInclude Include="BigInt.h" />
     <ClInclude Include="Cell.h" />
     <ClInclude Include="CoreEnv.h" />
@@ -231,7 +230,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Atom.cpp" />
-    <ClCompile Include="BIFuncCell.cpp" />
     <ClCompile Include="BigInt.cpp" />
     <ClCompile Include="Cell.cpp" />
     <ClCompile Include="CoreEnv.cpp" />

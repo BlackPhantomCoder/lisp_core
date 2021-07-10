@@ -18,9 +18,6 @@
     <ClInclude Include="Atom.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="BIFuncCell.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
     <ClInclude Include="BigInt.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
@@ -51,9 +48,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Atom.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
-    <ClCompile Include="BIFuncCell.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="BigInt.cpp">

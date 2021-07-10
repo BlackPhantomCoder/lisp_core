@@ -1,15 +1,19 @@
 #include "Cell.h"
 #include "Funcs.h"
-#include "BIFuncCell.h"
 #include "OnceCore.h"
 #include "ReplCore.h"
 #include "SerialReplCore.h"
+#include "profile.h"
 #include <string>
 #include <list>
 #include <vector>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 
 using namespace std;
+
+#include "TestsList.h"
 
 void execute_once(std::string input) {
     OnceCore core(std::move(input));
@@ -68,53 +72,85 @@ void execute_serial_repl(istream& is) {
     cin.sync_with_stdio(false);
     SerialReplCore core;
     while (is) {
-        string input;
         cout << "> ";
-        std::getline(is, input);
-      
-        auto [result_reason, result] = core.execute(input);
-
-        switch (result_reason)
-        {
-        case SerialReplCore::result_type::fail: cout << "fail";
-            break;
-        case SerialReplCore::result_type::success: cout << "success";
-            break;
+        for (const auto& exp : listp_expressions_from_stream(is)) {
+            SerialReplCore::result_type result_reason = SerialReplCore::result_type::success;
+            string result;
+            {
+                LogDuration a;
+                auto [result_reason2, result2] = core.execute(exp);
+                result = move(result2);
+                result_reason = result_reason2;
+            }
+            cout << result_reason << ", " << result << endl;
+            cout << "> ";
         }
+    }
+}
 
-        cout << ", " << result << endl;
+void cin_execute_serial_repl(istream& is) {
+    cin.sync_with_stdio(false);
+    SerialReplCore core;
+    if (is) {
+        cout << "> ";
+        for (const auto& exp : listp_expressions_from_stream(is, true)) {
+            SerialReplCore::result_type result_reason = SerialReplCore::result_type::success;
+            string result;
+            {
+                LogDuration a;
+                auto [result_reason2, result2] = core.execute(exp);
+                result = move(result2);
+                result_reason = result_reason2;
+            }
+            cout << result_reason << ", " << result << endl;
+            cout << "> ";
+        }
+    }
+    while (cin) {
+        cout << "> ";
+        std::string input;
+        getline(cin, input);
+        SerialReplCore::result_type result_reason = SerialReplCore::result_type::success;
+        string result;
+        {
+            LogDuration a;
+            auto [result_reason2, result2] = core.execute(input);
+            result = move(result2);
+            result_reason = result_reason2;
+        }
+        cout << result_reason << ", " << result << endl;
     }
 }
 
 int main()
 {
-    //init_lisp();
-    //repl("> ");
+    //запуск тестов (в эту функцию писать все запуски тестов)
+    run_all_tests();
 
-    //cout << std::numeric_limits<double>::max() << endl;
-    /*std::string input;
-    std::getline(cin, input);
-    input =  
-        "(progn "
-            "(defun fib3 (n)"
-                "(cond"
-                "((<= n 0) nil)"
-                "((= n 1) 1)"
-                "((= n 2) 2)"
-                "(T (fib3_rec 1 2 (- n 2)))"
-                ")"
-            ")" 
-            "(defun fib3_rec (one two n)"
-                "(if (= n 0)"
-                "two"
-                "(fib3_rec two (+ one two) (- n 1))"
-                ")"
-            ")"
-            + 
-            input 
-            + 
-        ")";*/
-    //execute_repl(cin);
+    //stringstream s(
+    //    "(defun fib3 (n)"
+    //        "(cond"
+    //        "((<= n 0) nil)"
+    //        "((= n 1) 1)"
+    //        "((= n 2) 2)"
+    //        "(T (fib3_rec 1 2 (- n 2)))"
+    //        ")"
+    //    ")"
+    //    "(defun fib3_rec (one two n)"
+    //        "(if (= n 0)"
+    //        "two"
+    //        "(fib3_rec two (+ one two) (- n 1))"
+    //        ")"
+    //    ")"
+    //    "(defun fib (n) (cond ((= n 1) 1) ((= n 2) 2) (T (+ (fib(- n 2)) (fib(- n 1))))))"
+    //);
 
-    execute_serial_repl(cin);
+
+    
+    //запуск репла с cin + предзагрузка из потока (в данном случае - файл) 
+    ifstream f("programs/1.lsp");
+    cin_execute_serial_repl(f);
+
+    //запуск репла с cin + предзагрузка из потока (в данном случае - stringstream) 
+    //cin_execute_serial_repl(s);
 }

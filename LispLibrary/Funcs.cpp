@@ -24,6 +24,17 @@ std::list<std::string> tokenize(const std::string& str)
             --brackets;
             ++s;
         }
+        else if (*s == '"') {
+            auto s2 = s;
+            ++s2;
+            while (*s2 != '"') {
+                ++s2;
+                if (*s2 == '\0') throw "invalid input";
+            }
+            ++s2;
+            tokens.push_back(std::string(s, s2));
+            s = s2;
+        }
         else {
             const char* t = s;
             while (*t && *t != ' ' && *t != '(' && *t != ')') {
@@ -78,7 +89,7 @@ Cell read_from(std::list<std::string>& tokens)
     }
     else {
         if (is_real_number(token.c_str())) {
-            stringstream s(token + " 1.0");
+            stringstream s(token);
             double n;
             s >> n;
             if (s.good())
@@ -135,7 +146,132 @@ std::string to_string(const Cell& exp)
     }
 }
 
-std::vector<std::string> expressions_from_file(const std::string& path)
+void delete_symbol(std::string& str, char symbol) {
+    size_t pos;
+    while ( (pos = str.find(symbol)) != str.npos) {
+        str.erase(pos);
+    }
+}
+
+std::vector<Cell> listp_expressions_from_string(const std::string& str)
 {
-    return vector<std::string>();
+    std::vector<Cell> result;
+    std::list<std::string> tokens;
+    const char* s = str.c_str();
+
+    long brackets = 0;
+    while (*s) {
+        while (*s == ' ' || *s == '\n' || *s == '\t')
+            ++s;
+
+        if (*s == '(') {
+            tokens.push_back("(");
+            ++brackets;
+            ++s;
+        }
+        else if (*s == ')') {
+            tokens.push_back(")");
+            --brackets;
+            ++s;
+        }
+        else if (*s == '"') {
+            auto s2 = s;
+            ++s2;
+            while (*s2 != '"') {
+                ++s2;
+                if (*s2 == '\0') throw "invalid input";
+            }
+            ++s2;
+            tokens.push_back(std::string(s, s2));
+            s = s2;
+        }
+        else {
+            const char* t = s;
+            while (*t && *t != ' ' && *t != '(' && *t != ')') {
+                ++t;
+            }
+            tokens.push_back(std::string(s, t));
+            delete_symbol(tokens.back(), '\n');
+            delete_symbol(tokens.back(), '\t');
+            s = t;
+        }
+        if (brackets == 0) {
+            result.push_back(read_from(tokens));
+        }
+    }
+    if (brackets != 0) throw "invalid_argument";
+    return result;
+}
+
+string get_prep_line(std::istream& in, bool skip_comments) {
+    string str;
+    getline(in, str);
+    if (skip_comments) {
+        if (auto pos = str.find(';'); pos != str.npos) {
+            str.erase(pos, str.size());
+        }
+    }
+    return str;
+}
+
+std::vector<Cell> listp_expressions_from_stream(std::istream& in, bool skip_comments)
+{
+    std::vector<Cell> result;
+    std::list<std::string> tokens;
+
+    long brackets = 0;
+    while (in) {
+        string str = get_prep_line(in, skip_comments);
+        const char* s = str.c_str();
+        while (*s) {
+            while (*s == ' ' || *s == '\n' || *s == '\t')
+                ++s;
+
+            if (*s == '(') {
+                tokens.push_back("(");
+                ++brackets;
+                ++s;
+            }
+            else if (*s == ')') {
+                tokens.push_back(")");
+                --brackets;
+                ++s;
+            }
+            else if (*s == '"') {
+                auto s2 = s;
+                ++s2;
+                while (*s2 && *s2 != '"') {
+                    ++s2;
+                }
+                if (!*s2 && in) {
+                    str = string(s) + get_prep_line(in, skip_comments);
+                    s = str.c_str();
+                    continue;
+                }
+                ++s2;
+                tokens.push_back(std::string(s, s2));
+                s = s2;
+            }
+            else {
+                const char* t = s;
+                while (*t && *t != ' ' && *t != '(' && *t != ')') {
+                    ++t;
+                }
+                if (!*t && in) {
+                    str = string(s) + get_prep_line(in, skip_comments);
+                    s = str.c_str();
+                    continue;
+                }
+                tokens.push_back(std::string(s, t));
+                delete_symbol(tokens.back(), '\n');
+                delete_symbol(tokens.back(), '\t');
+                s = t;
+            }
+            if (brackets == 0) {
+                result.push_back(read_from(tokens));
+            }
+        }
+    }
+    if (brackets != 0) throw "invalid_argument";
+    return result;
 }

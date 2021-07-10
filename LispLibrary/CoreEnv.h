@@ -1,12 +1,10 @@
 #pragma once
 
-#include "BIFuncCell.h"
 #include "LambdaCell.h"
 #include "Cell.h"
 #include <unordered_map>
 #include <exception>
 #include "Mutexed.h"
-
 
 struct throwhelper :std::exception{
 
@@ -42,6 +40,7 @@ private:
 	Cell bifunc_append(const std::vector<Cell>& c, CellEnv& sub_env);
 	Cell bifunc_cons(const std::vector<Cell>& c, CellEnv& sub_env);
 	Cell bifunc_list(const std::vector<Cell>& c, CellEnv& sub_env);
+	Cell bifunc_getf(const std::vector<Cell>& c, CellEnv& sub_env);
 
 
 	Cell nbifunc_quote(const std::vector<Cell>& c, CellEnv& sub_env);
@@ -56,7 +55,8 @@ private:
 
 	Cell eval(const Cell& arg, CellEnv& sub_env);
 	Cell eval_atom(const Cell& atom, CellEnv& sub_env);
-	BIFuncCell find_bifunc(const std::string& str);
+	std::pair<bool, Cell> try_bifunc(const std::string& str, const std::vector<Cell>& c, CellEnv& sub_env);
+	bool is_bifunc(const std::string& str);
 	Cell bool_cast(bool val);
 	bool is_T(const Cell& c);
 private:
