@@ -18,6 +18,7 @@ void ReplCore::execute(const std::string& input)
         forse_stop();
         t_handle.get();
     }
+    t_handle = std::future<void>();
     t_finished.set(false);
     t_handle = std::async(std::launch::async, [this, &input]() {
         bool success = true;

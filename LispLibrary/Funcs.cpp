@@ -101,6 +101,7 @@ Cell read_from(std::list<std::string>& tokens)
 
 // return the Lisp expression represented by the given string
 Cell read(const std::string& s) {
+    if (s.empty()) return make_atom(Atom("nil"));
     std::list<std::string> tokens(tokenize(s));
     return read_from(tokens);
 }

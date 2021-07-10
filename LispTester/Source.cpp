@@ -3,6 +3,7 @@
 #include "BIFuncCell.h"
 #include "OnceCore.h"
 #include "ReplCore.h"
+#include "SerialReplCore.h"
 #include <string>
 #include <list>
 #include <vector>
@@ -36,6 +37,7 @@ void execute_once(std::string input) {
 }
 
 void execute_repl(istream& is) {
+    cin.sync_with_stdio(false);
     ReplCore core;
     while (is) {
         string input;
@@ -55,6 +57,28 @@ void execute_repl(istream& is) {
         case ReplCore::result_type::success: cout << "success";
             break;
         case ReplCore::result_type::forsed_stopped: cout << "forsed_stopped";
+            break;
+        }
+
+        cout << ", " << result << endl;
+    }
+}
+
+void execute_serial_repl(istream& is) {
+    cin.sync_with_stdio(false);
+    SerialReplCore core;
+    while (is) {
+        string input;
+        cout << "> ";
+        std::getline(is, input);
+      
+        auto [result_reason, result] = core.execute(input);
+
+        switch (result_reason)
+        {
+        case SerialReplCore::result_type::fail: cout << "fail";
+            break;
+        case SerialReplCore::result_type::success: cout << "success";
             break;
         }
 
@@ -90,5 +114,7 @@ int main()
             input 
             + 
         ")";*/
-    execute_repl(cin);
+    //execute_repl(cin);
+
+    execute_serial_repl(cin);
 }
