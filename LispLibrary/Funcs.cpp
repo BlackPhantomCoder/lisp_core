@@ -89,7 +89,7 @@ Cell read_from(std::list<std::string>& tokens)
     }
     else {
         if (is_real_number(token.c_str())) {
-            stringstream s(token);
+            stringstream s(token + " ");
             double n;
             s >> n;
             if (s.good())
