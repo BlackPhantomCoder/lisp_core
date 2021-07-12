@@ -32,6 +32,7 @@ private:
 	Cell bifunc_mul(const std::vector<Cell>& c, CellEnv& sub_env);
 	Cell bifunc_div(const std::vector<Cell>& c, CellEnv& sub_env);
 	Cell bifunc_greater(const std::vector<Cell>& c, CellEnv& sub_env);
+	Cell bifunc_greater_equal(const std::vector<Cell>& c, CellEnv& sub_env);
 	Cell bifunc_less(const std::vector<Cell>& c, CellEnv& sub_env);
 	Cell bifunc_less_equal(const std::vector<Cell>& c, CellEnv& sub_env);
 	Cell bifunc_equal(const std::vector<Cell>& c, CellEnv& sub_env);

@@ -33,23 +33,23 @@ void test_eval_base() {
 
 //арифметические функции
 void arifm() {
-	/*{
+	{
 		SerialReplCore core;;
 		auto [result_reason, result] = core.execute("(- 3)");
 
 		ASSERT_EQUAL(result_reason, SerialReplCore::result_type::success);
 		ASSERT_EQUAL(result, "-3");
-	}*/
+	}
 
-	/*{
+	{
 		SerialReplCore core;;
 		auto [result_reason, result] = core.execute("(- 10.5 3)");
 
 		ASSERT_EQUAL(result_reason, SerialReplCore::result_type::success);
 		ASSERT_EQUAL(result, "7.5");
-	}*/
+	}
 
-	/*{
+	{
 		SerialReplCore core;;
 		auto [result_reason, result] = core.execute("(/ 45.3 3)");
 
@@ -71,7 +71,7 @@ void arifm() {
 
 		ASSERT_EQUAL(result_reason, SerialReplCore::result_type::success);
 		ASSERT_EQUAL(result, "31.5");
-	}*/
+	}
 	{
 		SerialReplCore core;;
 		auto [result_reason, result] = core.execute("(- 10 3)");
@@ -104,13 +104,13 @@ void arifm() {
 		ASSERT_EQUAL(result, "15");
 	}
 
-	/*{
+	{
 		SerialReplCore core;;
 		auto [result_reason, result] = core.execute("(+ 10.3 (* -1.0 3) -0.1 (/ 5 2.5))");
 
 		ASSERT_EQUAL(result_reason, SerialReplCore::result_type::success);
 		ASSERT_EQUAL(result, "9.2");
-	}*/
+	}
 
 	{
 		SerialReplCore core;;
@@ -165,13 +165,13 @@ void logic() {
 		ASSERT_EQUAL(result_reason, SerialReplCore::result_type::success);
 		ASSERT_EQUAL(result, "T");
 	}
-	/*{
+	{
 		SerialReplCore core;;
 		auto [result_reason, result] = core.execute("(>= 2 2.0)");
 
 		ASSERT_EQUAL(result_reason, SerialReplCore::result_type::success);
 		ASSERT_EQUAL(result, "T");
-	}*/
+	}
 	{
 		SerialReplCore core;;
 		auto [result_reason, result] = core.execute("(= 2 2.0)");
@@ -179,13 +179,13 @@ void logic() {
 		ASSERT_EQUAL(result_reason, SerialReplCore::result_type::success);
 		ASSERT_EQUAL(result, "T");
 	}
-	/*{
+	{
 		SerialReplCore core;;
 		auto [result_reason, result] = core.execute("(< 2 2.5)");
 
 		ASSERT_EQUAL(result_reason, SerialReplCore::result_type::success);
 		ASSERT_EQUAL(result, "T");
-	}*/
+	}
 	{
 		SerialReplCore core;;
 		auto [result_reason, result] = core.execute("(> 2 1.5)");
@@ -193,13 +193,13 @@ void logic() {
 		ASSERT_EQUAL(result_reason, SerialReplCore::result_type::success);
 		ASSERT_EQUAL(result, "T");
 	}
-	/*{
+	{
 		SerialReplCore core;;
 		auto [result_reason, result] = core.execute("(getf (defun kok (x) (* x x)))");
 
 		ASSERT_EQUAL(result_reason, SerialReplCore::result_type::success);
 		ASSERT_EQUAL(result, "(lambda (x) (* x x))");
-	}*/
+	}
 }
 
 //списковые функции
@@ -239,6 +239,7 @@ void list() {
 		ASSERT_EQUAL(result_reason, SerialReplCore::result_type::success);
 		ASSERT_EQUAL(result, "(1 1 2 2 3 3)");
 	}
+	//...
 	/*{
 		SerialReplCore core;;
 		auto [result_reason, result] = core.execute("(append 2 (quote (1 1)) (quote (2 2)) (quote (3 3)))");

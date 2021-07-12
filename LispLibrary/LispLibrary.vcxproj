@@ -136,10 +136,11 @@
       <AdditionalLibraryDirectories>$(SolutionDir)libs</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
-      <Command>$(MyRemoveHeadersEvent)</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>$(MyCopyHeadersEvent)</Command>
+      <Command>$(MyRemoveHeadersEvent);$(MyCopyHeadersEvent)</Command>
     </PostBuildEvent>
     <Lib>
       <AdditionalLibraryDirectories>$(MyLibsPath)\gmp\</AdditionalLibraryDirectories>
@@ -170,10 +171,11 @@
       <AdditionalLibraryDirectories>$(SolutionDir)libs</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
-      <Command>$(MyRemoveHeadersEvent)</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>$(MyCopyHeadersEvent)</Command>
+      <Command>$(MyRemoveHeadersEvent);$(MyCopyHeadersEvent)</Command>
     </PostBuildEvent>
     <Lib>
       <AdditionalDependencies>1.lib;</AdditionalDependencies>
@@ -224,6 +226,7 @@
     <ClInclude Include="Funcs.h" />
     <ClInclude Include="LambdaCell.h" />
     <ClInclude Include="Mutexed.h" />
+    <ClInclude Include="Number.h" />
     <ClInclude Include="OnceCore.h" />
     <ClInclude Include="ReplCore.h" />
     <ClInclude Include="SerialReplCore.h" />
@@ -235,6 +238,7 @@
     <ClCompile Include="CoreEnv.cpp" />
     <ClCompile Include="Funcs.cpp" />
     <ClCompile Include="LambdaCell.cpp" />
+    <ClCompile Include="Number.cpp" />
     <ClCompile Include="OnceCore.cpp" />
     <ClCompile Include="ReplCore.cpp" />
     <ClCompile Include="SerialReplCore.cpp" />

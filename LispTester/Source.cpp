@@ -124,6 +124,7 @@ void cin_execute_serial_repl(istream& is) {
 
 int main()
 {
+
     //запуск тестов (в эту функцию писать все запуски тестов)
     run_all_tests();
 

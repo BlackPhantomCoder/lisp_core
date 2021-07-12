@@ -85,10 +85,11 @@ BigInt& BigInt::div(const BigInt& rh)
     return *this;
 }
 
-BigInt& BigInt::mod(const BigInt& rh)
+BigInt BigInt::mod(const BigInt& rh) const
 {
-    mpz_mod(t_val, t_val, rh.t_val);
-    return *this;
+    BigInt result = *this;
+    mpz_mod(result.t_val, result.t_val, rh.t_val);
+    return result;
 }
 
 void BigInt::minus()
@@ -100,6 +101,7 @@ void BigInt::abs()
 {
     mpz_abs(t_val, t_val);
 }
+
 
 bool BigInt::is_castable_to_double() const
 {

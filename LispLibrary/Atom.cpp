@@ -12,20 +12,16 @@ Atom::Atom(const std::string& str):
 {
 }
 
-Atom::Atom(BigInt&& val)noexcept :
+Atom::Atom(Number&& val) noexcept:
     t_data(move(val))
 {
 }
 
-Atom::Atom(const BigInt& val) :
+Atom::Atom(const Number& val) :
     t_data(val)
 {
 }
 
-Atom::Atom(double val) :
-    t_data(val)
-{
-}
 
 Atom::~Atom()
 {
@@ -37,14 +33,9 @@ bool Atom::is_symbol() const
     return holds_alternative<Atom::symbol>(t_data);
 }
 
-bool Atom::is_integer() const
+bool Atom::is_number() const
 {
-    return holds_alternative<Atom::integer>(t_data);
-}
-
-bool Atom::is_real() const
-{
-    return holds_alternative<Atom::real>(t_data);
+    return holds_alternative<Number>(t_data);
 }
 
 Atom::symbol& Atom::to_symbol()
@@ -53,16 +44,10 @@ Atom::symbol& Atom::to_symbol()
     return get<Atom::symbol>(t_data);
 }
 
-Atom::integer& Atom::to_integer()
+Number& Atom::to_number()
 {
-    if (!is_integer()) throw "invalid type";
-    return get<Atom::integer>(t_data);
-}
-
-Atom::real& Atom::to_real()
-{
-    if (!is_real()) throw "invalid type";
-    return get<Atom::real>(t_data);
+    if (!is_number()) throw "invalid type";
+    return get<Number>(t_data);
 }
 
 const Atom::symbol& Atom::to_symbol() const
@@ -71,14 +56,8 @@ const Atom::symbol& Atom::to_symbol() const
     return get<Atom::symbol>(t_data);
 }
 
-const Atom::integer& Atom::to_integer() const
+const Number& Atom::to_number() const
 {
-    if (!is_integer()) throw "invalid type";
-    return get<Atom::integer>(t_data);
-}
-
-const Atom::real& Atom::to_real() const
-{
-    if (!is_real()) throw "invalid type";
-    return get<Atom::real>(t_data);
+    if (!is_number()) throw "invalid type";
+    return get<Number>(t_data);
 }

@@ -7,8 +7,8 @@ class BigInt
 {
 public:
 	BigInt(const BigInt& rh);
-	BigInt(const std::string& str);
-	BigInt(long n);
+	explicit BigInt(const std::string& str);
+	explicit BigInt(long n);
 
 	BigInt(double n);
 
@@ -27,7 +27,7 @@ public:
 	BigInt& operator-=(const BigInt& rh);
 	BigInt& operator*=(const BigInt& rh);
 	BigInt& div(const BigInt& rh);
-	BigInt& mod(const BigInt& rh);
+	BigInt mod(const BigInt& rh) const;
 
 	void minus();
 	void abs();

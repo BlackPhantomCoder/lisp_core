@@ -1,6 +1,9 @@
 #include "Funcs.h"
 
+#include "Number.h"
+
 #include <sstream>
+#include <iomanip>
 using namespace std;
 
 
@@ -94,16 +97,16 @@ Cell read_from(std::list<std::string>& tokens)
             s >> n;
             if (s.good())
             {
-                return make_atom(Atom(n));
+                return make_atom(Atom(Number(n)));
             }
             else
             {
                 token.erase(token.find('.'), token.npos);
-                return make_atom(Atom(BigInt(move(token))));
+                return make_atom(Atom(Number(BigInt(move(token)))));
             }
         }
         if (is_integer_number(token.c_str())) {
-            return make_atom(Atom(BigInt(move(token))));
+            return make_atom(Atom(Number(BigInt(move(token)))));
         }
         return  make_atom(Atom(move(token)));
     }
@@ -138,11 +141,40 @@ std::string to_string(const Cell& exp)
     else if (exp.to_atom().is_symbol()) {
         return exp.to_atom().to_symbol();
     }
-    else if(exp.to_atom().is_integer()){
-        return exp.to_atom().to_integer().to_string();
+    else if (exp.to_atom().is_number()) {
+        if (exp.to_atom().to_number().is_integer()) {
+            return exp.to_atom().to_number().to_integer().to_string();
+        }
+        else if(exp.to_atom().to_number().is_real()) {
+            double result = exp.to_atom().to_number().to_real();
+            double a = 0;
+            double b = modf(result, &a);
+            unsigned i = 0;
+
+            while (a >= 1) {
+                a /= 10;
+                ++i;
+                if (i == Number::epsilon - 1) break;
+            }
+
+            while (b > 0) {
+                b *= 10;
+                b = modf(b, &a);
+                ++i;
+                if (i == Number::epsilon - 1) break;
+            }
+
+            ostringstream s;
+            s << setprecision(i + 1);
+            s << result;
+            return s.str();
+        }
+        else {
+            throw "error number cell";
+        }
     }
     else {
-        return to_string(exp.to_atom().to_real());
+        throw "error cell";
     }
 }
 

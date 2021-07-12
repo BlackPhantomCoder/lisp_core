@@ -50,17 +50,17 @@ bool is_symbol_c(const Cell& c) {
 
 bool is_integer_number_c(const Cell& c) {
     if (!c.is_atom()) return false;
-    return c.to_atom().is_integer();
+    return c.to_atom().is_number() && c.to_atom().to_number().is_integer();
 }
 
 bool is_real_number_c(const Cell& c) {
     if (!c.is_atom()) return false;
-    return c.to_atom().is_real();
+    return c.to_atom().is_number() && c.to_atom().to_number().is_real();
 }
 
 bool is_number2_c(const Cell& c) {
     if (!c.is_atom()) return false;
-    return c.to_atom().is_real() || c.to_atom().is_integer();
+    return c.to_atom().is_number();
 }
 
 bool CoreEnvironment::is_T(const Cell& c) {
@@ -91,561 +91,228 @@ Cell CoreEnvironment::bifunc_null(const std::vector<Cell>& c, CoreEnvironment::C
     return bool_cast(is_null(eval(c[1], sub_env)));
 }
 
-using anumb = variant<double, BigInt>;
-
-void add(anumb& numb, double val) {
-    if (holds_alternative<double>(numb)) {
-        double sum = get<double>(numb) + val;
-        if (abs(sum) < val || abs(sum) < abs(get<double>(numb))) {
-            numb = anumb(BigInt(get<double>(numb)));
-            get<BigInt>(numb) += BigInt(val);
-        }
-        else {
-            get<double>(numb) += val;
-        }
-    }
-    else {
-        if (get<BigInt>(numb).is_castable_to_double()) {
-            anumb result = get<BigInt>(numb).to_double();
-            add(result,val);
-            numb.swap(result);
-        }
-        else {
-            get<BigInt>(numb) += BigInt(val);
-        }
-    }
-}
-
-void add(anumb& numb, const BigInt& val) {
-    if (holds_alternative<double>(numb)) {
-        anumb buf = val;
-        add(buf, get<double>(numb));
-        numb.swap(buf);
-    }
-    else {
-        get<BigInt>(numb) += val;
-    }
-}
-
-void mlt(anumb& numb, double val) {
-    if (holds_alternative<double>(numb)) {
-        double x = get<double>(numb);
-
-        int exponent1 = 0;
-        int exponent2 = 0;
-        int exponent3 = 0;
-
-        double significand1 = frexp(x, &exponent1);
-        double significand2 = frexp(val, &exponent2);
-        double significand3 = frexp(std::numeric_limits<double>::max(), &exponent3);
-
-        if (exponent1 + exponent2 >= exponent3) {
-            numb = anumb(BigInt(get<double>(numb)));
-            get<BigInt>(numb) *= BigInt(val);
-        }
-        else {
-            get<double>(numb) *= val;
-        }
-    }
-    else {
-        if (get<BigInt>(numb).is_castable_to_double()) {
-            anumb result = get<BigInt>(numb).to_double();
-            mlt(result, val);
-            numb.swap(result);
-        }
-        else {
-            get<BigInt>(numb) *= BigInt(val);
-        }
-    }
-}
-
-void mlt(anumb& numb, const BigInt& val) {
-    if (holds_alternative<double>(numb)) {
-        anumb buf = val;
-        mlt(buf, get<double>(numb));
-        numb.swap(buf);
-    }
-    else {
-        get<BigInt>(numb) *= val;
-    }
-}
-
-void div(anumb& numb, double val) {
-    if (holds_alternative<double>(numb)) {
-        double x = get<double>(numb);
-
-        int exponent1 = 0;
-        int exponent2 = 0;
-        int exponent3 = 0;
-
-        double significand1 = frexp(x, &exponent1);
-        double significand2 = frexp(val, &exponent2);
-        double significand3 = frexp(std::numeric_limits<double>::min(), &exponent3);
-
-        if (exponent1 + exponent2 <= exponent3) {
-            numb = anumb(BigInt(get<double>(numb)));
-            get<BigInt>(numb).div(BigInt(val));
-        }
-        else {
-            get<double>(numb) /= val;
-        }
-    }
-    else {
-        if (get<BigInt>(numb).is_castable_to_double()) {
-            anumb result = get<BigInt>(numb).to_double();
-            div(result, val);
-            numb.swap(result);
-        }
-        else {
-            get<BigInt>(numb).div(BigInt(val));
-        }
-    }
-}
-
-void div(anumb& numb, const BigInt& val) {
-    if (holds_alternative<double>(numb)) {
-
-        if (val.is_castable_to_double()) {
-            numb = get<double>(numb) / val.to_double();
-        }
-        else {
-            anumb result = BigInt(get<double>(numb));
-            div(result, val);
-            numb.swap(result);
-        }
-    }
-    else {
-        get<BigInt>(numb).div(val);
-    }
-}
-
-bool operator>(const anumb& numb, double val) {
-    if (holds_alternative<double>(numb)) {
-        return  get<double>(numb) > val;
-    }
-    else {
-        if (get<BigInt>(numb).is_castable_to_double()) {
-            return get<BigInt>(numb).to_double() > val;
-        }
-        else {
-            return true;
-        }
-    }
-}
-
-bool operator<(const anumb& numb, double val) {
-    if (holds_alternative<double>(numb)) {
-        return  get<double>(numb) > val;
-    }
-    else {
-        if (get<BigInt>(numb).is_castable_to_double()) {
-            return get<BigInt>(numb).to_double() < val;
-        }
-        else {
-            return false;
-        }
-    }
-}
-
-bool operator==(const anumb& numb, double val) {
-    if (holds_alternative<double>(numb)) {
-        return  get<double>(numb) == val;
-    }
-    return false;
-}
-
-bool operator>(const anumb& numb, const BigInt& val) {
-    if (holds_alternative<double>(numb)) {
-        auto buf = get<double>(numb);
-        if (get<BigInt>(numb).is_castable_to_double()) {
-            return buf > val.to_double();
-        }
-        else {
-            return false;
-        }
-    }
-    else {
-        return get<BigInt>(numb) > val;
-    }
-}
-
-bool operator<(const anumb& numb, const BigInt& val) {
-    if (holds_alternative<double>(numb)) {
-        auto buf = get<double>(numb);
-        if (get<BigInt>(numb).is_castable_to_double()) {
-            return buf < val.to_double();
-        }
-        else {
-            return true;
-        }
-    }
-    else {
-        return get<BigInt>(numb) < val;
-    }
-}
-
-bool operator==(const anumb& numb, const BigInt& val) {
-    if (holds_alternative<double>(numb)) {
-        auto buf = get<double>(numb);
-        if (get<BigInt>(numb).is_castable_to_double()) {
-            return buf == val.to_double();
-        }
-        else {
-            return false;
-        }
-    }
-    else {
-        return get<BigInt>(numb) == val;
-    }
-}
-
-
 Cell CoreEnvironment::bifunc_add(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env)
 {
     if(c.size() < 3) throw "bifunc_add error";
     auto buf1 = eval(*(begin(c) + 1), sub_env);
     if (!is_number2_c(buf1)) throw "bifunc_add error";
-    anumb n;
-    if (buf1.to_atom().is_integer()) {
-        n = buf1.to_atom().to_integer();
-    }
-    else {
-        n = buf1.to_atom().to_real();
-    }
+    Number n = buf1.to_atom().to_number();
 
     for (auto it = begin(c) + 2; it != end(c); ++it) {
         auto buf = eval(*it, sub_env);
         if (!is_number2_c(buf)) throw "bifunc_add error";
-        if (buf.to_atom().is_integer()) {
-            add(n, buf.to_atom().to_integer());
-        }
-        else{
-            add(n, buf.to_atom().to_real());
-        }
+        n += buf.to_atom().to_number();
     }
-    if (holds_alternative<double>(n)) {
-        return make_atom(Atom(get<double>(n)));
-    }
-    return make_atom(Atom(get<BigInt>(n)));
+    return make_atom(Atom(n));
 }
 
 Cell CoreEnvironment::bifunc_sub(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env)
 {
-    if (c.size() < 3) throw "bifunc_add error";
+    if (c.size() < 2) throw "bifunc_sub error";
+
+    if (c.size() == 2) {
+        auto buf1 = eval(*(begin(c) + 1), sub_env);
+        if (!is_number2_c(buf1)) throw "bifunc_sub error";
+        Number n = buf1.to_atom().to_number();
+        n.minus();
+        return make_atom(Atom(n));
+    }
     auto buf1 = eval(*(begin(c) + 1), sub_env);
-    if (!is_number2_c(buf1)) throw "bifunc_add error";
-    anumb n;
-    if (buf1.to_atom().is_integer()) {
-        n = buf1.to_atom().to_integer();
-    }
-    else {
-        n = buf1.to_atom().to_real();
-    }
+    if (!is_number2_c(buf1)) throw "bifunc_sub error";
+    Number n = buf1.to_atom().to_number();
 
     for (auto it = begin(c) + 2; it != end(c); ++it) {
         auto buf = eval(*it, sub_env);
-        if (!is_number2_c(buf)) throw "bifunc_add error";
-        if (buf.to_atom().is_integer()) {
-            auto reversed = buf.to_atom().to_integer();
-            reversed *= BigInt(-1l);
-            add(n, reversed);
-        }
-        else {
-            auto reversed = buf.to_atom().to_real();
-            reversed *= -1;
-            add(n, reversed);
-        }
+        if (!is_number2_c(buf)) throw "bifunc_sub error";
+        n -= buf.to_atom().to_number();
     }
-    if (holds_alternative<double>(n)) {
-        return make_atom(Atom(get<double>(n)));
-    }
-    return make_atom(Atom(get<BigInt>(n)));
+    return make_atom(Atom(n));
 }
 
 Cell CoreEnvironment::bifunc_mul(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env)
 {
-    if (c.size() < 3) throw "bifunc_add error";
+    if (c.size() < 1) throw "bifunc_mul error";
+
+    if (c.size() == 1) {
+        return make_atom(Atom(Number(BigInt(1l))));
+    }
+
+    if (c.size() == 2) {
+        auto buf1 = eval(*(begin(c) + 1), sub_env);
+        if (!is_number2_c(buf1)) throw "bifunc_mul error";
+        return buf1;
+    }
     auto buf1 = eval(*(begin(c) + 1), sub_env);
-    if (!is_number2_c(buf1)) throw "bifunc_add error";
-    anumb n;
-    if (buf1.to_atom().is_integer()) {
-        n = buf1.to_atom().to_integer();
-    }
-    else {
-        n = buf1.to_atom().to_real();
-    }
+    if (!is_number2_c(buf1)) throw "bifunc_mul error";
+    Number n = buf1.to_atom().to_number();
 
     for (auto it = begin(c) + 2; it != end(c); ++it) {
         auto buf = eval(*it, sub_env);
-        if (!is_number2_c(buf)) throw "bifunc_add error";
-        if (buf.to_atom().is_integer()) {
-            mlt(n, buf.to_atom().to_integer());
-        }
-        else {
-            mlt(n, buf.to_atom().to_real());
-        }
+        if (!is_number2_c(buf)) throw "bifunc_mul error";
+        n *= buf.to_atom().to_number();
     }
-    if (holds_alternative<double>(n)) {
-        return make_atom(Atom(get<double>(n)));
-    }
-    return make_atom(Atom(get<BigInt>(n)));
+    return make_atom(Atom(n));
 }
 
 Cell CoreEnvironment::bifunc_div(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env)
 {
-    if (c.size() < 2) throw "bifunc_add error";
-    auto buf1 = eval(*(begin(c) + 1), sub_env);
-    if (!is_number2_c(buf1)) throw "bifunc_add error";
+    if (c.size() < 2) throw "bifunc_div error";
 
     if (c.size() == 2) {
-        anumb result = 1.0;
-
-        if (buf1.to_atom().is_integer()) {
-            div(result, buf1.to_atom().to_integer());
-        }
-        else {
-            div(result, buf1.to_atom().to_real());
-        }
-        if (holds_alternative<double>(result)) {
-            return make_atom(Atom(get<double>(result)));
-        }
-        return make_atom(Atom(get<BigInt>(result)));
+        auto buf1 = eval(*(begin(c) + 1), sub_env);
+        if (!is_number2_c(buf1)) throw "bifunc_div error";
+        Number n(1);
+        n /= buf1.to_atom().to_number();
+        return make_atom(Atom(n));
     }
 
-    anumb n;
-    if (buf1.to_atom().is_integer()) {
-        n = buf1.to_atom().to_integer();
-    }
-    else {
-        n = buf1.to_atom().to_real();
-    }
+    auto buf1 = eval(*(begin(c) + 1), sub_env);
+    if (!is_number2_c(buf1)) throw "bifunc_div error";
+    Number n = buf1.to_atom().to_number();
 
     auto buf2 = eval(*(begin(c) + 2), sub_env);
-    if (!is_number2_c(buf2)) throw "bifunc_add error";
-    
-    anumb n1;
-    if (buf1.to_atom().is_integer()) {
-        n1 = buf2.to_atom().to_integer();
-    }
-    else {
-        n1 = buf2.to_atom().to_real();
-    }
+    if (!is_number2_c(buf2)) throw "bifunc_div error";
+    Number n2 = buf2.to_atom().to_number();
+
     for (auto it = begin(c) + 3; it != end(c); ++it) {
         auto buf = eval(*it, sub_env);
-        if (!is_number2_c(buf)) throw "bifunc_add error";
-        if (buf.to_atom().is_integer()) {
-            mlt(n1, buf.to_atom().to_integer());
-        }
-        else {
-            mlt(n1, buf.to_atom().to_real());
-        }
+        if (!is_number2_c(buf)) throw "bifunc_div error";
+        n2 *= buf.to_atom().to_number();
     }
 
-    if (holds_alternative<double>(n1)) {
-        div(n, get<double>(n1));
-    }
-    else {
-        div(n, get<BigInt>(n1));
-    }
+    n /= n2;
 
-    if (holds_alternative<double>(n)) {
-        return make_atom(Atom(get<double>(n)));
-    }
-    return make_atom(Atom(get<BigInt>(n)));
+    return make_atom(Atom(n));
 }
 
-//????
 Cell CoreEnvironment::bifunc_greater(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env)
 {
     if (c.size() < 3) throw "bifunc_greater error";
-    auto pre_buf1 = eval(c[1], sub_env);
-    auto buf2 = eval(c[2], sub_env);
-    if (!is_number2_c(pre_buf1) || !is_number2_c(buf2)) throw "bifunc_equal error";
+    auto buf1 = eval(*(begin(c) + 1), sub_env);
+    if (!is_number2_c(buf1)) throw "bifunc_greater error";
+    Number n = buf1.to_atom().to_number();
 
-    anumb buf1;
-    if (pre_buf1.to_atom().is_integer()) {
-        buf1 = pre_buf1.to_atom().to_integer();
-    }
-    else {
-        buf1 = pre_buf1.to_atom().to_real();
-    }
-    bool result = false;
+    bool result = true;
+    auto it = begin(c) + 2;
+    for (; it != end(c); ++it) {
+        auto buf = eval(*it, sub_env);
+        if (!is_number2_c(buf)) throw "bifunc_greater error";
+        Number n2 = buf.to_atom().to_number();
+        result = n > n2;
 
-    if (buf2.to_atom().is_integer()) {
-        result = buf1 > buf2.to_atom().to_integer();
-    }
-    else {
-        result = buf1 > buf2.to_atom().to_real();
+        if (!result) break;
+        n = move(n2);
     }
 
-
-    if (result) {
-        for (auto it = begin(c) + 3; it != end(c); ++it) {
-            if (buf2.to_atom().is_integer()) {
-                buf1 = buf2.to_atom().to_integer();
-            }
-            else {
-                buf1 = buf2.to_atom().to_real();
-            }
-            buf2 = eval(*it, sub_env);
-
-            if (!is_number2_c(buf2)) throw "bifunc_equal error";
-            if (buf2.to_atom().is_integer()) {
-                result = buf1 > buf2.to_atom().to_integer();
-            }
-            else {
-                result = buf1 > buf2.to_atom().to_real();
-            }
-            if (!result)break;
-        }
+    for (; it != end(c); ++it) {
+        auto buf = eval(*it, sub_env);
+        if (!is_number2_c(buf)) throw "bifunc_greater error";
     }
-
     return bool_cast(result);
 }
 
-//?????
+Cell CoreEnvironment::bifunc_greater_equal(const std::vector<Cell>& c, CellEnv& sub_env)
+{
+    if (c.size() < 3) throw "bifunc_greater_equal error";
+    auto buf1 = eval(*(begin(c) + 1), sub_env);
+    if (!is_number2_c(buf1)) throw "bifunc_greater_equal error";
+    Number n = buf1.to_atom().to_number();
+
+    bool result = true;
+    auto it = begin(c) + 2;
+    for (; it != end(c); ++it) {
+        auto buf = eval(*it, sub_env);
+        if (!is_number2_c(buf)) throw "bifunc_greater_equal error";
+        Number n2 = buf.to_atom().to_number();
+        result = n >= n2;
+
+        if (!result) break;
+        n = move(n2);
+    }
+
+    for (; it != end(c); ++it) {
+        auto buf = eval(*it, sub_env);
+        if (!is_number2_c(buf)) throw "bifunc_greater_equal error";
+    }
+    return bool_cast(result);
+}
+
 Cell CoreEnvironment::bifunc_less(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env)
 {
     if (c.size() < 3) throw "bifunc_less error";
-    auto pre_buf1 = eval(c[1], sub_env);
-    auto buf2 = eval(c[2], sub_env);
-    if (!is_number2_c(pre_buf1) || !is_number2_c(buf2)) throw "bifunc_equal error";
+    auto buf1 = eval(*(begin(c) + 1), sub_env);
+    if (!is_number2_c(buf1)) throw "bifunc_less error";
+    Number n = buf1.to_atom().to_number();
 
-    anumb buf1;
-    if (pre_buf1.to_atom().is_integer()) {
-        buf1 = pre_buf1.to_atom().to_integer();
-    }
-    else {
-        buf1 = pre_buf1.to_atom().to_real();
-    }
-    bool result = false;
+    bool result = true;
+    auto it = begin(c) + 2;
+    for (; it != end(c); ++it) {
+        auto buf = eval(*it, sub_env);
+        if (!is_number2_c(buf)) throw "bifunc_less error";
+        Number n2 = buf.to_atom().to_number();
+        result = n < n2;
 
-    if (buf2.to_atom().is_integer()) {
-        result = buf1 < buf2.to_atom().to_integer();
-    }
-    else {
-        result = buf1 < buf2.to_atom().to_real();
+        if (!result) break;
+        n = move(n2);
     }
 
-
-    if (result) {
-        for (auto it = begin(c) + 3; it != end(c); ++it) {
-            if (buf2.to_atom().is_integer()) {
-                buf1 = buf2.to_atom().to_integer();
-            }
-            else {
-                buf1 = buf2.to_atom().to_real();
-            }
-            buf2 = eval(*it, sub_env);
-
-            if (!is_number2_c(buf2)) throw "bifunc_equal error";
-            if (buf2.to_atom().is_integer()) {
-                result = buf1 < buf2.to_atom().to_integer();
-            }
-            else {
-                result = buf1 < buf2.to_atom().to_real();
-            }
-            if (!result)break;
-        }
+    for (; it != end(c); ++it) {
+        auto buf = eval(*it, sub_env);
+        if (!is_number2_c(buf)) throw "bifunc_less error";
     }
 
     return bool_cast(result);
 }
 
-//????
 Cell CoreEnvironment::bifunc_less_equal(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env)
 {
-    if (c.size() < 3) throw "bifunc_equal error";
-    auto pre_buf1 = eval(c[1], sub_env);
-    auto buf2 = eval(c[2], sub_env);
-    if (!is_number2_c(pre_buf1) || !is_number2_c(buf2)) throw "bifunc_less_equal error";
+    if (c.size() < 3) throw "bifunc_less_equal error";
+    auto buf1 = eval(*(begin(c) + 1), sub_env);
+    if (!is_number2_c(buf1)) throw "bifunc_less_equal error";
+    Number n = buf1.to_atom().to_number();
 
-    anumb buf1;
-    if (pre_buf1.to_atom().is_integer()) {
-        buf1 = pre_buf1.to_atom().to_integer();
-    }
-    else {
-        buf1 = pre_buf1.to_atom().to_real();
-    }
-    bool result = false;
+    bool result = true;
+    auto it = begin(c) + 2;
+    for (; it != end(c); ++it) {
+        auto buf = eval(*it, sub_env);
+        if (!is_number2_c(buf)) throw "bifunc_less_equal error";
+        Number n2 = buf.to_atom().to_number();
+        result = n <= n2;
 
-    if (buf2.to_atom().is_integer()) {
-        result = buf1 < buf2.to_atom().to_integer() || buf1 == buf2.to_atom().to_integer();
-    }
-    else {
-        result = buf1 < buf2.to_atom().to_real() || buf1 == buf2.to_atom().to_real();
+        if (!result) break;
+        n = move(n2);
     }
 
-
-    if (result) {
-        for (auto it = begin(c) + 3; it != end(c); ++it) {
-            if (buf2.to_atom().is_integer()) {
-                buf1 = buf2.to_atom().to_integer();
-            }
-            else {
-                buf1 = buf2.to_atom().to_real();
-            }
-            buf2 = eval(*it, sub_env);
-
-            if (!is_number2_c(buf2)) throw "bifunc_equal error";
-            if (buf2.to_atom().is_integer()) {
-                result = buf1 < buf2.to_atom().to_integer() || buf1 == buf2.to_atom().to_integer();
-            }
-            else {
-                result = buf1 < buf2.to_atom().to_real() || buf1 == buf2.to_atom().to_real();
-            }
-            if (!result)break;
-        }
+    for (; it != end(c); ++it) {
+        auto buf = eval(*it, sub_env);
+        if (!is_number2_c(buf)) throw "bifunc_less_equal error";
     }
 
     return bool_cast(result);
 }
 
-
-//????
 Cell CoreEnvironment::bifunc_equal(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env)
 {
     if (c.size() < 3) throw "bifunc_equal error";
-    auto pre_buf1 = eval(c[1], sub_env);
-    auto buf2 = eval(c[2], sub_env);
-    if (!is_number2_c(pre_buf1) || !is_number2_c(buf2)) throw "bifunc_equal error";
+    auto buf1 = eval(*(begin(c) + 1), sub_env);
+    if (!is_number2_c(buf1)) throw "bifunc_equal error";
+    Number n = buf1.to_atom().to_number();
 
-    anumb buf1;
-    if (pre_buf1.to_atom().is_integer()) {
-        buf1 = pre_buf1.to_atom().to_integer();
-    }
-    else {
-        buf1 = pre_buf1.to_atom().to_real();
-    }
-    bool result = false;
+    bool result = true;
+    auto it = begin(c) + 2;
+    for (; it != end(c); ++it) {
+        auto buf = eval(*it, sub_env);
+        if (!is_number2_c(buf)) throw "bifunc_equal error";
+        Number n2 = buf.to_atom().to_number();
+        result = n == n2;
 
-    if (buf2.to_atom().is_integer()) {
-        result =  buf1 == buf2.to_atom().to_integer();
-    }
-    else {
-        result = buf1 == buf2.to_atom().to_real();
+        if (!result) break;
+        n = move(n2);
     }
 
-
-    if (result) {
-        for (auto it = begin(c) + 3; it != end(c); ++it) {
-            if (buf2.to_atom().is_integer()) {
-                buf1 = buf2.to_atom().to_integer();
-            }
-            else {
-                buf1 = buf2.to_atom().to_real();
-            }
-            buf2 = eval(*it, sub_env);
-
-            if (!is_number2_c(buf2)) throw "bifunc_equal error";
-            if (buf2.to_atom().is_integer()) {
-                result = buf1 == buf2.to_atom().to_integer();
-            }
-            else {
-                result = buf1 == buf2.to_atom().to_real();
-            }
-            if (!result)break;
-        }
+    for (; it != end(c); ++it) {
+        auto buf = eval(*it, sub_env);
+        if (!is_number2_c(buf)) throw "bifunc_equal error";
     }
 
     return bool_cast(result);
@@ -718,17 +385,17 @@ Cell CoreEnvironment::bifunc_list(const std::vector<Cell>& c, CoreEnvironment::C
 Cell CoreEnvironment::bifunc_getf(const std::vector<Cell>& c, CellEnv& sub_env)
 {
     if (c.size() < 2) throw "bifunc_getf error";
-
-    if(!is_symbol_c(c[1])) throw "bifunc_getf error";
+    auto buf = eval(c[1], sub_env);
+    if(!is_symbol_c(buf)) throw "bifunc_getf error";
 
     Cell result;
 
-    if (is_bifunc(c[1].to_atom().to_symbol())) {
+    if (is_bifunc(buf.to_atom().to_symbol())) {
         result = nil;
     }
     else {
-        if (t_lambdas.find(c[1].to_atom().to_symbol()) != end(t_lambdas)) {
-            const auto& fnc = t_lambdas.at(c[1].to_atom().to_symbol());
+        if (t_lambdas.find(buf.to_atom().to_symbol()) != end(t_lambdas)) {
+            const auto& fnc = t_lambdas.at(buf.to_atom().to_symbol());
 
             if (fnc.is_lambda()) {
                 const auto& lambda = fnc.get();
@@ -742,6 +409,7 @@ Cell CoreEnvironment::bifunc_getf(const std::vector<Cell>& c, CellEnv& sub_env)
                 }
                 str += ") ";
                 str += to_string(lambda.body);
+                str += ")";
                 result = make_atom(Atom(move(str)));
             }
             else {
@@ -756,6 +424,7 @@ Cell CoreEnvironment::bifunc_getf(const std::vector<Cell>& c, CellEnv& sub_env)
                 }
                 str += ") ";
                 str += to_string(lambda.body);
+                str += ")";
                 result = make_atom(Atom(move(str)));
             }
         }
@@ -854,6 +523,7 @@ std::pair<bool, Cell> CoreEnvironment::try_bifunc(const std::string& str, const 
     if (str == ">") {return { true, bifunc_greater(v, env)};};
     if (str == "<") {return { true, bifunc_less(v, env)};};
     if (str == "<=") {return { true, bifunc_less_equal(v, env)};};
+    if (str == ">=") { return { true, bifunc_greater_equal(v, env) }; };
     if (str == "=") {return { true, bifunc_equal(v, env)};};
     if (str == "getf") { return { true, bifunc_getf(v, env) }; };
 
@@ -888,6 +558,7 @@ bool CoreEnvironment::is_bifunc(const std::string& str)
     if (str == ">") return true;
     if (str == "<") return true;
     if (str == "<=") return true;
+    if (str == ">=") return true;
     if (str == "=")return true;
     if (str == "getf") return true;
 
@@ -923,7 +594,12 @@ Cell CoreEnvironment::eval(const Cell& arg, CoreEnvironment::CellEnv& sub_env) {
                     const auto& lambda = fnc.get();
                     auto it = next(begin(lst));
                     for (auto arg_it = begin(lambda.params); arg_it != end(lambda.params); ++arg_it) {
-                        params.emplace(arg_it->to_atom().to_symbol(), eval(*it, sub_env));
+                        if (it == end(lst)) {
+                            params.emplace(arg_it->to_atom().to_symbol(), nil);
+                        }
+                        else {
+                            params.emplace(arg_it->to_atom().to_symbol(), eval(*it, sub_env));
+                        }
                         ++it;
                     }
 
@@ -938,7 +614,12 @@ Cell CoreEnvironment::eval(const Cell& arg, CoreEnvironment::CellEnv& sub_env) {
                     const auto& lambda = fnc.get();
                     auto it = next(begin(lst));
                     for (auto arg_it = begin(lambda.params); arg_it != end(lambda.params); ++arg_it) {
-                        params.emplace(arg_it->to_atom().to_symbol(), *it);
+                        if (it == end(lst)) {
+                            params.emplace(arg_it->to_atom().to_symbol(), nil);
+                        }
+                        else {
+                            params.emplace(arg_it->to_atom().to_symbol(), *it);
+                        }
                         ++it;
                     }
                 }
