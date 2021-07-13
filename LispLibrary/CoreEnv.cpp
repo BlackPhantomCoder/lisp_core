@@ -11,21 +11,154 @@
 
 using namespace std;
 
-Cell CoreEnvironment::nil = make_list({});
-Cell CoreEnvironment::T = make_atom(Atom("T"));
 
-CoreEnvironment::CoreEnvironment()
+struct throwhelper :std::exception {
+
+};
+
+struct {
+    bool operator()(const pair<const char*, CoreEnvironment::bifunc>& lh, const pair<const char*, CoreEnvironment::bifunc>& rh)const {
+        return strcmp(lh.first, rh.first) < 0;
+    }
+} bifunc_pair_less;
+
+struct {
+    bool operator()(const pair<const char*, CoreEnvironment::bifunc>& lh, const string& rh)const {
+        return lh.first < rh;
+    }
+} bifunc_pair_less_w_string;
+
+
+LambdaCell make_lambda_form(
+    bool lambda,
+    Cell::olist::const_iterator beg_params,
+    Cell::olist::const_iterator end_params,
+    Cell::olist::const_iterator beg_body,
+    Cell::olist::const_iterator end_body
+)
 {
-	t_vars.emplace("nil", nil);
-	t_vars.emplace("T", T);
+    auto size = std::distance(beg_params, end_params);
+    std::vector<std::string> params(size);
+    size_t i = 0;
+    for (auto it = beg_params; it != end_params; ++it, ++i) {
+        if (!is_symbol_c(*it)) throw "get_lambda_form error";
+        params[i] = it->to_atom().to_symbol();
+    }
+
+    if (lambda) {
+        return  make_lambda(move(params), { beg_body , end_body });
+    }
+    else {
+        return make_nlambda(move(params), { beg_body , end_body });
+    }
+}
+
+
+LambdaCell get_lambda_form(
+    Cell::olist::const_iterator beg_it,
+    Cell::olist::const_iterator end_it,
+    CoreEnvironment::CellEnv& sub_env
+)
+{
+    if (std::distance(beg_it, end_it) < 2) throw "get_lambda_form error";
+    if (!is_symbol_c(*beg_it)) throw "get_lambda_form error";
+    if (
+        beg_it->to_atom().to_symbol() == CoreEnvironment::nlambda_str
+        ||
+        beg_it->to_atom().to_symbol() == CoreEnvironment::lambda_str
+        )
+    {
+        if (!(beg_it + 1)->is_list()) {
+            // (defun name x body) stil not available
+            throw "get_lambda_form error (not available)";
+        }
+        return
+            make_lambda_form(
+                beg_it->to_atom().to_symbol() == CoreEnvironment::lambda_str,
+                begin((beg_it + 1)->to_list()), end((beg_it + 1)->to_list()),
+                beg_it + 2, end_it
+            );
+    }
+    throw "get_lambda_form error";
+}
+
+
+
+CoreEnvironment::bifuncs_array bifunc_setup() {
+    auto result =  CoreEnvironment::bifuncs_array{
+        make_pair("APPEND", &CoreEnvironment::bifunc_append),
+        make_pair("CAR", &CoreEnvironment::bifunc_car),
+        make_pair("CDR", &CoreEnvironment::bifunc_cdr),
+        make_pair("CONS", &CoreEnvironment::bifunc_cons),
+        make_pair("LIST", &CoreEnvironment::bifunc_list),
+        make_pair("NULL", &CoreEnvironment::bifunc_null),
+        make_pair("NUMBERP", &CoreEnvironment::bifunc_numberp),
+        make_pair("SYMBOLP", &CoreEnvironment::bifunc_symbolp),
+        make_pair("LISTP", &CoreEnvironment::bifunc_listp),
+        make_pair("ATOMP", &CoreEnvironment::bifunc_atomp),
+        make_pair("+", &CoreEnvironment::bifunc_add),
+        make_pair("-", &CoreEnvironment::bifunc_sub),
+        make_pair("*", &CoreEnvironment::bifunc_mul),
+        make_pair("/", &CoreEnvironment::bifunc_div),
+        make_pair(">", &CoreEnvironment::bifunc_greater),
+        make_pair("<", &CoreEnvironment::bifunc_less),
+        make_pair("<=", &CoreEnvironment::bifunc_less_equal),
+        make_pair(">=", &CoreEnvironment::bifunc_greater_equal),
+        make_pair("=", &CoreEnvironment::bifunc_equal),
+        make_pair("GETD", &CoreEnvironment::bifunc_getd),
+        make_pair("EVAL", &CoreEnvironment::nbifunc_eval),
+        make_pair("DEFUN", &CoreEnvironment::nbifunc_defun),
+        make_pair("QUOTE", &CoreEnvironment::nbifunc_quote),
+        make_pair("COND", &CoreEnvironment::nbifunc_cond),
+        make_pair("IF", &CoreEnvironment::nbifunc_if),
+        make_pair("PROGN", &CoreEnvironment::nbifunc_progn),
+        make_pair("SET", &CoreEnvironment::bifunc_set),
+        make_pair("SETQ", &CoreEnvironment::nbifunc_setq),
+        make_pair("READ", &CoreEnvironment::bifunc_read),
+        make_pair("PROG1", &CoreEnvironment::bifunc_prog1),
+        make_pair("LOOP", &CoreEnvironment::nbifunc_loop),
+        make_pair("PRINT", &CoreEnvironment::bifunc_print)
+    };
+
+    std::sort(
+        begin(result),
+        end(result),
+        bifunc_pair_less
+    );
+
+    return result;
+}
+
+
+const char* CoreEnvironment::nil_str = "NIL";
+const char* CoreEnvironment::T_str = "T";
+const char* CoreEnvironment::read_up_case_str = "*READ-UPCASE*";
+
+const char* CoreEnvironment::lambda_str = "LAMBDA";
+const char* CoreEnvironment::nlambda_str = "NLAMBDA";
+
+const Cell CoreEnvironment::nil = make_list({});
+const Cell CoreEnvironment::T = make_atom(Atom(T_str));
+
+const  CoreEnvironment::bifuncs_array  CoreEnvironment::bifuncs = bifunc_setup();
+
+
+CoreEnvironment::CoreEnvironment(std::istream& input, std::ostream& output):
+    CoreEnvStreamsProvider(input, output)
+{
+	t_vars.emplace(nil_str, nil);
+	t_vars.emplace(T_str, T);
+
+
+    //t_vars.emplace("*READ-UPCASE*", T);
 }
 
 Cell CoreEnvironment::execute_one(const Cell& c, const Mutexted<bool>& stop_flag)
 {
-    t_stop_flag = &stop_flag;
+    t_stop_flag = { stop_flag };
     Cell result = nil;
     try {
-        result = eval(c, t_env);
+        result = eval_quote(c, t_env);
     }
     catch (const throwhelper&e) {
         
@@ -33,73 +166,45 @@ Cell CoreEnvironment::execute_one(const Cell& c, const Mutexted<bool>& stop_flag
     return result; 
 }
 
-Cell CoreEnvironment::bool_cast(bool val) {
-    if (val)  return T;
-    return nil;
+const std::unordered_map<std::string, LambdaCell>& CoreEnvironment::lambdas() const
+{
+    return t_lambdas;
 }
 
-bool is_null(const Cell& c) {
-    if (!c.is_list()) return false;
-    return c.to_list().empty();
+const std::unordered_map<std::string, Cell>& CoreEnvironment::vars() const
+{
+    return t_vars;
 }
-
-bool is_symbol_c(const Cell& c) {
-    if (!c.is_atom()) return false;
-    return c.to_atom().is_symbol();
-}
-
-bool is_integer_number_c(const Cell& c) {
-    if (!c.is_atom()) return false;
-    return c.to_atom().is_number() && c.to_atom().to_number().is_integer();
-}
-
-bool is_real_number_c(const Cell& c) {
-    if (!c.is_atom()) return false;
-    return c.to_atom().is_number() && c.to_atom().to_number().is_real();
-}
-
-bool is_number2_c(const Cell& c) {
-    if (!c.is_atom()) return false;
-    return c.to_atom().is_number();
-}
-
-bool CoreEnvironment::is_T(const Cell& c) {
-    if (!c.is_atom()) return false;
-    if (!is_symbol_c(c)) return false;
-    return c.to_atom().to_symbol() == T.to_atom().to_symbol();
-}
-
-
 
 Cell CoreEnvironment::bifunc_atomp(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env) {
-    return bool_cast(eval(c[1], sub_env).is_atom());
+    return bool_cast(eval_quote(c[1], sub_env).is_atom());
 }
 
 Cell CoreEnvironment::bifunc_symbolp(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env) {
-    return bool_cast(is_symbol_c(eval(c[1], sub_env)));
+    return bool_cast(is_symbol_c(eval_quote(c[1], sub_env)));
 }
 
 Cell CoreEnvironment::bifunc_numberp(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env) {
-    return bool_cast(is_number2_c(eval(c[1], sub_env)));
+    return bool_cast(is_number2_c(eval_quote(c[1], sub_env)));
 }
 
 Cell CoreEnvironment::bifunc_listp(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env) {
-    return bool_cast(eval(c[1], sub_env).is_list());
+    return bool_cast(eval_quote(c[1], sub_env).is_list());
 }
 
 Cell CoreEnvironment::bifunc_null(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env) {
-    return bool_cast(is_null(eval(c[1], sub_env)));
+    return bool_cast(is_null(eval_quote(c[1], sub_env)));
 }
 
 Cell CoreEnvironment::bifunc_add(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env)
 {
     if(c.size() < 3) throw "bifunc_add error";
-    auto buf1 = eval(*(begin(c) + 1), sub_env);
+    auto buf1 = eval_quote(*(begin(c) + 1), sub_env);
     if (!is_number2_c(buf1)) throw "bifunc_add error";
     Number n = buf1.to_atom().to_number();
 
     for (auto it = begin(c) + 2; it != end(c); ++it) {
-        auto buf = eval(*it, sub_env);
+        auto buf = eval_quote(*it, sub_env);
         if (!is_number2_c(buf)) throw "bifunc_add error";
         n += buf.to_atom().to_number();
     }
@@ -111,18 +216,18 @@ Cell CoreEnvironment::bifunc_sub(const std::vector<Cell>& c, CoreEnvironment::Ce
     if (c.size() < 2) throw "bifunc_sub error";
 
     if (c.size() == 2) {
-        auto buf1 = eval(*(begin(c) + 1), sub_env);
+        auto buf1 = eval_quote(*(begin(c) + 1), sub_env);
         if (!is_number2_c(buf1)) throw "bifunc_sub error";
         Number n = buf1.to_atom().to_number();
         n.minus();
         return make_atom(Atom(n));
     }
-    auto buf1 = eval(*(begin(c) + 1), sub_env);
+    auto buf1 = eval_quote(*(begin(c) + 1), sub_env);
     if (!is_number2_c(buf1)) throw "bifunc_sub error";
     Number n = buf1.to_atom().to_number();
 
     for (auto it = begin(c) + 2; it != end(c); ++it) {
-        auto buf = eval(*it, sub_env);
+        auto buf = eval_quote(*it, sub_env);
         if (!is_number2_c(buf)) throw "bifunc_sub error";
         n -= buf.to_atom().to_number();
     }
@@ -138,16 +243,16 @@ Cell CoreEnvironment::bifunc_mul(const std::vector<Cell>& c, CoreEnvironment::Ce
     }
 
     if (c.size() == 2) {
-        auto buf1 = eval(*(begin(c) + 1), sub_env);
+        auto buf1 = eval_quote(*(begin(c) + 1), sub_env);
         if (!is_number2_c(buf1)) throw "bifunc_mul error";
         return buf1;
     }
-    auto buf1 = eval(*(begin(c) + 1), sub_env);
+    auto buf1 = eval_quote(*(begin(c) + 1), sub_env);
     if (!is_number2_c(buf1)) throw "bifunc_mul error";
     Number n = buf1.to_atom().to_number();
 
     for (auto it = begin(c) + 2; it != end(c); ++it) {
-        auto buf = eval(*it, sub_env);
+        auto buf = eval_quote(*it, sub_env);
         if (!is_number2_c(buf)) throw "bifunc_mul error";
         n *= buf.to_atom().to_number();
     }
@@ -159,23 +264,23 @@ Cell CoreEnvironment::bifunc_div(const std::vector<Cell>& c, CoreEnvironment::Ce
     if (c.size() < 2) throw "bifunc_div error";
 
     if (c.size() == 2) {
-        auto buf1 = eval(*(begin(c) + 1), sub_env);
+        auto buf1 = eval_quote(*(begin(c) + 1), sub_env);
         if (!is_number2_c(buf1)) throw "bifunc_div error";
         Number n(1);
         n /= buf1.to_atom().to_number();
         return make_atom(Atom(n));
     }
 
-    auto buf1 = eval(*(begin(c) + 1), sub_env);
+    auto buf1 = eval_quote(*(begin(c) + 1), sub_env);
     if (!is_number2_c(buf1)) throw "bifunc_div error";
     Number n = buf1.to_atom().to_number();
 
-    auto buf2 = eval(*(begin(c) + 2), sub_env);
+    auto buf2 = eval_quote(*(begin(c) + 2), sub_env);
     if (!is_number2_c(buf2)) throw "bifunc_div error";
     Number n2 = buf2.to_atom().to_number();
 
     for (auto it = begin(c) + 3; it != end(c); ++it) {
-        auto buf = eval(*it, sub_env);
+        auto buf = eval_quote(*it, sub_env);
         if (!is_number2_c(buf)) throw "bifunc_div error";
         n2 *= buf.to_atom().to_number();
     }
@@ -188,14 +293,14 @@ Cell CoreEnvironment::bifunc_div(const std::vector<Cell>& c, CoreEnvironment::Ce
 Cell CoreEnvironment::bifunc_greater(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env)
 {
     if (c.size() < 3) throw "bifunc_greater error";
-    auto buf1 = eval(*(begin(c) + 1), sub_env);
+    auto buf1 = eval_quote(*(begin(c) + 1), sub_env);
     if (!is_number2_c(buf1)) throw "bifunc_greater error";
     Number n = buf1.to_atom().to_number();
 
     bool result = true;
     auto it = begin(c) + 2;
     for (; it != end(c); ++it) {
-        auto buf = eval(*it, sub_env);
+        auto buf = eval_quote(*it, sub_env);
         if (!is_number2_c(buf)) throw "bifunc_greater error";
         Number n2 = buf.to_atom().to_number();
         result = n > n2;
@@ -205,7 +310,7 @@ Cell CoreEnvironment::bifunc_greater(const std::vector<Cell>& c, CoreEnvironment
     }
 
     for (; it != end(c); ++it) {
-        auto buf = eval(*it, sub_env);
+        auto buf = eval_quote(*it, sub_env);
         if (!is_number2_c(buf)) throw "bifunc_greater error";
     }
     return bool_cast(result);
@@ -214,14 +319,14 @@ Cell CoreEnvironment::bifunc_greater(const std::vector<Cell>& c, CoreEnvironment
 Cell CoreEnvironment::bifunc_greater_equal(const std::vector<Cell>& c, CellEnv& sub_env)
 {
     if (c.size() < 3) throw "bifunc_greater_equal error";
-    auto buf1 = eval(*(begin(c) + 1), sub_env);
+    auto buf1 = eval_quote(*(begin(c) + 1), sub_env);
     if (!is_number2_c(buf1)) throw "bifunc_greater_equal error";
     Number n = buf1.to_atom().to_number();
 
     bool result = true;
     auto it = begin(c) + 2;
     for (; it != end(c); ++it) {
-        auto buf = eval(*it, sub_env);
+        auto buf = eval_quote(*it, sub_env);
         if (!is_number2_c(buf)) throw "bifunc_greater_equal error";
         Number n2 = buf.to_atom().to_number();
         result = n >= n2;
@@ -231,7 +336,7 @@ Cell CoreEnvironment::bifunc_greater_equal(const std::vector<Cell>& c, CellEnv& 
     }
 
     for (; it != end(c); ++it) {
-        auto buf = eval(*it, sub_env);
+        auto buf = eval_quote(*it, sub_env);
         if (!is_number2_c(buf)) throw "bifunc_greater_equal error";
     }
     return bool_cast(result);
@@ -240,14 +345,14 @@ Cell CoreEnvironment::bifunc_greater_equal(const std::vector<Cell>& c, CellEnv& 
 Cell CoreEnvironment::bifunc_less(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env)
 {
     if (c.size() < 3) throw "bifunc_less error";
-    auto buf1 = eval(*(begin(c) + 1), sub_env);
+    auto buf1 = eval_quote(*(begin(c) + 1), sub_env);
     if (!is_number2_c(buf1)) throw "bifunc_less error";
     Number n = buf1.to_atom().to_number();
 
     bool result = true;
     auto it = begin(c) + 2;
     for (; it != end(c); ++it) {
-        auto buf = eval(*it, sub_env);
+        auto buf = eval_quote(*it, sub_env);
         if (!is_number2_c(buf)) throw "bifunc_less error";
         Number n2 = buf.to_atom().to_number();
         result = n < n2;
@@ -257,7 +362,7 @@ Cell CoreEnvironment::bifunc_less(const std::vector<Cell>& c, CoreEnvironment::C
     }
 
     for (; it != end(c); ++it) {
-        auto buf = eval(*it, sub_env);
+        auto buf = eval_quote(*it, sub_env);
         if (!is_number2_c(buf)) throw "bifunc_less error";
     }
 
@@ -267,14 +372,14 @@ Cell CoreEnvironment::bifunc_less(const std::vector<Cell>& c, CoreEnvironment::C
 Cell CoreEnvironment::bifunc_less_equal(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env)
 {
     if (c.size() < 3) throw "bifunc_less_equal error";
-    auto buf1 = eval(*(begin(c) + 1), sub_env);
+    auto buf1 = eval_quote(*(begin(c) + 1), sub_env);
     if (!is_number2_c(buf1)) throw "bifunc_less_equal error";
     Number n = buf1.to_atom().to_number();
 
     bool result = true;
     auto it = begin(c) + 2;
     for (; it != end(c); ++it) {
-        auto buf = eval(*it, sub_env);
+        auto buf = eval_quote(*it, sub_env);
         if (!is_number2_c(buf)) throw "bifunc_less_equal error";
         Number n2 = buf.to_atom().to_number();
         result = n <= n2;
@@ -284,7 +389,7 @@ Cell CoreEnvironment::bifunc_less_equal(const std::vector<Cell>& c, CoreEnvironm
     }
 
     for (; it != end(c); ++it) {
-        auto buf = eval(*it, sub_env);
+        auto buf = eval_quote(*it, sub_env);
         if (!is_number2_c(buf)) throw "bifunc_less_equal error";
     }
 
@@ -294,14 +399,14 @@ Cell CoreEnvironment::bifunc_less_equal(const std::vector<Cell>& c, CoreEnvironm
 Cell CoreEnvironment::bifunc_equal(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env)
 {
     if (c.size() < 3) throw "bifunc_equal error";
-    auto buf1 = eval(*(begin(c) + 1), sub_env);
+    auto buf1 = eval_quote(*(begin(c) + 1), sub_env);
     if (!is_number2_c(buf1)) throw "bifunc_equal error";
     Number n = buf1.to_atom().to_number();
 
     bool result = true;
     auto it = begin(c) + 2;
     for (; it != end(c); ++it) {
-        auto buf = eval(*it, sub_env);
+        auto buf = eval_quote(*it, sub_env);
         if (!is_number2_c(buf)) throw "bifunc_equal error";
         Number n2 = buf.to_atom().to_number();
         result = n == n2;
@@ -311,7 +416,7 @@ Cell CoreEnvironment::bifunc_equal(const std::vector<Cell>& c, CoreEnvironment::
     }
 
     for (; it != end(c); ++it) {
-        auto buf = eval(*it, sub_env);
+        auto buf = eval_quote(*it, sub_env);
         if (!is_number2_c(buf)) throw "bifunc_equal error";
     }
 
@@ -321,10 +426,10 @@ Cell CoreEnvironment::bifunc_equal(const std::vector<Cell>& c, CoreEnvironment::
 Cell CoreEnvironment::bifunc_car(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env)
 {
     if (c.size() < 2) throw "bifunc_car error";
-    auto buf = eval(c[1], sub_env);
+    auto buf = eval_quote(c[1], sub_env);
     if (!buf.is_list()) return nil;
     for (auto it = begin(c) + 2; it != end(c); ++it) {
-        eval(*it, sub_env);
+        eval_quote(*it, sub_env);
     }
     return buf.to_list()[0];
 }
@@ -332,10 +437,10 @@ Cell CoreEnvironment::bifunc_car(const std::vector<Cell>& c, CoreEnvironment::Ce
 Cell CoreEnvironment::bifunc_cdr(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env)
 {
     if (c.size() < 2) throw "bifunc_cdr error";
-    auto buf = eval(c[1], sub_env);
+    auto buf = eval_quote(c[1], sub_env);
     if (!buf.is_list()) return nil;
     for (auto it = begin(c) + 2; it != end(c); ++it) {
-        eval(*it, sub_env);
+        eval_quote(*it, sub_env);
     }
     const auto& lst = buf.to_list();
     return make_list(std::vector<Cell>(next(begin(lst)), end(lst)));
@@ -346,7 +451,7 @@ Cell CoreEnvironment::bifunc_append(const std::vector<Cell>& c, CoreEnvironment:
     if (c.size() < 3) throw "bifunc_append error";
     std::list<Cell> lst;
     for (auto it = begin(c) + 1; it != end(c); ++it) {
-        auto buf = eval(*it, sub_env);
+        auto buf = eval_quote(*it, sub_env);
         if (!buf.is_list()) return nil;
         for (const auto& elem : buf.to_list()) {
             lst.push_back(elem);
@@ -358,16 +463,16 @@ Cell CoreEnvironment::bifunc_append(const std::vector<Cell>& c, CoreEnvironment:
 Cell CoreEnvironment::bifunc_cons(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env)
 {
     if (c.size() < 3) throw "bifunc_cons error";
-    auto buf = eval(c[2], sub_env);
+    auto buf = eval_quote(c[2], sub_env);
     if (!buf.is_list()) return nil;
     const auto& lst = buf.to_list();
     std::vector<Cell> result(1 + lst.size());
-    result[0] = eval(c[1], sub_env);
+    result[0] = eval_quote(c[1], sub_env);
     for (unsigned char i = 1; i != result.size(); ++i) {
         result[i] = lst[i - 1];
     }
     for (auto it = begin(c) + 3; it != end(c); ++it) {
-        eval(*it, sub_env);
+        eval_quote(*it, sub_env);
     }
     return make_list(std::move(result));
 }
@@ -377,15 +482,15 @@ Cell CoreEnvironment::bifunc_list(const std::vector<Cell>& c, CoreEnvironment::C
     if (c.size() < 2) throw "bifunc_list error";
     std::vector<Cell> lst(c.size() - 1);
     for (unsigned char i = 0; i < c.size() - 1; ++i) {
-        lst[i] = eval(c[i + 1], sub_env);
+        lst[i] = eval_quote(c[i + 1], sub_env);
     }
     return make_list(std::move(lst));
 }
 
-Cell CoreEnvironment::bifunc_getf(const std::vector<Cell>& c, CellEnv& sub_env)
+Cell CoreEnvironment::bifunc_getd(const std::vector<Cell>& c, CellEnv& sub_env)
 {
     if (c.size() < 2) throw "bifunc_getf error";
-    auto buf = eval(c[1], sub_env);
+    auto buf = eval_quote(c[1], sub_env);
     if(!is_symbol_c(buf)) throw "bifunc_getf error";
 
     Cell result;
@@ -399,31 +504,45 @@ Cell CoreEnvironment::bifunc_getf(const std::vector<Cell>& c, CellEnv& sub_env)
 
             if (fnc.is_lambda()) {
                 const auto& lambda = fnc.get();
-                string str = "(lambda (";
+                string str = "(";
+                str += lambda_str;
+                str += " (";
 
                 if (!lambda.params.empty()){
                     for (const auto& name : lambda.params) {
-                        str += name.to_atom().to_symbol() + " ";
+                        str += name + " ";
                     }
                     str.erase(str.size() - 1);
                 }
                 str += ") ";
-                str += to_string(lambda.body);
+                if (lambda.body.size()) {
+                    str += to_string(lambda.body[0]);
+                }
+                else {
+                    str += to_string(lambda.body);
+                }
                 str += ")";
                 result = make_atom(Atom(move(str)));
             }
-            else {
+            else if(fnc.is_nlambda()){
                 const auto& lambda = fnc.get();
-                string str = "(nlambda (";
+                string str = "(";
+                str += nlambda_str;
+                str += " (";
 
                 if (!lambda.params.empty()) {
                     for (const auto& name : lambda.params) {
-                        str += name.to_atom().to_symbol() + " ";
+                        str += name + " ";
                     }
                     str.erase(str.size() - 1);
                 }
                 str += ") ";
-                str += to_string(lambda.body);
+                if (lambda.body.size()) {
+                    str += to_string(lambda.body[0]);
+                }
+                else {
+                    str += to_string(lambda.body);
+                }
                 str += ")";
                 result = make_atom(Atom(move(str)));
             }
@@ -435,9 +554,65 @@ Cell CoreEnvironment::bifunc_getf(const std::vector<Cell>& c, CellEnv& sub_env)
 
 
     for (auto it = begin(c) + 2; it != end(c); ++it) {
-        eval(*it, sub_env);
+        eval_quote(*it, sub_env);
     }
     return  result;
+}
+
+Cell CoreEnvironment::bifunc_read(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env) {
+    for (const auto& cell : c) {
+        eval_quote(cell, sub_env);
+    }
+
+    for(;;){
+        auto [result_reason, cell] 
+            = read_one_expression_from_stream(
+                t_input_stream(),
+                ReferencePublicCoreEnvironmentProvider(*this),
+                stream_read_mode::new_string,
+                true
+            );
+        if (result_reason) { return cell; }
+        if (t_stop_flag) throw throwhelper{};
+    }
+}
+
+Cell CoreEnvironment::bifunc_prog1(const std::vector<Cell>& c, CellEnv& sub_env)
+{
+    if (c.size() < 2) throw "nbifunc_prog1 error";
+    Cell result = eval_quote(c[1], sub_env);
+    for (auto it = begin(c) + 2; it != end(c); ++it) {
+         eval_quote(*it, sub_env);
+    }
+    return result;
+}
+
+Cell CoreEnvironment::nbifunc_loop(const std::vector<Cell>& c, CellEnv& sub_env)
+{
+    if (c.size() < 2) throw "nbifunc_loop error";
+    auto it = begin(c) + 1;
+    for(;;) {
+        if(it == end(c)) it = begin(c) + 1;
+        if (is_implicit_cond(*it, sub_env)) {
+            auto buf = eval_quote(it->to_list()[0], sub_env);
+            if (is_symbol_c(buf) && buf.to_atom().to_symbol() == T_str) {
+                if (it->to_list().size() == 1) return nil;
+                return eval_quote(it->to_list()[1], sub_env);
+            }
+        }
+        else {
+            eval_quote(*it, sub_env);
+        }
+        ++it;
+    }
+}
+
+Cell CoreEnvironment::bifunc_print(const std::vector<Cell>& c, CellEnv& sub_env)
+{
+    if (c.size() < 2) throw "bifunc_print error";
+    auto result = eval_quote(c[1], sub_env);
+    t_output_stream() << to_string(result) << endl;
+    return result;
 }
 
 Cell CoreEnvironment::nbifunc_quote(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env)
@@ -446,45 +621,41 @@ Cell CoreEnvironment::nbifunc_quote(const std::vector<Cell>& c, CoreEnvironment:
     return c[1];
 }
 
-Cell CoreEnvironment::nbifunc_defun(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env) {
-    if (c.size() < 3) throw "nbifunc_defun error";
-    if (!is_symbol_c(c[1])) return bool_cast(false);
-    if (!c[2].is_list()) return bool_cast(false);
-    const auto& name = c[1].to_atom().to_symbol();
-    const auto& first_lst = c[2].to_list();
+LambdaCell make_lambda_from(bool lambda, const std::vector<Cell>& param_cells, std::vector<Cell> body) {
+    std::vector<std::string> params(param_cells.size());
+    for (size_t i = 0; i < param_cells.size(); ++i) {
+        if (!is_symbol_c(param_cells[i])) throw "make_lambda_from error";
+        params[i] = param_cells[i].to_atom().to_symbol();
+    }
 
-    std::vector<Cell> params;
-    const Cell* body = nullptr;
-
-    if (first_lst.empty()) {
-        if (begin(c) + 3 == end(c)) throw "bifunc_defun error";
-        body = &(*(begin(c) + 3));
+    if (lambda) {
+        return  make_lambda(move(params), move(body));
     }
     else {
-        if (!is_symbol_c(first_lst[0])) throw "bifunc_defun error";
-
-
-        const auto& name = first_lst[0].to_atom().to_symbol();
-        if (name == "nlambda") {
-            if (!first_lst[1].is_list()) throw "bifunc_defun";
-            params = first_lst[1].to_list();
-
-            body = &(first_lst[2]);
-            t_lambdas[name] = make_nlambda(std::move(params), *body);
-            return c[1];
-        }
-        else if (name == "lambda") {
-            if (!first_lst[1].is_list()) throw "bifunc_defun";
-            params = first_lst[1].to_list();
-
-            body = &(first_lst[2]);
-        }
-        else {
-            params = first_lst;
-            body = &(c[3]);
-        }
+        return make_nlambda(move(params), move(body));
     }
-    t_lambdas[name] = make_lambda(std::move(params), *body);
+}
+
+Cell CoreEnvironment::nbifunc_defun(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env) {
+    if (c.size() < 3)  return bool_cast(false);
+    if (!is_symbol_c(c[1])) return bool_cast(false);
+    if (!c[2].is_list()) {
+        // (defun name x body) stil not available
+        return bool_cast(false);
+    }
+    const auto& name = c[1].to_atom().to_symbol();
+    if (c[2].to_list().empty()) {
+        t_lambdas[name] = make_lambda_form(true, end(c), end(c), begin(c) + 3, end(c));
+        return c[1];
+    }
+    const auto& lst = c[2].to_list();
+    if (!is_symbol_c(lst[0])) throw "bifunc_defun error";
+    if (lst[0].to_atom().to_symbol() == nlambda_str || lst[0].to_atom().to_symbol() == lambda_str) {
+        t_lambdas[name] = get_lambda_form(begin(lst), end(lst), sub_env);
+    }
+    else {
+        t_lambdas[name] = make_lambda_form(true, begin(lst), end(lst), begin(c) + 3, end(c));
+    }
     return c[1];
 }
 
@@ -503,81 +674,100 @@ Cell CoreEnvironment::eval_atom(const Cell& atom, CoreEnvironment::CellEnv& sub_
     return atom;
 }
 
+Cell CoreEnvironment::eval_lambda(const LambdaCell& fnc, Cell::olist::const_iterator beg_it, Cell::olist::const_iterator end_it, CoreEnvironment::CellEnv& sub_env) {
+    CoreEnvironment::CellEnv params;
+    if (fnc.is_lambda()) {
+        {
+            const auto& lambda = fnc.get();
+            auto it = beg_it;
+            for (auto arg_it = begin(lambda.params); arg_it != end(lambda.params); ++arg_it) {
+                if (it == end_it) {
+                    params.emplace(*arg_it, nil);
+                }
+                else {
+                    params.emplace(*arg_it, eval_quote(*it, sub_env));
+                    ++it;
+                }
+            }
+
+            for (; it != end_it; ++it) {
+                eval_quote(*it, sub_env);
+            }
+        }
+        const auto& body = fnc.get().body;
+        if (body.size() == 0) return nil;
+        if (body.size() == 1) return eval_quote(body[0], params);
+        for (auto it = begin(body); it < prev(end(body)); ++it) {
+            eval_quote(*it, params);
+        }
+        return eval_quote(*prev(end(body)), params);
+    }
+    else {
+        {
+            const auto& lambda = fnc.get();
+            auto it = beg_it;
+            for (auto arg_it = begin(lambda.params); arg_it != end(lambda.params); ++arg_it) {
+                if (it == end_it) {
+                    params.emplace(*arg_it, nil);
+                }
+                else {
+                    params.emplace(*arg_it, *it);
+                    ++it;
+                }
+            }
+        }
+        const auto& body = fnc.get().body;
+        if (body.size() == 0) return nil;
+        if (body.size() == 1) return eval_quote(body[0], params);
+        for (auto it = begin(body); it < prev(end(body)); ++it) {
+            eval_quote(*it, params);
+        }
+        return eval_quote(*prev(end(body)), params);
+    }
+}
+
 std::pair<bool, Cell> CoreEnvironment::try_bifunc(const std::string& str, const std::vector<Cell>& v, CellEnv& env)
 {
-    if (str == "append") {return { true, bifunc_append(v, env)};};
-    if (str == "car") { return { true, bifunc_car(v, env)};};
-    if (str == "cdr") {return { true, bifunc_cdr(v, env)};};
-    if (str == "cons") {return { true, bifunc_cons(v, env)};};
-    if (str == "list") {return { true, bifunc_list(v, env)};};
-    if (str == "null") {return { true, bifunc_null(v, env)};};
-    if (str == "numberp") {return { true, bifunc_numberp(v, env)};};
-    if (str == "symbolp") {return { true, bifunc_symbolp(v, env)};};
-    if (str == "listp") {return { true, bifunc_listp(v, env)};};
-    if (str == "atomp") {return { true, bifunc_atomp(v, env)};};
-
-    if (str == "+") {return { true, bifunc_add(v, env)};};
-    if (str == "-") {return { true, bifunc_sub(v, env)};};
-    if (str == "*") {return { true, bifunc_mul(v, env)};};
-    if (str == "/") {return { true, bifunc_div(v, env)};};
-    if (str == ">") {return { true, bifunc_greater(v, env)};};
-    if (str == "<") {return { true, bifunc_less(v, env)};};
-    if (str == "<=") {return { true, bifunc_less_equal(v, env)};};
-    if (str == ">=") { return { true, bifunc_greater_equal(v, env) }; };
-    if (str == "=") {return { true, bifunc_equal(v, env)};};
-    if (str == "getf") { return { true, bifunc_getf(v, env) }; };
-
-    if (str == "eval") { return { true, nbifunc_eval(v, env)};};
-    if (str == "defun") { return { true, nbifunc_defun(v, env)};};
-    if (str == "quote") { return { true, nbifunc_quote(v, env)};};
-    if (str == "cond") { return { true, nbifunc_cond(v, env)};};
-    if (str == "if") { return { true, nbifunc_if(v, env)};};
-    if (str == "progn") { return { true, nbifunc_progn(v, env)};};
-    if (str == "setq") { return { true, nbifunc_setq(v,env) }; }
-
+    auto it =
+        std::lower_bound(
+            begin(bifuncs),
+            end(bifuncs),
+            str,
+            bifunc_pair_less_w_string
+    );
+    if (it != end(bifuncs) && (it->first == str)) return { true,  (this->*(it->second))(v, env) };
     return { false, Cell() };
 }
 
 bool CoreEnvironment::is_bifunc(const std::string& str)
 {
-    if (str == "append") return true;
-    if (str == "car") return true;
-    if (str == "cdr") return true;
-    if (str == "cons") return true;
-    if (str == "list") return true;
-    if (str == "null") return true;
-    if (str == "numberp") return true;
-    if (str == "symbolp") return true;
-    if (str == "listp") return true;
-    if (str == "atomp") return true;
-
-    if (str == "+") return true;
-    if (str == "-") return true;
-    if (str == "*") return true;
-    if (str == "/") return true;
-    if (str == ">") return true;
-    if (str == "<") return true;
-    if (str == "<=") return true;
-    if (str == ">=") return true;
-    if (str == "=")return true;
-    if (str == "getf") return true;
-
-    if (str == "eval") return true;
-    if (str == "defun") return true;
-    if (str == "quote") return true;
-    if (str == "cond")return true;
-    if (str == "if") return true;
-    if (str == "progn") return true;
-    if (str == "setq") return true;
+    auto it = 
+        std::lower_bound(
+            begin(bifuncs),
+            end(bifuncs),
+            str,
+            bifunc_pair_less_w_string
+        );
+    if (it != end(bifuncs) && (it->first == str)) return true;
     return false;
 }
 
-
-Cell CoreEnvironment::eval(const Cell& arg, CoreEnvironment::CellEnv& sub_env) {
-    if (t_stop_flag->get()) throw throwhelper{};
+Cell CoreEnvironment::eval_quote(const Cell& arg, CoreEnvironment::CellEnv& sub_env) {
+    if ((t_stop_flag) && (*t_stop_flag).get().get()) throw throwhelper{};
     if (arg.is_list()) {
         const auto& lst = arg.to_list();
-        if (!is_symbol_c(lst[0])) throw "eval error";
+        if (!is_symbol_c(lst[0])) {
+            if (lst[0].is_list())
+            {
+                return eval_lambda(
+                        get_lambda_form(begin(lst[0].to_list()), end(lst[0].to_list()), sub_env),
+                        begin(lst) + 1,
+                        end(lst),
+                        sub_env
+                    );
+            }
+            throw "eval error";
+        }
 
         {
             auto [reason, result] = try_bifunc(lst[0].to_atom().to_symbol(), lst, sub_env);
@@ -587,44 +777,7 @@ Cell CoreEnvironment::eval(const Cell& arg, CoreEnvironment::CellEnv& sub_env) {
         }
 
         if (t_lambdas.find(lst[0].to_atom().to_symbol()) != end(t_lambdas)) {
-            CoreEnvironment::CellEnv params;
-            const auto& fnc = t_lambdas.at(lst[0].to_atom().to_symbol());
-            if (fnc.is_lambda()) {
-                {
-                    const auto& lambda = fnc.get();
-                    auto it = next(begin(lst));
-                    for (auto arg_it = begin(lambda.params); arg_it != end(lambda.params); ++arg_it) {
-                        if (it == end(lst)) {
-                            params.emplace(arg_it->to_atom().to_symbol(), nil);
-                        }
-                        else {
-                            params.emplace(arg_it->to_atom().to_symbol(), eval(*it, sub_env));
-                        }
-                        ++it;
-                    }
-
-                    for (; it != end(lst); ++it) {
-                        eval(*it, sub_env);
-                    }
-                }
-                return eval(fnc.get().body, params);
-            }
-            else {
-                {
-                    const auto& lambda = fnc.get();
-                    auto it = next(begin(lst));
-                    for (auto arg_it = begin(lambda.params); arg_it != end(lambda.params); ++arg_it) {
-                        if (it == end(lst)) {
-                            params.emplace(arg_it->to_atom().to_symbol(), nil);
-                        }
-                        else {
-                            params.emplace(arg_it->to_atom().to_symbol(), *it);
-                        }
-                        ++it;
-                    }
-                }
-                return eval(fnc.get().body, params);
-            }
+            return eval_lambda(t_lambdas.at(lst[0].to_atom().to_symbol()), begin(lst) + 1, end(lst), sub_env);
         }
         else {
             throw "eval error";
@@ -639,13 +792,13 @@ std::pair<bool, Cell>  CoreEnvironment::cond_exec_arc(const std::vector<Cell>& c
     if (c[0].is_list()) {
         if (is_null(c[0])) return  { false, nil };
 
-        if (is_null(eval(c[0], sub_env))) return  { false, nil };
+        if (is_null(eval_quote(c[0], sub_env))) return  { false, nil };
         else {
-            return  { true, eval(c[1], sub_env) };
+            return  { true, eval_quote(c[1], sub_env) };
         }
     }
-    else if (is_T(eval(c[0], sub_env))) {
-        return { true, eval(c[1], sub_env) };
+    else if (is_T(eval_quote(c[0], sub_env))) {
+        return { true, eval_quote(c[1], sub_env) };
     }
     else {
         throw "cond_exec_arc error";
@@ -672,38 +825,38 @@ Cell CoreEnvironment::nbifunc_if(const std::vector<Cell>& c, CoreEnvironment::Ce
     if (c.size() < 3) throw "nbifunc_if error";
 
     if (c.size() == 3) {
-        if (!is_null(eval(c[1], sub_env))) {
-            return eval(c[2], sub_env);
+        if (!is_null(eval_quote(c[1], sub_env))) {
+            return eval_quote(c[2], sub_env);
         }
         else {
             return nil;
         }
     }
 
-    if (!is_null(eval(c[1], sub_env))) {
-        return eval(c[2], sub_env);
+    if (!is_null(eval_quote(c[1], sub_env))) {
+        return eval_quote(c[2], sub_env);
     }
     else {
-        return eval(c[3], sub_env);
+        return eval_quote(c[3], sub_env);
     }
 }
 
 Cell CoreEnvironment::nbifunc_progn(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env)
 {
     if (c.size() < 2) throw "nbifunc_progn error";
-    Cell result;
-    for (const auto& now : c) {
-        result = eval(now, sub_env);
+    for (auto it = begin(c) + 1; it != prev(end(c)); ++it) {
+        eval_quote(*it, sub_env);
     }
-    return result;
+    return eval_quote(*prev(end(c)), sub_env);
 }
 
-Cell CoreEnvironment::nbifunc_setq(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env)
+Cell CoreEnvironment::bifunc_set(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env)
 {
-    if (c.size() < 3) throw "bifunc_setq error";
-    if (!is_symbol_c(c[1])) throw "bifunc_setq error";
-    const auto& name = c[1].to_atom().to_symbol();
-    auto val = eval(c[2], sub_env);
+    if (c.size() < 3) throw "bifunc_set error";
+    auto buf = eval_quote(c[1], sub_env);
+    if (!is_symbol_c(buf)) throw "bifunc_set error";
+    const auto& name = buf.to_atom().to_symbol();
+    auto val = eval_quote(c[2], sub_env);
     if (t_vars.find(name) != end(t_vars)) {
         t_vars.erase(name);
         t_vars.emplace(name,val);
@@ -717,42 +870,31 @@ Cell CoreEnvironment::nbifunc_setq(const std::vector<Cell>& c, CoreEnvironment::
             t_vars.emplace(name, val);
         }
     }
-    return val;
+    return buf;
+}
+
+Cell CoreEnvironment::nbifunc_setq(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env)
+{
+    if (c.size() < 3) throw "bifunc_set error";
+    if (!is_symbol_c(c[1])) throw "bifunc_set error";
+    const auto& name = c[1].to_atom().to_symbol();
+    auto val = eval_quote(c[2], sub_env);
+    if (t_vars.find(name) != end(t_vars)) {
+        t_vars.erase(name);
+        t_vars.emplace(name, val);
+    }
+    else {
+        if (sub_env.find(name) != std::end(sub_env)) {
+            sub_env.erase(name);
+            sub_env.emplace(name, val);
+        }
+        else {
+            t_vars.emplace(name, val);
+        }
+    }
+    return c[1];
 }
 
 Cell CoreEnvironment::nbifunc_eval(const std::vector<Cell>& c, CoreEnvironment::CellEnv& sub_env) {
-    return eval(c[1], sub_env);
+    return eval_quote(eval_quote(c[1], sub_env), sub_env);
 }
-//
-//BIFuncCell CoreEnvironment::find_bifunc(const std::string& str)
-//{
-//    if (str == "append") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_append(v, env);}); }
-//    if (str == "car") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env) {return bifunc_car(v, env);}); }
-//    if (str == "cdr") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_cdr(v, env);}); }
-//    if (str == "cons") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_cons(v, env);}); }
-//    if (str == "list") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_list(v, env);}); }
-//    if (str == "null") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_null(v, env);}); }
-//    if (str == "numberp") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_numberp(v, env);}); }
-//    if (str == "symbolp") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_symbolp(v, env);}); }
-//    if (str == "listp") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_listp(v, env);}); }
-//    if (str == "atomp") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_atomp(v, env);}); }
-//
-//    if (str == "+") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_add(v, env);}); }
-//    if (str == "-") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_sub(v, env);}); }
-//    if (str == "*") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_mul(v, env);}); }
-//    if (str == "/") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_div(v, env);}); }
-//    if (str == ">") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_greater(v, env);}); }
-//    if (str == "<") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_less(v, env);}); }
-//    if (str == "<=") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_less_equal(v, env);}); }
-//    if (str == "=") { return  make_bifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return bifunc_equal(v, env);}); }
-//
-//    if (str == "eval") { return  make_nbifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return nbifunc_eval(v, env);}); }
-//    if (str == "defun") { return  make_nbifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return nbifunc_defun(v, env);}); }
-//    if (str == "quote") { return  make_nbifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return nbifunc_quote(v, env);}); }
-//    if (str == "cond") { return  make_nbifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return nbifunc_cond(v, env);}); }
-//    if (str == "if") { return  make_nbifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return nbifunc_if(v, env);}); }
-//    if (str == "progn") { return  make_nbifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return nbifunc_progn(v, env);}); }
-//    if (str == "setq") { return  make_nbifunc([this](const vector<Cell> &v, unordered_map <string, Cell>&env){ return nbifunc_setq(v, env);}); }
-//
-//    return  {};
-//}

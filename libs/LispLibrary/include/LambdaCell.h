@@ -6,8 +6,8 @@ enum class lambda_types : bool { lambda, nlambda };
 
 struct lambda {
     //args symbs
-    std::vector<Cell> params;
-    Cell body;
+    std::vector<std::string> params;
+    std::vector<Cell> body;
 };
 
 class LambdaCell
@@ -31,8 +31,5 @@ private:
     lambda t_func;
 };
 
-LambdaCell make_lambda(std::vector<Cell>&& params, const Cell& body);
-LambdaCell make_lambda(const std::vector<Cell>& params, const Cell& body);
-
-LambdaCell make_nlambda(std::vector<Cell>&& params, const Cell& body);
-LambdaCell make_nlambda(const std::vector<Cell>& params, const Cell& body);
+LambdaCell make_lambda(std::vector<std::string> params, std::vector<Cell> body);
+LambdaCell make_nlambda(std::vector<std::string> params, std::vector<Cell> body);

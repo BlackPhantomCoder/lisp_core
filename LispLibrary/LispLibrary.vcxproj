@@ -222,26 +222,29 @@
     <ClInclude Include="Atom.h" />
     <ClInclude Include="BigInt.h" />
     <ClInclude Include="Cell.h" />
+    <ClInclude Include="Core.h" />
     <ClInclude Include="CoreEnv.h" />
+    <ClInclude Include="CoreEnvStreamsProvider.h" />
     <ClInclude Include="Funcs.h" />
     <ClInclude Include="LambdaCell.h" />
     <ClInclude Include="Mutexed.h" />
     <ClInclude Include="Number.h" />
-    <ClInclude Include="OnceCore.h" />
-    <ClInclude Include="ReplCore.h" />
-    <ClInclude Include="SerialReplCore.h" />
+    <ClInclude Include="PredLispFuncs.h" />
+    <ClInclude Include="PublicCoreEnvironmentProvider.h" />
+    <ClInclude Include="Types.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Atom.cpp" />
     <ClCompile Include="BigInt.cpp" />
     <ClCompile Include="Cell.cpp" />
+    <ClCompile Include="Core.cpp" />
     <ClCompile Include="CoreEnv.cpp" />
+    <ClCompile Include="CoreEnvStreamsProvider.cpp" />
     <ClCompile Include="Funcs.cpp" />
     <ClCompile Include="LambdaCell.cpp" />
     <ClCompile Include="Number.cpp" />
-    <ClCompile Include="OnceCore.cpp" />
-    <ClCompile Include="ReplCore.cpp" />
-    <ClCompile Include="SerialReplCore.cpp" />
+    <ClCompile Include="PredLispFuncs.cpp" />
+    <ClCompile Include="PublicCoreEnvironmentProvider.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

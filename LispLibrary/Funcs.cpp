@@ -6,51 +6,6 @@
 #include <iomanip>
 using namespace std;
 
-
-std::list<std::string> tokenize(const std::string& str)
-{
-    std::list<std::string> tokens;
-    const char* s = str.c_str();
-
-    long brackets = 0;
-    while (*s) {
-        while (*s == ' ')
-            ++s;
-
-        if (*s == '(') {
-            tokens.push_back("(");
-            ++brackets;
-            ++s;
-        }
-        else if (*s == ')') {
-            tokens.push_back(")");
-            --brackets;
-            ++s;
-        }
-        else if (*s == '"') {
-            auto s2 = s;
-            ++s2;
-            while (*s2 != '"') {
-                ++s2;
-                if (*s2 == '\0') throw "invalid input";
-            }
-            ++s2;
-            tokens.push_back(std::string(s, s2));
-            s = s2;
-        }
-        else {
-            const char* t = s;
-            while (*t && *t != ' ' && *t != '(' && *t != ')') {
-                ++t;
-            }
-            tokens.push_back(std::string(s, t));
-            s = t;
-        }
-    }
-    if (brackets != 0) throw "invalid_argument";
-    return tokens;
-}
-
 inline bool isdig(char c)
 {
     return isdigit(static_cast<unsigned char>(c)) != 0;
@@ -79,14 +34,20 @@ inline bool is_real_number(const char* str) {
 }
 
 // return the Lisp expression in the given tokens
-Cell read_from(std::list<std::string>& tokens)
+Cell read_from(std::list<std::string>& tokens, const IPublicCoreEnvironmentProvider& env)
 {
     std::string token(std::move(tokens.front()));
     tokens.pop_front();
+
+    if (token == "'") {
+        auto cell = read_from(tokens, env);
+        return make_list({ make_atom(Atom("QUOTE")), move(cell) });
+    }
+
     if (token == "(") {
         std::list<Cell> lst;
         while (tokens.front() != ")")
-            lst.push_back(read_from(tokens));
+            lst.push_back(read_from(tokens, env));
         tokens.pop_front();
         return make_list(std::move(lst));
     }
@@ -108,16 +69,19 @@ Cell read_from(std::list<std::string>& tokens)
         if (is_integer_number(token.c_str())) {
             return make_atom(Atom(Number(BigInt(move(token)))));
         }
+        const auto& vars = env.get().vars();
+
+        if (auto it = vars.find(CoreEnvironment::read_up_case_str);
+            it == end(vars)
+            ||
+            to_string(it->second) != CoreEnvironment::nil_str
+           ) 
+            {
+                std::transform(token.begin(), token.end(), token.begin(), std::toupper);
+            }
         return  make_atom(Atom(move(token)));
     }
         
-}
-
-// return the Lisp expression represented by the given string
-Cell read(const std::string& s) {
-    if (s.empty()) return make_atom(Atom("nil"));
-    std::list<std::string> tokens(tokenize(s));
-    return read_from(tokens);
 }
 
 // convert given Cell to a Lisp-readable string
@@ -125,7 +89,7 @@ std::string to_string(const Cell& exp)
 {
     if (exp.is_list()) {
         const auto& lst = exp.to_list();
-        if (lst.empty()) return "nil";
+        if (lst.empty()) return CoreEnvironment::nil_str;
         std::string s("(");
         for (auto e = std::begin(lst); e != std::end(lst); ++e) {
             s += to_string(*e);
@@ -180,59 +144,9 @@ std::string to_string(const Cell& exp)
 
 void delete_symbol(std::string& str, char symbol) {
     size_t pos;
-    while ( (pos = str.find(symbol)) != str.npos) {
+    while ((pos = str.find(symbol)) != str.npos) {
         str.erase(pos);
     }
-}
-
-std::vector<Cell> listp_expressions_from_string(const std::string& str)
-{
-    std::vector<Cell> result;
-    std::list<std::string> tokens;
-    const char* s = str.c_str();
-
-    long brackets = 0;
-    while (*s) {
-        while (*s == ' ' || *s == '\n' || *s == '\t')
-            ++s;
-
-        if (*s == '(') {
-            tokens.push_back("(");
-            ++brackets;
-            ++s;
-        }
-        else if (*s == ')') {
-            tokens.push_back(")");
-            --brackets;
-            ++s;
-        }
-        else if (*s == '"') {
-            auto s2 = s;
-            ++s2;
-            while (*s2 != '"') {
-                ++s2;
-                if (*s2 == '\0') throw "invalid input";
-            }
-            ++s2;
-            tokens.push_back(std::string(s, s2));
-            s = s2;
-        }
-        else {
-            const char* t = s;
-            while (*t && *t != ' ' && *t != '(' && *t != ')') {
-                ++t;
-            }
-            tokens.push_back(std::string(s, t));
-            delete_symbol(tokens.back(), '\n');
-            delete_symbol(tokens.back(), '\t');
-            s = t;
-        }
-        if (brackets == 0) {
-            result.push_back(read_from(tokens));
-        }
-    }
-    if (brackets != 0) throw "invalid_argument";
-    return result;
 }
 
 string get_prep_line(std::istream& in, bool skip_comments) {
@@ -246,20 +160,43 @@ string get_prep_line(std::istream& in, bool skip_comments) {
     return str;
 }
 
-std::vector<Cell> listp_expressions_from_stream(std::istream& in, bool skip_comments)
+
+std::pair<bool, Cell> read_one_expression_from_string(
+    const std::string& str,
+    const IPublicCoreEnvironmentProvider& env,
+    bool skip_comments
+)
 {
-    std::vector<Cell> result;
+    istringstream s(str);
+    return read_one_expression_from_stream(s, env, stream_read_mode::new_string, skip_comments);
+}
+
+std::pair<bool, Cell> read_one_expression_from_stream(
+    std::istream& in,
+    const IPublicCoreEnvironmentProvider& env,
+    stream_read_mode mode,
+    bool skip_comments
+)
+{
     std::list<std::string> tokens;
 
     long brackets = 0;
-    while (in) {
+    auto pos = in.tellg();
+
+    bool finish = false;
+    while (in && !finish) {
         string str = get_prep_line(in, skip_comments);
         const char* s = str.c_str();
         while (*s) {
-            while (*s == ' ' || *s == '\n' || *s == '\t')
+            while (*s == ' ' || *s == '\t')
                 ++s;
 
-            if (*s == '(') {
+            if (*s == '\'') {
+                tokens.push_back("'");
+                ++s;
+                continue;
+            }
+            else if (*s == '(') {
                 tokens.push_back("(");
                 ++brackets;
                 ++s;
@@ -289,21 +226,119 @@ std::vector<Cell> listp_expressions_from_stream(std::istream& in, bool skip_comm
                 while (*t && *t != ' ' && *t != '(' && *t != ')') {
                     ++t;
                 }
-                if (!*t && in) {
+                if (!*t && in && mode == stream_read_mode::s_expression) {
                     str = string(s) + get_prep_line(in, skip_comments);
                     s = str.c_str();
                     continue;
                 }
                 tokens.push_back(std::string(s, t));
-                delete_symbol(tokens.back(), '\n');
                 delete_symbol(tokens.back(), '\t');
                 s = t;
             }
             if (brackets == 0) {
-                result.push_back(read_from(tokens));
+                auto readed = str.size() - strlen(s);
+                pos += readed;
+                if (readed != str.size()) {
+                    in.seekg(pos);
+                    in.clear();
+                }
+                finish = true;
+                break;
             }
         }
     }
-    if (brackets != 0) throw "invalid_argument";
+    if (brackets != 0) {
+        throw "invalid_argument";
+    }
+    else if(tokens.empty()){
+        return { false, Cell() };
+    }
+    else {
+        return { true, read_from(tokens, env) };
+    }
+}
+
+std::vector<Cell> read_expressions_from_string(
+    const std::string& str,
+    const IPublicCoreEnvironmentProvider& env,
+    bool skip_comments)
+{
+    istringstream s(str);
+    return read_expressions_from_stream(s, env, stream_read_mode::s_expression, skip_comments);
+}
+
+std::vector<Cell> read_expressions_from_stream(
+    std::istream& in,
+    const IPublicCoreEnvironmentProvider& env,
+    stream_read_mode mode,
+    bool skip_comments
+)
+{
+    std::vector<Cell> result;
+    while (in) {
+        auto [result_reason, cell] = read_one_expression_from_stream(in, env, mode, skip_comments);
+        if (result_reason) {
+            result.push_back(move(cell));
+        }
+    }
     return result;
+}
+
+Cell bool_cast(bool val) {
+    if (val)  return CoreEnvironment::T;
+    return CoreEnvironment::nil;
+}
+
+bool is_null(const Cell& c) {
+    if (!c.is_list()) return false;
+    return c.to_list().empty();
+}
+
+bool is_symbol_c(const Cell& c) {
+    if (!c.is_atom()) return false;
+    return c.to_atom().is_symbol();
+}
+
+bool is_integer_number_c(const Cell& c) {
+    if (!c.is_atom()) return false;
+    return c.to_atom().is_number() && c.to_atom().to_number().is_integer();
+}
+
+bool is_real_number_c(const Cell& c) {
+    if (!c.is_atom()) return false;
+    return c.to_atom().is_number() && c.to_atom().to_number().is_real();
+}
+
+bool is_number2_c(const Cell& c) {
+    if (!c.is_atom()) return false;
+    return c.to_atom().is_number();
+}
+
+bool is_T(const Cell& c) {
+    if (!c.is_atom()) return false;
+    if (!is_symbol_c(c)) return false;
+    return c.to_atom().to_symbol() == CoreEnvironment::T_str;
+}
+
+bool is_implicit_cond(const Cell& arg, CoreEnvironment::CellEnv& sub_env)
+{
+    if (!arg.is_list()) return false;
+    if (!arg.to_list()[0].is_list()) return false;
+    if (
+        !arg.to_list()[0].to_list().empty()
+        &&
+        arg.to_list()[0].to_list()[0].is_atom()
+        &&
+        arg.to_list()[0].to_list()[0].to_atom().is_symbol()
+        &&
+        (
+            arg.to_list()[0].to_list()[0].to_atom().to_symbol() == CoreEnvironment::lambda_str
+            ||
+            arg.to_list()[0].to_list()[0].to_atom().to_symbol() == CoreEnvironment::nlambda_str
+        )
+        )
+    {
+        return false;
+    }
+    return true;
 }
