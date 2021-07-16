@@ -31,7 +31,7 @@ public:
 public:
 	CoreEnvironment(std::istream& input, std::ostream& output);
 
-	Cell execute_one(const Cell& c, const Mutexted<bool>& stop_flag = {false});
+	Cell execute_one(const Cell& c, const IMutexed<bool>& stop_flag);
 
 
 	const std::unordered_map < std::string, LambdaCell>& lambdas() const;
@@ -82,5 +82,5 @@ private:
 	std::unordered_map < std::string, LambdaCell> t_lambdas;
 	std::unordered_map < std::string, Cell> t_vars;
 	CellEnv t_env;
-	std::optional<std::reference_wrapper<const Mutexted<bool>>> t_stop_flag;
+	std::optional<std::reference_wrapper<const IMutexed<bool>>> t_stop_flag;
 };

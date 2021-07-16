@@ -4,6 +4,8 @@
 
 #include <sstream>
 #include <iomanip>
+#include <algorithm>
+
 using namespace std;
 
 inline bool isdig(char c)

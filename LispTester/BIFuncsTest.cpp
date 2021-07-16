@@ -299,6 +299,7 @@ void list() {
 	{
 		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
 		auto [result_reason, result] = core.execute("(list (+ 1 2) (quote (s d)) c)");
+		auto cell = core.execute_to_cell("(list (+ 1 2) (quote (s d)) c)");
 
 		ASSERT_EQUAL(result_reason, Core::result_type::success);
 		ASSERT_EQUAL(result, "(3 (S D) C)");

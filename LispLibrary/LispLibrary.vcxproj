@@ -231,6 +231,7 @@
     <ClInclude Include="Number.h" />
     <ClInclude Include="PredLispFuncs.h" />
     <ClInclude Include="PublicCoreEnvironmentProvider.h" />
+    <ClInclude Include="STDMutexed.h" />
     <ClInclude Include="Types.h" />
   </ItemGroup>
   <ItemGroup>

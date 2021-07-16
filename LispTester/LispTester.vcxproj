@@ -123,8 +123,7 @@
       <AdditionalDependencies>LispLibrary_r.lib;1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)libs\LispLibrary;$(SolutionDir)libs\gmp</AdditionalLibraryDirectories>
       <Profile>true</Profile>
-      <StackReserveSize>
-      </StackReserveSize>
+      <StackReserveSize>4194304</StackReserveSize>
       <StackCommitSize>
       </StackCommitSize>
     </Link>

@@ -1,15 +1,33 @@
 #include "Core.h"
 #include "Funcs.h"
-
+#include "STDMutexed.h"
 #include <tuple>
 #include  <utility>
 
 using namespace std;
 
-Core::Core(std::istream& pred_funcs, std::istream& input, std::ostream& output) :
-    t_stop(false),
+Core::Core(std::istream& pred_funcs, std::istream& input, std::ostream& output, std::unique_ptr<IMutexed<bool>>&& custom_mutex):
     t_env(input, output)
 {
+    t_stop = move(custom_mutex); 
+    t_stop->set(false);
+    for (const auto& exp : read_expressions_from_stream(pred_funcs, *this, stream_read_mode::s_expression, true)) {
+        Core::result_type result_reason = Core::result_type::success;
+        this->execute(exp);
+    }
+}
+
+Core::Core(std::istream& input, std::ostream& output, std::unique_ptr<IMutexed<bool>>&& custom_mutex):
+    t_env(input, output)
+{
+    t_stop = move(custom_mutex);
+    t_stop->set(false);
+}
+
+Core::Core(std::istream& pred_funcs, std::istream& input, std::ostream& output) :
+    t_env(input, output)
+{
+    t_stop = make_unique<STDMutexed<bool>>(false);
     for (const auto& exp : read_expressions_from_stream(pred_funcs, *this, stream_read_mode::s_expression, true)) {
         Core::result_type result_reason = Core::result_type::success;
         this->execute(exp);
@@ -17,14 +35,14 @@ Core::Core(std::istream& pred_funcs, std::istream& input, std::ostream& output) 
 }
 
 Core::Core(std::istream& input, std::ostream& output) :
-    t_stop(false),
     t_env(input, output)
 {
+    t_stop = make_unique<STDMutexed<bool>>(false);
 }
 
 Core::~Core()
 {
-    t_stop.set(true);
+    t_stop->set(true);
 }
 
 CoreEnvStreamsProvider& Core::streams()
@@ -48,48 +66,13 @@ std::pair<Core::result_type, std::string> Core::execute(const std::string& input
 
 std::pair<Core::result_type, Cell> Core::execute_to_cell(const Cell& input)
 {
-    bool success = true;
-    Cell result;
-    try
-    {
-        result = t_env.execute_one(input, t_stop);
-    }
-    catch (const char* str)
-    {
-        success = false;
-        result = make_atom(Atom(str));
-    }
-    catch (...)
-    {
-        success = false;
-        result = make_atom(Atom("unknown error (wrong catch)"));
-    }
-    if (!success && !t_stop.get()) return { Core::result_type::fail, move(result) };
-    if(!success && t_stop.get())return { Core::result_type::stopped, move(result) };
-    return{ Core::result_type::success, move(result) };
+    return execute_to_cell_temp(input);
 }
 
 std::pair<Core::result_type, std::string> Core::execute(const Cell& input)
 {
-    bool success = true;
-    std::string result;
-    try
-    {
-        result = to_string(t_env.execute_one(input, t_stop));
-    }
-    catch (const char* str)
-    {
-        success = false;
-        result = str;
-    }
-    catch (...)
-    {
-        success = false;
-        result = "unknown error (wrong catch)";
-    }
-    if (!success && !t_stop.get()) return { Core::result_type::fail, move(result) };
-    if (!success && t_stop.get())return { Core::result_type::stopped, move(result) };
-    return{ Core::result_type::success, move(result) };
+    auto [reason, cell] = execute_to_cell_temp(input);
+    return { reason, to_string(move(cell))};
 }
 
 const CoreEnvironment& Core::get() const
@@ -99,7 +82,7 @@ const CoreEnvironment& Core::get() const
 
 void Core::stop()
 {
-    t_stop.set(false);
+    t_stop->set(true);
 }
 
 std::string to_string(Core::result_type rt) {
@@ -127,4 +110,10 @@ std::pair<Core, std::unique_ptr<empty_streams>> make_core_w_empty_streams()
 {
     auto s = std::make_unique<empty_streams>();
     return std::pair<Core, std::unique_ptr<empty_streams>>{ std::piecewise_construct_t(), std::forward_as_tuple(s->in, s->out), std::forward_as_tuple(move(s)) };
+}
+
+std::pair<Core, std::unique_ptr<empty_streams>> make_core_w_empty_streams(std::unique_ptr<IMutexed<bool>>&& custom_mutex)
+{
+    auto s = std::make_unique<empty_streams>();
+    return std::pair<Core, std::unique_ptr<empty_streams>>{ std::piecewise_construct_t(), std::forward_as_tuple(s->in, s->out, move(custom_mutex)), std::forward_as_tuple(move(s)) };
 }

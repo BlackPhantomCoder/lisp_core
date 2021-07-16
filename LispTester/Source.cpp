@@ -9,10 +9,10 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-
 using namespace std;
 
 #include "TestsList.h"
+#include "STDMutexed.h"
 
 void cin_execute_kostil_repl(istream& is) {
     Core core = make_core_w_predfuncs(cin, cout);

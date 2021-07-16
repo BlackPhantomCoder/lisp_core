@@ -8,13 +8,9 @@
 #include <unordered_map>
 #include <variant>
 #include <cmath>
+#include <algorithm>
 
 using namespace std;
-
-
-struct throwhelper :std::exception {
-
-};
 
 struct {
     bool operator()(const pair<const char*, CoreEnvironment::bifunc>& lh, const pair<const char*, CoreEnvironment::bifunc>& rh)const {
@@ -153,17 +149,10 @@ CoreEnvironment::CoreEnvironment(std::istream& input, std::ostream& output):
     //t_vars.emplace("*READ-UPCASE*", T);
 }
 
-Cell CoreEnvironment::execute_one(const Cell& c, const Mutexted<bool>& stop_flag)
+Cell CoreEnvironment::execute_one(const Cell& c, const IMutexed<bool>& stop_flag)
 {
     t_stop_flag = { stop_flag };
-    Cell result = nil;
-    try {
-        result = eval_quote(c, t_env);
-    }
-    catch (const throwhelper&e) {
-        
-    }
-    return result; 
+    return eval_quote(c, t_env);
 }
 
 const std::unordered_map<std::string, LambdaCell>& CoreEnvironment::lambdas() const
@@ -573,7 +562,7 @@ Cell CoreEnvironment::bifunc_read(const std::vector<Cell>& c, CoreEnvironment::C
                 true
             );
         if (result_reason) { return cell; }
-        if (t_stop_flag) throw throwhelper{};
+        if (t_stop_flag) throw throw_stop_helper{};
     }
 }
 
@@ -753,7 +742,7 @@ bool CoreEnvironment::is_bifunc(const std::string& str)
 }
 
 Cell CoreEnvironment::eval_quote(const Cell& arg, CoreEnvironment::CellEnv& sub_env) {
-    if ((t_stop_flag) && (*t_stop_flag).get().get()) throw throwhelper{};
+    if ((t_stop_flag) && (*t_stop_flag).get().get()) throw throw_stop_helper{};
     if (arg.is_list()) {
         const auto& lst = arg.to_list();
         if (!is_symbol_c(lst[0])) {
