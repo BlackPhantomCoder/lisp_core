@@ -304,6 +304,609 @@ void list() {
 		ASSERT_EQUAL(result_reason, Core::result_type::success);
 		ASSERT_EQUAL(result, "(3 (S D) C)");
 	}
+	/*{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(list)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "nil");
+	}*/
+	/*{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(cons)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "(NIL)");
+	} */
+	/*{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(append)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(car)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(cdr)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}*/
+}
+
+//предикаты
+void pred() {
+	/*{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(null (list))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "T");
+	}*/
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(null '())");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "T");
+	}
+	/*{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(null `())");         //косой апостроф
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "T");
+	}*/
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(null '(0))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(numberp 26)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "T");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(numberp 26.5)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "T");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(numberp -26.5)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "T");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(numberp 'a)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(numberp '(1 1))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(numberp (car '(2 a)))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "T");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(symbolp 26)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(symbolp 'a)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "T");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(symbolp '(a a))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(symbolp (car '(a 2)))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "T");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(listp 26)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(listp 'a)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(listp '(a a))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "T");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(listp (car '((1 a 2) a 2)))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "T");
+	}
+	/*{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(atom 26)");           //чисто переименовать
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "T");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(atom 'a)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "T");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(atom '(a a))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(atom (car '(a 2)))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "T");
+	}*/
+
+}
+
+//условные функции
+void usl() {
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(cond ((null '()) 'a) ((numberp 26) 'b) ((listp '(2)) 'c))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "A");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(cond ((null '(1)) 'a) ((numberp 26) 'b) ((listp '(2)) 'c))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "B");
+	} 
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(cond ((null '(2)) 'a) ((numberp r) 'b) ((listp '(2)) (car '(c 2))))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "C");
+	}
+	/*{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(cond ((null '(2)) 'a) ((numberp r) 'b) ((listp '2) 'c))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}*/
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(cond ((null '(2)) 'a) ((numberp r) 'b) ((listp '2) 'c) (T 'da))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "DA");
+	}
+	/*{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(cond)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}*/
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(if T 'a 'b)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "A");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(if NIL 'a 'b)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "B");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(if (null '()) 'a 'b)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "A");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(if (null '(2)) 'a 'b)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "B");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(if (null '()) 'a)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "A");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(if (null '(2)) 'a)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}
+	/*{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(if (null '()))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}*/
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(if (null '()) (+ 1 2) 'b)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "3");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(if (null '(2)) (+ 1 2) (+ 3 4))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "7");
+	}
+	/*{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(if)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}*/
+}
+
+//функции вычислений
+void calcfun() {
+	/*{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(eval)");            //тут вообще в минус
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}*/
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(eval a)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "A");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(progn (setq a 2) (eval a))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "2");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(progn (setq a 2) (setq b 'a) (eval b))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "2");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(progn (setq a 2) (setq b 'a) (eval 'b))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "A");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(eval '(+ 1 2))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "3");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(eval ((lambda (x) (* x x)) 3))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "9");
+	}
+	/*{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(eval ''''((lambda (x) (* x x)) 3))");    //мнение фориса
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "9");
+	}*/
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(quote a)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "A");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("'(quote a)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "(QUOTE A)");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("'''a");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "(QUOTE (QUOTE A))");
+	}
+	/*{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("`a");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "A");
+	}*/
+}
+
+//управление вычислениями
+void control_calc() {
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(defun kek (x) (* x x))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "KEK");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(progn (defun kek (x) (* x x)) (kek 3))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "9");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(progn (defun kek (x a) (* x x) a) (kek 3))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(defun)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(defun kek)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(defun kek (x))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "KEK");
+	}
+	/*{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(progn)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}*/
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(progn (+ 1 2) (+ 3 4))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "7");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(progn (setq a 2) (+ 2 a) )");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "4");
+	}
+	/*{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(prog1)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}*/
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(prog1 (+ 1 2) (+ 3 4))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "3");
+	}
+	/*{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(prog1 (setq a 2) (+ 2 a) (setq a 3))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "2");
+	}*/
+	/*{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(setq)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(setq a)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}*/
+	/*{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(setq a 2)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "2");
+	}*/
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(eval (setq a 2))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "2");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(progn (setq a 2) a)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "2");
+	}
+	/*{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(set)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(set a)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}*/
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(progn (setq a 2) (setq b 'a) (set b 3) a)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "3");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(progn (setq L '(1 2 3 4)) (loop ((null L) 'da) (setq L (cdr L))))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "DA");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(progn (setq N 0) (setq L '(1 2 3 4)) (loop ((null L) N) (setq N (+ 1 N)) (setq L (cdr L))))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "4");
+	}
+	
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(progn (setq L '(1 a 2 q kek)) (loop ((null(cdr L)) (car L)) (setq L(cdr L))))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "KEK");
+	}
+}
+
+//ввод/вывод
+void io() {
+	/*{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(print)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");  //формат вывода под вопросом
+	}*/
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(print a)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "A");
+	}
+	{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(print (+ 1 2 3))");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "6");
+	}
+	/*{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(print 'а_вообще_хз_как_его_тестировать)");
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "а_вообще_хз_как_его_тестировать");
+	}*/
+	/*{
+		auto [core, streams] = make_core_w_predfuncs_and_empty_streams();
+		auto [result_reason, result] = core.execute("(setq a (read))");         //крч тоже хз, вроде работает
+
+		ASSERT_EQUAL(result_reason, Core::result_type::success);
+		ASSERT_EQUAL(result, "NIL");
+	}*/ 
 }
 
 //тест встроренных функиций
@@ -314,4 +917,9 @@ void test_bifuncs()
 	RUN_TEST(r, arifm);
 	RUN_TEST(r, logic);
 	RUN_TEST(r, list);
+	RUN_TEST(r, pred);
+	RUN_TEST(r, usl);
+	RUN_TEST(r, calcfun);
+	RUN_TEST(r, control_calc);
+	RUN_TEST(r, io);
 }
