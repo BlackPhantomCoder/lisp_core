@@ -1,5 +1,5 @@
-;     1. Подсчитать сумму квадратов целых чисел в заданном интервале
-;           значений от M до N включительно.
+;     1. ???????? ??? ?????? ??? ?? ? ???????? ??????
+;           ?????? ?? M ?? N ???????.
 (defun sum_sqrs (a b)
     (if (> a b) 
         0
@@ -11,7 +11,7 @@
 )
 
 
-;     3. Определить наибольший общий делитель двух заданных чисел.
+;     3. ???????? ???????? ??? ?????? ???? ???????? ??.
 (defun nod (a b)
     (cond
         ((> a b) (nod (- a b) b))
@@ -21,7 +21,7 @@
 )
 
 
-;     2. Определить наименьшее общее кратное двух заданных чисел.
+;     2. ???????? ???????? ??? ???? ???? ???????? ??.
 (defun nok (a b)
     (/
         (* a b)
@@ -35,7 +35,7 @@
         (- a)
     )
 )
-;     4. Вычислить квадратный корень из заданного числа.
+;     4. ?????? ??????? ???? ?? ????????? ??.
 
 ; xn1 = (xn + a/xn)/2
 (defun sqrt_r (a xn e)
@@ -71,9 +71,9 @@
 
 
 
-;     5. Первые два члена ряда Фибоначчи равны 1 и 2. Каждый следующий
-;           член ряда равен сумме двух предыдущих.  Определить функцию,
-;           вы числяющую N-ый член ряда Фибоначчи.
+;     5. ???? ??? ??? ?? ???????? ??? 1 ? 2. ????? ?????
+;           ?? ?? ??? ??? ???? ??????.  ???????? ????,
+;           ?? ??????? N-? ?? ?? ????????.
 (defun fib (n)
     (cond
         ((= n 1) 1)
@@ -139,4 +139,50 @@
     )
 )
 
-(fib 5)
+(defun mytest_print_y ()  (print a) (print b) (print c) nil)
+(defun mytest_a (a) (mytest_b (+ a 1)))
+(defun mytest_b (b) (mytest_c (+ a 1)))
+(defun mytest_c (c) (mytest_print_y))
+
+
+
+(defun gen_next (name_val) 
+    (list  lambda (list 'name_val name_val)
+        (list 'if '(equal name_val 'NIL11111)
+            'T
+            (list 'progn
+                (list 'if '(equal name_val 'NIL11)
+                    (list 'progn
+                        (list 'setq name_val '5)
+                        (list 'print 'setq)
+                    )
+                )
+                '(print NIL11)
+                '(setq name_val (pack (append (unpack name_val) (list 1))))
+                '(print name_val)
+                '(apply (gen_next name_val) (list name_val))
+            )
+        )
+    )
+)
+
+
+
+; (lambda (name_val NIL11)
+;     (if (equal name_val 'NIL11111)
+;         T
+;         (progn
+;             (if (equal name_val 'NIL11)
+;                 (progn
+;                     (setq NIL11 5)
+;                     (print 'setq)
+;                 )
+;             )
+;             (print NIL11)
+;             (setq name_val (pack (append (unpack name_val) (list 1))))
+;             (print name_val)
+;             (apply (gen_next name_val) (list name_val))
+;         )
+;     )
+; )
+

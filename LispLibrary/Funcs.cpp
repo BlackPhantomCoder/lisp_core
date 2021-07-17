@@ -322,7 +322,7 @@ bool is_T(const Cell& c) {
     return c.to_atom().to_symbol() == CoreEnvironment::T_str;
 }
 
-bool is_implicit_cond(const Cell& arg, CoreEnvironment::CellEnv& sub_env)
+bool is_implicit_cond(const Cell& arg)
 {
     if (!arg.is_list()) return false;
     if (!arg.to_list()[0].is_list()) return false;

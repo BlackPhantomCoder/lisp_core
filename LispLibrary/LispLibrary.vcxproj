@@ -222,6 +222,7 @@
     <ClInclude Include="Atom.h" />
     <ClInclude Include="BigInt.h" />
     <ClInclude Include="Cell.h" />
+    <ClInclude Include="CellEnvironment.h" />
     <ClInclude Include="Core.h" />
     <ClInclude Include="CoreEnv.h" />
     <ClInclude Include="CoreEnvStreamsProvider.h" />
@@ -238,6 +239,7 @@
     <ClCompile Include="Atom.cpp" />
     <ClCompile Include="BigInt.cpp" />
     <ClCompile Include="Cell.cpp" />
+    <ClCompile Include="CellEnvironment.cpp" />
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="CoreEnv.cpp" />
     <ClCompile Include="CoreEnvStreamsProvider.cpp" />

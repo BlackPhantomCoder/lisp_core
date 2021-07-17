@@ -48,4 +48,4 @@ bool is_integer_number_c(const Cell& c);
 bool is_real_number_c(const Cell& c);
 bool is_number2_c(const Cell& c);
 bool is_T(const Cell& c);
-bool is_implicit_cond(const Cell& arg, CoreEnvironment::CellEnv& sub_env);
+bool is_implicit_cond(const Cell& arg);

@@ -31,3 +31,19 @@
 (defun CDDDAR (lst) (cdr (cdr (cdar lst))))
 (defun CDAADR (lst) (cdr (car (cadr lst))))
 (defun CDDADR (lst) (cdr (cdr (cadr lst))))
+
+(defun APPEND (lst tail)
+    ((null lst) tail)
+    (cons (car lst) (append (cdr lst) tail))
+)
+
+(defun IF 
+    (nlambda (predicate then else)
+        ((eval predicate) (eval then))
+        (eval else)
+    )
+)
+
+; (DEFUN FUNCALL (FUNC ARG1 ARG2...ARGN)
+;     (APPLY FUNC ARG1 ARG2...ARGN NIL)
+; )

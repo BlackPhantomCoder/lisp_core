@@ -31,7 +31,26 @@ void cin_execute_kostil_repl(istream& is) {
         }
     }
 
-    auto [result_reason2, result2] = core.execute("(loop (print (eval (progn (print '>) (read)))))");
+    //auto [result_reason2, result2] = core.execute("(loop (print (eval (progn (print '>) (read)))))");
+    while (cin)
+    {
+        cout << "> ";
+        auto [readed, exp] = read_one_expression_from_stream(cin, core, stream_read_mode::new_string, true);
+        
+        if (!readed) {
+            cout << "wrong input" << endl;
+            continue;
+        }
+        Core::result_type result_reason = Core::result_type::success;
+        string result;
+        {
+            LogDuration a;
+            auto [result_reason2, result2] = core.execute(exp);
+            result = move(result2);
+            result_reason = result_reason2;
+        }
+        cout << result_reason << ", " << result << endl;
+    }
 }
 
 int main()
