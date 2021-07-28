@@ -47,3 +47,89 @@
 ; (DEFUN FUNCALL (FUNC ARG1 ARG2...ARGN)
 ;     (APPLY FUNC ARG1 ARG2...ARGN NIL)
 ; )
+
+(defun NOT (X)
+    (if X nil T)                        ;нужны полупредикаты
+)
+;(defun AND (nlambda lsta               ;бесконечные агрументы
+;    ((null (eval lsta)) NIL)
+;    (if (car (eval lsta)) (apply 'AND (cdr (eval lsta))) nil))
+;)
+;(defun OR (nlambda lsto
+;    ((null (eval lsto)) NIL)
+;    (if (car (eval lsto)) T (apply 'OR (cdr (eval lsto))))
+;)
+;)
+
+(defun AND (nlambda (L R)
+    (if (eval L) (if (eval R) T nil) nil)
+)
+)
+(defun OR (nlambda (L R)
+    (if (eval L) T (if (eval R) T nil))
+)
+)
+
+(defun NTHCDR (N L)
+(if (minusp N)
+    nil
+    (loop
+        ((= N 0) L)
+        ((null L) nil)
+        (setq N (- N 1))
+        (setq L (cdr L))
+    )
+)
+)
+(defun NTH (N L)
+(if (minusp N)
+    nil
+    (loop
+        ((= N 0) (car L))
+        ((null L) nil)
+        (setq N (- N 1))
+        (setq L (cdr L))
+    )
+)
+)
+(defun SUBLIST (L N M)
+(if (and (listp L) (and (numberp N) (and (numberp M) (>= M N))))
+    (progn
+        (setq L (nthcdr N L))
+        (setq M (- M N))
+        (setq N 0)
+        (setq C '())
+        (if (>= M (length L)) (setq M (- (length L) 1)))
+        (loop
+            ((= (- N 1) M) C)
+            (setq C (cons (nth M L) C))
+            (setq M (- M 1))
+        )
+    )
+    nil
+)
+)
+
+(defun ZEROP (X)
+(if (and (numberp X) (= X 0)) T nil)
+)
+(defun PLUSP (X)
+(if (and (numberp X) (> X 0)) T nil)
+)
+(defun MINUSP (X)
+(if (and (numberp X) (< X 0)) T nil)
+)
+;(defun ODDP (X)                          ;плохой алгоритм, возможно нужен integerp
+;(if (= (mod X 2) 1) T nil)
+;)
+;(defun EVENP (X)
+;(if (= (mod X 2) 0) T nil)
+;)
+
+(defun MOD (X L)                         ;плохая производительность
+(loop
+    ;((not (and (numberp X) (numberp L))) nil)
+    ((< (- X L) L) (- X L))
+    (setq x (- x l))
+)
+)
