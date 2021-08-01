@@ -32,11 +32,6 @@
 (defun CDAADR (lst) (cdr (car (cadr lst))))
 (defun CDDADR (lst) (cdr (cdr (cadr lst))))
 
-(defun APPEND (lst tail)
-    ((null lst) tail)
-    (cons (car lst) (append (cdr lst) tail))
-)
-
 (defun IF 
     (nlambda (predicate then else)
         ((eval predicate) (eval then))
@@ -44,29 +39,21 @@
     )
 )
 
-; (DEFUN FUNCALL (FUNC ARG1 ARG2...ARGN)
-;     (APPLY FUNC ARG1 ARG2...ARGN NIL)
-; )
+(DEFUN FUNCALL X
+    (APPLY (car x) (cdr x))
+)
 
 (defun NOT (X)
-    (if X nil T)                        ;нужны полупредикаты
+    (if X nil T)
 )
-;(defun AND (nlambda lsta               ;бесконечные агрументы
-;    ((null (eval lsta)) NIL)
-;    (if (car (eval lsta)) (apply 'AND (cdr (eval lsta))) nil))
-;)
-;(defun OR (nlambda lsto
-;    ((null (eval lsto)) NIL)
-;    (if (car (eval lsto)) T (apply 'OR (cdr (eval lsto))))
-;)
-;)
 
-(defun AND (nlambda (L R)
-    (if (eval L) (if (eval R) T nil) nil)
+(defun AND (nlambda lsta 
+   ((null (eval lsta)) NIL)
+   (if (car (eval lsta)) (apply 'AND (cdr (eval lsta))) nil))
 )
-)
-(defun OR (nlambda (L R)
-    (if (eval L) T (if (eval R) T nil))
+(defun OR (nlambda lsto
+   ((null (eval lsto)) NIL)
+   (if (car (eval lsto)) T (apply 'OR (cdr (eval lsto))))
 )
 )
 
@@ -81,6 +68,7 @@
     )
 )
 )
+
 (defun NTH (N L)
 (if (minusp N)
     nil
@@ -92,6 +80,7 @@
     )
 )
 )
+
 (defun SUBLIST (L N M)
 (if (and (listp L) (and (numberp N) (and (numberp M) (>= M N))))
     (progn
@@ -113,12 +102,15 @@
 (defun ZEROP (X)
 (if (and (numberp X) (= X 0)) T nil)
 )
+
 (defun PLUSP (X)
 (if (and (numberp X) (> X 0)) T nil)
 )
+
 (defun MINUSP (X)
 (if (and (numberp X) (< X 0)) T nil)
 )
+
 ;(defun ODDP (X)                          ;плохой алгоритм, возможно нужен integerp
 ;(if (= (mod X 2) 1) T nil)
 ;)

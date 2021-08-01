@@ -13,52 +13,91 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Файлы заголовков\Cell">
+      <UniqueIdentifier>{e8114819-2388-457c-a236-5b07d5fcce1a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Файлы заголовков\lambda">
+      <UniqueIdentifier>{e041e89c-f961-4db6-9585-3c3886cc91ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Файлы заголовков\Core">
+      <UniqueIdentifier>{d3012f2c-947b-4150-a66a-b40c251b3067}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Файлы заголовков\Platform">
+      <UniqueIdentifier>{eb289925-5ba5-4556-a9ed-77a5c03aef1a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Файлы заголовков\Core\Env">
+      <UniqueIdentifier>{75a5f941-93e0-4beb-84a6-a2d372bae82c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Atom.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="BigInt.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
     <ClInclude Include="Cell.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="CoreEnv.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="Funcs.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="LambdaCell.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="Mutexed.h">
-      <Filter>Файлы заголовков</Filter>
+      <Filter>Файлы заголовков\Cell</Filter>
     </ClInclude>
     <ClInclude Include="Number.h">
-      <Filter>Файлы заголовков</Filter>
+      <Filter>Файлы заголовков\Cell</Filter>
+    </ClInclude>
+    <ClInclude Include="Atom.h">
+      <Filter>Файлы заголовков\Cell</Filter>
+    </ClInclude>
+    <ClInclude Include="BigInt.h">
+      <Filter>Файлы заголовков\Cell</Filter>
+    </ClInclude>
+    <ClInclude Include="LambdaCell.h">
+      <Filter>Файлы заголовков\lambda</Filter>
     </ClInclude>
     <ClInclude Include="Core.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicCoreEnvironmentProvider.h">
-      <Filter>Файлы заголовков</Filter>
+      <Filter>Файлы заголовков\Core</Filter>
     </ClInclude>
     <ClInclude Include="CoreEnvStreamsProvider.h">
-      <Filter>Файлы заголовков</Filter>
+      <Filter>Файлы заголовков\Core</Filter>
     </ClInclude>
-    <ClInclude Include="PredLispFuncs.h">
-      <Filter>Файлы заголовков</Filter>
+    <ClInclude Include="LambdaEvaler.h">
+      <Filter>Файлы заголовков\lambda</Filter>
     </ClInclude>
-    <ClInclude Include="Types.h">
-      <Filter>Файлы заголовков</Filter>
+    <ClInclude Include="CoreData.h">
+      <Filter>Файлы заголовков\Core</Filter>
     </ClInclude>
     <ClInclude Include="STDMutexed.h">
-      <Filter>Файлы заголовков</Filter>
+      <Filter>Файлы заголовков\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="Mutexed.h">
+      <Filter>Файлы заголовков\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="Lexer.h">
+      <Filter>Файлы заголовков\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="SymbolsProvider.h">
+      <Filter>Файлы заголовков\Cell</Filter>
+    </ClInclude>
+    <ClInclude Include="PredLispFuncs.h">
+      <Filter>Файлы заголовков\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Funcs.h">
+      <Filter>Файлы заголовков\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Symbol.h">
+      <Filter>Файлы заголовков\Cell</Filter>
+    </ClInclude>
+    <ClInclude Include="SimpleCoreStream.h">
+      <Filter>Файлы заголовков\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="CoreStreamInt.h">
+      <Filter>Файлы заголовков\Core</Filter>
     </ClInclude>
     <ClInclude Include="CellEnvironment.h">
-      <Filter>Файлы заголовков</Filter>
+      <Filter>Файлы заголовков\Core\Env</Filter>
+    </ClInclude>
+    <ClInclude Include="ArgsStack.h">
+      <Filter>Файлы заголовков\Core\Env</Filter>
+    </ClInclude>
+    <ClInclude Include="BIFuncEvaler.h">
+      <Filter>Файлы заголовков\Core\Env</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicCoreEnvironmentProvider.h">
+      <Filter>Файлы заголовков\Core\Env</Filter>
+    </ClInclude>
+    <ClInclude Include="CoreEnv.h">
+      <Filter>Файлы заголовков\Core\Env</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -96,6 +135,30 @@
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="CellEnvironment.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="LambdaEvaler.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="BIFuncEvaler.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="CoreData.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="Lexer.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="SymbolsProvider.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="Symbol.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="SimpleCoreStream.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="ArgsStack.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>

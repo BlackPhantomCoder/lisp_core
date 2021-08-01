@@ -9,89 +9,110 @@
 #include <exception>
 #include <array>
 #include <optional>
+#include <functional>
+#include <variant>
+#include "LambdaEvaler.h"
+#include "CoreData.h"
+#include "BIFuncEvaler.h"
+#include "SymbolsProvider.h"
+#include "Lexer.h"
+#include "ArgsStack.h"
 
-class  CoreEnvironment : public CoreEnvStreamsProvider {
+#define eval_direct_bifunc(f, b, e)\
+    (\
+    t_args.push(b, e), \
+    t_direct_call_buf = (this->*(f))(), \
+    t_args.pop(), \
+    t_direct_call_buf\
+    )
+
+#define env_eval_direct_bifunc(f, b, e, env_ptr)\
+    (\
+    env_ptr->t_args.push(b, e), \
+    env_ptr->t_direct_call_buf = (env_ptr->*(f))(), \
+    env_ptr->t_args.pop(), \
+    env_ptr->t_direct_call_buf\
+    )
+
+class  CoreEnvironment {
+	friend CoreData::bifuncs_array CoreData::bifunc_setup();
+	friend CoreData::nbifuncs_array CoreData::nbifunc_setup();
+
+	friend class LambdaEvaler;
+	friend class BifuncEvaler;
 public:
-	typedef Cell(CoreEnvironment::*bifunc) (const std::vector<Cell>&, CellEnvironment&);
-	using bifuncs_array = std::array<std::pair<const char*, bifunc>, 35>;
-public:
-	friend bifuncs_array bifunc_setup();
-public:
-	static const char* nil_str;
-	static const char* T_str;
-	static const char* read_up_case_str;
+	CoreEnvironment(CoreEnvStreamsProvider& streams);
+	~CoreEnvironment() = default;
 
-	static const char* lambda_str;
-	static const char* nlambda_str;
+	std::vector<Cell> execute_all(CoreInputStreamInt& stream, const IMutexed<bool>& stop_flag);
+	Cell execute_one(CoreInputStreamInt& stream, const IMutexed<bool>& stop_flag);
 
-	static const Cell nil;
-	static const Cell T;
-
-	static const bifuncs_array bifuncs;
-public:
-	CoreEnvironment(std::istream& input, std::ostream& output);
-
-	Cell execute_one(const Cell& c, const IMutexed<bool>& stop_flag);
-
-
-	const std::unordered_map < std::string, LambdaCell>& lambdas() const;
-	const std::unordered_map < std::string, Cell>& vars() const;
+	const std::unordered_map < Symbol, LambdaCell>& lambdas() const;
+	const CellEnvironment::mp& vars() const;
 private:
-	Cell bifunc_atomp(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_symbolp(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_numberp(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_listp(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_null(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_add(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_sub(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_mul(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_div(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	//Cell bifunc_mod(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_greater(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_greater_equal(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_less(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_less_equal(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_equal(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_car(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_cdr(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	//Cell bifunc_append(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_cons(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_list(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_getd(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_read(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_prog1(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_print(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_set(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_eq(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_last(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_length(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell bifunc_apply(const std::vector<Cell>& c, CellEnvironment& sub_env);
+	enum class find_bifunc_result {bi, nbi, null};
+private:
+	Cell bifunc_atomp();
+	Cell bifunc_symbolp();
+	Cell bifunc_numberp();
+	Cell bifunc_listp();
+	Cell bifunc_null();
+	Cell bifunc_add();
+	Cell bifunc_sub();
+	Cell bifunc_mul();
+	Cell bifunc_div();
+	//Cell bifunc_mod();
+	Cell bifunc_greater();
+	Cell bifunc_greater_equal();
+	Cell bifunc_less();
+	Cell bifunc_less_equal();
+	Cell bifunc_num_eq();
+	Cell bifunc_equal();
+	Cell bifunc_car();
+	Cell bifunc_cdr();
+	Cell bifunc_append();
+	Cell bifunc_cons();
+	Cell bifunc_list();
+	Cell bifunc_getd();
+	Cell bifunc_read();
+	Cell bifunc_prog1();
+	Cell bifunc_print();
+	Cell bifunc_set();
+	Cell bifunc_eq();
+	Cell bifunc_last();
+	Cell bifunc_length();
+	Cell bifunc_apply();
+	Cell bifunc_eval();
+	Cell bifunc_integerp();
+	Cell bifunc_oblist();
 
-	Cell bifunc_set_modif(Cell::olist::const_iterator beg_it, Cell::olist::const_iterator end_it, CellEnvironment& sub_env);
-	Cell bifunc_setq_modif(Cell::olist::const_iterator beg_it, Cell::olist::const_iterator end_it, CellEnvironment& sub_env);
-
-	Cell nbifunc_quote(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell nbifunc_defun(const std::vector<Cell>& c, CellEnvironment& sub_env);
-
-	Cell nbifunc_cond(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell nbifunc_progn(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell nbifunc_progn_modif(Cell::olist::const_iterator beg_it, Cell::olist::const_iterator end_it, CellEnvironment& sub_env);
-	Cell nbifunc_setq(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell nbifunc_eval(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell nbifunc_loop(const std::vector<Cell>& c, CellEnvironment& sub_env);
-	Cell nbifunc_eq(const std::vector<Cell>& c, CellEnvironment& sub_env);
+	Cell nbifunc_quote();
+	Cell nbifunc_defun();
+	Cell nbifunc_cond();
+	Cell nbifunc_progn();
+	Cell nbifunc_setq();
+	Cell nbifunc_loop();
 
 
-	Cell eval_quote(const Cell& arg, CellEnvironment& sub_env);
-	Cell eval_atom(const Cell& atom, CellEnvironment& sub_env);
-	Cell eval_lambda(const LambdaCell& fnc, Cell::olist::const_iterator beg_it, Cell::olist::const_iterator end_it, CellEnvironment& sub_env);
-	std::pair<bool, Cell> try_bifunc(const std::string& str, const std::vector<Cell>& c, CellEnvironment& sub_env);
-	bool is_bifunc(const std::string& str);
-	void eval_rest(Cell::olist::const_iterator beg_it, Cell::olist::const_iterator end_it, CellEnvironment& sub_env);
+	Cell eval_quote(const Cell& atom);
+	Cell eval_atom(const Cell& atom);
+	std::optional<Cell> eval_implicit_cond(const Cell& atom);
+	std::pair<find_bifunc_result, CoreData::bifunc> find_bifunc(const Symbol& str);
+
+	std::vector<Cell> eval_args(Cell::olist::const_iterator beg_it, Cell::olist::const_iterator end_it);
 
 private:
-	std::unordered_map < std::string, LambdaCell> t_lambdas;
-	std::unordered_map < std::string, Cell> t_vars;
-	CellEnvironment t_env;
+	SymbolsProvider t_symbols;
+	std::unordered_map < Symbol, LambdaCell> t_lambdas;
+	ArgsStack t_args;
+	CellEnvironment t_envs;
 	std::optional<std::reference_wrapper<const IMutexed<bool>>> t_stop_flag;
+
+	LambdaEvaler t_l_evaler;
+	BifuncEvaler t_bi_evaler;
+	CoreEnvStreamsProvider& t_streams;
+	Syntaxer t_syntaxer;
+	
+	//optimazed buffer for direct call
+	Cell t_direct_call_buf;
 };

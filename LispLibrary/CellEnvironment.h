@@ -2,25 +2,34 @@
 #include <string>
 #include <unordered_map>
 #include <optional>
-
+#include <deque>
 #include "Cell.h"
 
-//environment for nlambda/lambda 
 class CellEnvironment
 {
 public:
-	explicit CellEnvironment(std::unordered_map<std::string, Cell>&& env);
-	explicit CellEnvironment(const std::unordered_map<std::string, Cell>& env);
+	using mp = std::unordered_map<Symbol, Cell>;
+public:
+	CellEnvironment(mp&& env);
+	CellEnvironment(const mp& env = {});
 
-	explicit CellEnvironment(std::unordered_map<std::string, Cell>&& env, CellEnvironment& prev);
-	explicit CellEnvironment(const std::unordered_map<std::string, Cell>& env, CellEnvironment& prev);
+	void push(mp&& rh);
+	void push(const mp& rh);
+	void pop();
 
-	std::optional<std::reference_wrapper<Cell>> get(const std::string& name);
-	std::optional<std::reference_wrapper<const Cell>> get(const std::string& name) const;
-	
+	size_t size() const;
+
+	const mp& get_globals() const;
+	void add_global_var(const Symbol& name, const Cell& val);
+	std::optional<std::reference_wrapper<Cell>> get_global_var(const Symbol& name);
+	std::optional<std::reference_wrapper<const Cell>> get_global_var(const Symbol& name) const;
+
+	std::optional<std::reference_wrapper<Cell>> get(const Symbol& name);
+	std::optional<std::reference_wrapper<const Cell>> get(const Symbol& name) const;
+
+	void clear_subenvs();
 private:
-	std::unordered_map<std::string, Cell> t_env;
-	std::optional<std::reference_wrapper<CellEnvironment>> t_prev;
-	std::optional<std::reference_wrapper<const CellEnvironment>> t_prev_const;
+	mp t_glonal;
+	std::deque<mp> t_stack;
 };
 

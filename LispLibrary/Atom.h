@@ -2,16 +2,16 @@
 
 #include "BigInt.h"
 #include "Number.h"
+#include "Symbol.h"
+
 #include <variant>
-#include <string>
 
 class Atom
 {
-    using symbol = std::string;
 public:
 
-    explicit Atom(std::string&& str) noexcept;
-    explicit Atom(const std::string& str);
+    explicit Atom(Symbol&& str) noexcept;
+    explicit Atom(const Symbol& str);
 
     explicit Atom(Number&& val) noexcept;
     explicit Atom(const Number& val);
@@ -21,11 +21,11 @@ public:
     bool is_symbol() const;
     bool is_number() const;
 
-    symbol& to_symbol();
+    Symbol& to_symbol();
     Number& to_number();
 
-    const symbol& to_symbol()const;
+    const Symbol& to_symbol()const;
     const Number& to_number()const;
 private:
-    std::variant<symbol, Number, void*> t_data;
+    std::variant<Symbol, Number, void*> t_data;
 };

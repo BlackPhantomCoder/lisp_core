@@ -2,12 +2,12 @@
 
 using namespace std;
 
-Atom::Atom(std::string&& str)noexcept:
+Atom::Atom(Symbol&& str)noexcept:
     t_data(move(str))
 {
 }
 
-Atom::Atom(const std::string& str):
+Atom::Atom(const Symbol& str):
     t_data(str)
 {
 }
@@ -30,7 +30,7 @@ Atom::~Atom()
 
 bool Atom::is_symbol() const
 {
-    return holds_alternative<Atom::symbol>(t_data);
+    return holds_alternative<Symbol>(t_data);
 }
 
 bool Atom::is_number() const
@@ -38,10 +38,10 @@ bool Atom::is_number() const
     return holds_alternative<Number>(t_data);
 }
 
-Atom::symbol& Atom::to_symbol()
+Symbol& Atom::to_symbol()
 {
     if (!is_symbol()) throw "invalid type";
-    return get<Atom::symbol>(t_data);
+    return get<Symbol>(t_data);
 }
 
 Number& Atom::to_number()
@@ -50,10 +50,10 @@ Number& Atom::to_number()
     return get<Number>(t_data);
 }
 
-const Atom::symbol& Atom::to_symbol() const
+const Symbol& Atom::to_symbol() const
 {
     if (!is_symbol()) throw "invalid type";
-    return get<Atom::symbol>(t_data);
+    return get<Symbol>(t_data);
 }
 
 const Number& Atom::to_number() const

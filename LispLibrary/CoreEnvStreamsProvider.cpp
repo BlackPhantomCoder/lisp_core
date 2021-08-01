@@ -1,48 +1,29 @@
 #include "CoreEnvStreamsProvider.h"
 
-CoreEnvStreamsProvider::CoreEnvStreamsProvider(std::istream& input, std::ostream& output, stream_read_mode mode):
-    t_input(input),
-    t_output(output),
-    t_mode(mode)
+CoreEnvStreamsProvider::CoreEnvStreamsProvider(
+    std::unique_ptr<CoreInputStreamInt>&& input, std::unique_ptr<CoreOutputStreamInt>&& output
+):
+    t_input(move(input)),
+    t_output(move(output))
 {
 }
 
-void CoreEnvStreamsProvider::set_istream(std::istream& in)
+CoreInputStreamInt& CoreEnvStreamsProvider::t_input_stream()
 {
-    t_input = { in };
+    return *t_input.get();
 }
 
-void CoreEnvStreamsProvider::set_ostream(std::ostream& out)
+CoreOutputStreamInt& CoreEnvStreamsProvider::t_output_stream()
 {
-    t_output = { out };
+    return *t_output.get();
 }
 
-void CoreEnvStreamsProvider::set_read_mode(stream_read_mode new_mode)
+const CoreInputStreamInt& CoreEnvStreamsProvider::t_input_stream() const
 {
-    t_mode = new_mode;
+    return *t_input.get();
 }
 
-stream_read_mode CoreEnvStreamsProvider::get_read_mode() const
+const CoreOutputStreamInt& CoreEnvStreamsProvider::t_output_stream() const
 {
-    return t_mode;
-}
-
-std::istream& CoreEnvStreamsProvider::t_input_stream()
-{
-    return t_input.get();
-}
-
-std::ostream& CoreEnvStreamsProvider::t_output_stream()
-{
-    return t_output.get();
-}
-
-const std::istream& CoreEnvStreamsProvider::t_input_stream() const
-{
-    return t_input.get();
-}
-
-const std::ostream& CoreEnvStreamsProvider::t_output_stream() const
-{
-    return t_output.get();
+    return *t_output.get();
 }

@@ -3,6 +3,7 @@
 #include "Core.h"
 #include "profile.h"
 #include "PredLispFuncs.h"
+#include "SimpleCoreStream.h"
 #include <string>
 #include <list>
 #include <vector>
@@ -10,42 +11,30 @@
 #include <fstream>
 #include <sstream>
 using namespace std;
+using namespace CoreData;
 
 #include "TestsList.h"
 #include "STDMutexed.h"
 
-void cin_execute_kostil_repl(istream& is) {
-    Core core = make_core_w_predfuncs(cin, cout);
-    if (is) {
-
-        for (const auto& exp : read_expressions_from_stream(is, core, stream_read_mode::s_expression, true)) {
-            Core::result_type result_reason = Core::result_type::success;
-            string result;
-            {
-                //LogDuration a;
-                auto [result_reason2, result2] = core.execute(exp);
-                result = move(result2);
-                result_reason = result_reason2;
-            }
-            cout << result_reason << ", " << result << endl;
-        }
+void cin_execute_kostil_repl(CoreInputStreamInt& is) {
+    Core core = make_core_w_predfuncs(cin, stream_read_mode::new_string,  cout);
+    if (is.ready()) 
+    {
+        core.execute_all(is);
     }
 
     //auto [result_reason2, result2] = core.execute("(loop (print (eval (progn (print '>) (read)))))");
+    SimpleInputCoreStream s(cin, stream_read_mode::new_string);
     while (cin)
     {
         cout << "> ";
-        auto [readed, exp] = read_one_expression_from_stream(cin, core, stream_read_mode::new_string, true);
-        
-        if (!readed) {
-            cout << "wrong input" << endl;
-            continue;
-        }
         Core::result_type result_reason = Core::result_type::success;
         string result;
         {
+            string s;
+            getline(cin, s);
             LogDuration a;
-            auto [result_reason2, result2] = core.execute(exp);
+            auto [result_reason2, result2] = core.execute_one(s);
             result = move(result2);
             result_reason = result_reason2;
         }
@@ -81,7 +70,8 @@ int main()
     
     //запуск репла с cin + предзагрузка из потока (в данном случае - файл) 
     ifstream f("programs/1.lsp");
-    cin_execute_kostil_repl(f);
+    auto cf = SimpleInputCoreStream(f, stream_read_mode::s_expression);
+    cin_execute_kostil_repl(cf);
 
     //запуск репла с cin + предзагрузка из потока (в данном случае - stringstream) 
     //cin_execute_kostil_repl(s);
