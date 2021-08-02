@@ -3,7 +3,8 @@
 #include "Core.h"
 #include "profile.h"
 #include "PredLispFuncs.h"
-#include "SimpleCoreStream.h"
+#include "StdCoreInputStream.h"
+#include "StdCoreInputMemoryStream.h"
 #include <string>
 #include <list>
 #include <vector>
@@ -24,17 +25,17 @@ void cin_execute_kostil_repl(CoreInputStreamInt& is) {
     }
 
     //auto [result_reason2, result2] = core.execute("(loop (print (eval (progn (print '>) (read)))))");
-    SimpleInputCoreStream s(cin, stream_read_mode::new_string);
+    StdCoreInputStream s(cin, stream_read_mode::new_string);
     while (cin)
     {
         cout << "> ";
         Core::result_type result_reason = Core::result_type::success;
         string result;
         {
-            string s;
-            getline(cin, s);
+            string str;
+            getline(cin, str);
             LogDuration a;
-            auto [result_reason2, result2] = core.execute_one(s);
+            auto [result_reason2, result2] = core.execute_one(str);
             result = move(result2);
             result_reason = result_reason2;
         }
@@ -70,7 +71,7 @@ int main()
     
     //запуск репла с cin + предзагрузка из потока (в данном случае - файл) 
     ifstream f("programs/1.lsp");
-    auto cf = SimpleInputCoreStream(f, stream_read_mode::s_expression);
+    auto cf = StdCoreInputStream(f, stream_read_mode::s_expression);
     cin_execute_kostil_repl(cf);
 
     //запуск репла с cin + предзагрузка из потока (в данном случае - stringstream) 

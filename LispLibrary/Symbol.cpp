@@ -1,4 +1,5 @@
 #include "Symbol.h"
+#include "profile_advanced.h"
 using namespace std;
 
 Symbol::Symbol(const Symbol& rh) :
@@ -90,8 +91,11 @@ Symbols::symbol_core Symbols::make_or_copy(std::string&& str)
     return symbol_core(it, *this);
 }
 
+
+
 Symbols::symbol_core Symbols::make_or_copy(const std::string& str)
 {
+    
     auto [it, reason] = t_symbol_to_it_and_count.insert({ str, { end(t_oblist), 0 } });
     if (reason) {
         t_oblist.push_front(it->first);

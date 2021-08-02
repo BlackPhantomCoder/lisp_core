@@ -46,40 +46,64 @@ struct throw_token_stream_empty {};
 
 struct EndlessStreamHelper {
 
-	EndlessStreamHelper(EndlessStream& s);
+	EndlessStreamHelper(CoreInputStreamInt& s);
 	char get();
 	void next();
 	void unread_last();
 	operator bool() const;
 private:
-	EndlessStream& t_base;
+	EndlessStream t_base;
 	char t_now = 0;
-	bool t_readed = false;
+	bool t_readed;
 };
 
 
 class TokenStream {
 public:
-	TokenStream(bool skip_comments, EndlessStream& stream);
+	TokenStream(bool skip_comments, CoreInputStreamInt& stream);
 	std::pair<tokens, std::string> read();
-private:
 
-	std::pair<tokens, std::string> t_read(EndlessStreamHelper& s);
-	std::string read_expr_under_DoubleQuote(EndlessStreamHelper& s);
-	std::string read_expr_under_VerticalLine(EndlessStreamHelper& s);
-
-	std::pair<tokens, std::string> read_break_symbol(EndlessStreamHelper& s);
-	bool is_break_symbol(char symbol) const;
-	bool is_skip_symbol(char symbol) const;
+	bool alive() const;
+	bool ready() const;
 private:
-	EndlessStream& t_base;
+	std::string t_read_expr_under_DoubleQuote();
+	std::string t_read_expr_under_VerticalLine();
+
+	std::pair<tokens, std::string> t_read_break_symbol();
+	bool t_is_break_symbol(char symbol) const;
+	bool t_is_skip_symbol(char symbol) const;
+	bool t_is_ignore_symbol(char symbol) const;
+private:
+	EndlessStreamHelper t_base;
+	CoreInputStreamInt& t_stream;
 	bool t_skip_comments;
 };
 
 enum class read_reason { success, stream_fail, wrong_input, empty_input };
 
+
+struct throw_SExprStreamError {};
+class Syntaxer;
+
+class SExprStream {
+public:
+	SExprStream(Syntaxer& owner, CoreInputStreamInt& stream);
+	std::pair<read_reason, Cell> read();
+	bool alive() const;
+	bool ready() const;
+
+	
+private:
+	TokenStream t_base;
+	Syntaxer& t_owner;
+};
+
+
+
+
 class Syntaxer
 {
+	friend class SExprStream;
 public:
 	Syntaxer(Symbols& symbols, bool skip_comments = true, bool upcase_mode = true);
 
@@ -92,6 +116,8 @@ public:
 	std::pair<read_reason, char> read_char(CoreInputStreamInt& stream);
 	std::pair<read_reason, Cell> read_sexpr(CoreInputStreamInt& stream);
 	std::pair<read_reason, std::vector<Cell>> read_sexprs(CoreInputStreamInt& stream);
+
+	SExprStream read_sexprs_stream(CoreInputStreamInt& stream);
 private:
 	void process_char(char& symbol);
 	void process_symbol(std::string& symbol);
@@ -102,3 +128,4 @@ private:
 	bool t_skip_comments;
 	bool t_upcase_mode;
 };
+

@@ -14,13 +14,13 @@ public:
 public:
     static unsigned epsilon;
 public:
-    Number(Number&& rh);
+    Number(Number&& rh)noexcept;
     Number(const Number& rh);
 
     explicit Number(double val);
     explicit Number(const BigInt& val);
 
-    Number& operator=(Number&& rh);
+    Number& operator=(Number&& rh)noexcept;
     Number& operator=(const Number& rh);
 
     bool operator<(const Number& rh)const;

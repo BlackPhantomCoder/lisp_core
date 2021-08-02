@@ -22,7 +22,7 @@ unsigned double_macheps()
 
 unsigned Number::epsilon = double_macheps();
 
-Number::Number(Number&& rh):
+Number::Number(Number&& rh)noexcept:
     t_data(move(rh.t_data))
 {
     rh.t_data = nullptr;
@@ -43,7 +43,7 @@ Number::Number(const BigInt& val) :
 {
 }
 
-Number& Number::operator=(Number&& rh)
+Number& Number::operator=(Number&& rh)noexcept
 {
     t_data = move(rh.t_data);
     rh.t_data = nullptr;
@@ -335,7 +335,7 @@ Number& Number::operator+=(const Number& rh)
     }
     else if (holds_alternative<BigInt>(t_data)) {
         if (rh.is_real()) {
-            auto result = rh;
+            Number result = rh;
             result += *this;
             t_data = result.t_data;
         }
@@ -373,7 +373,7 @@ Number& Number::operator-=(const Number& rh)
     }
     else if (holds_alternative<BigInt>(t_data)) {
         if (rh.is_real()) {
-            auto result = rh;
+            Number result = rh;
             result.minus();
             result += *this;
             t_data = result.t_data;
@@ -412,7 +412,7 @@ Number& Number::operator*=(const Number& rh)
     }
     else if (holds_alternative<BigInt>(t_data)) {
         if (rh.is_real()) {
-            auto result = rh;
+            Number result = rh;
             result *= *this;
             t_data = result.t_data;
         }
@@ -529,7 +529,7 @@ Number& Number::div(const Number& rh)
 
 Number Number::mod(const Number& rh)const
 {
-    auto result = *this;
+    Number result = *this;
     result /= rh;
     if (result.is_integer()) {
         return Number(BigInt(0l));

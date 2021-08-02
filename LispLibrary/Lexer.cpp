@@ -50,8 +50,8 @@ std::pair<read_reason, Cell>  Syntaxer::read_sexpr(CoreInputStreamInt& stream)
         return { read_reason::empty_input,  make_symbol_cell(CoreData::nil_str, t_symbols) };
     }
     try {
-        EndlessStream es(stream);
-        auto s = TokenStream(t_skip_comments, es);
+        //EndlessStream es(stream);
+        auto s = TokenStream(t_skip_comments, stream);
         return gen_cell(s);
     }
     catch (const throw_token_stream_empty&) {
@@ -61,21 +61,36 @@ std::pair<read_reason, Cell>  Syntaxer::read_sexpr(CoreInputStreamInt& stream)
 
 std::pair<read_reason, std::vector<Cell>> Syntaxer::read_sexprs(CoreInputStreamInt& stream)
 {
-    std::vector<Cell> result;
-    auto result_pair = read_sexpr(stream);
-    while (result_pair.first != read_reason::empty_input) {
-        if (result_pair.first != read_reason::success) {
-            return { result_pair.first, {} };
+    try {
+        std::vector<Cell> result;
+        auto result_pair = read_sexpr(stream);
+        while (result_pair.first != read_reason::empty_input) {
+            if (result_pair.first != read_reason::success) {
+                return { result_pair.first, {} };
+            }
+            result.push_back(result_pair.second);
+            result_pair = read_sexpr(stream);
         }
-        result.push_back(result_pair.second);
-        result_pair = read_sexpr(stream);
+        return { read_reason::success , move(result) };
     }
-    return { read_reason::success , move(result) };
+    catch (const char* str) {
+        std::cout << str << endl;
+        throw str;
+    }
+    catch (...) {
+        std::cout << "wtf" << endl;
+        throw;
+    }
+}
+
+SExprStream Syntaxer::read_sexprs_stream(CoreInputStreamInt& stream)
+{
+    return SExprStream(*this, stream);
 }
 
 void Syntaxer::process_char(char& symbol)
 {
-    if (t_upcase_mode) symbol = std::toupper(symbol);
+    if (t_upcase_mode) symbol = char(std::toupper(symbol));
 }
 
 void Syntaxer::process_symbol(std::string& symbol)
@@ -190,95 +205,103 @@ std::pair<read_reason, Cell> Syntaxer::gen_cell(tokens token, std::string&& val,
 
 
 
-TokenStream::TokenStream(bool skip_comments, EndlessStream& stream) :
+TokenStream::TokenStream(bool skip_comments, CoreInputStreamInt& stream) :
     t_base(stream),
-    t_skip_comments(skip_comments)
+    t_skip_comments(skip_comments),
+    t_stream(stream)
 {
 }
 
 std::pair<tokens, std::string> TokenStream::read()
 {
-    EndlessStreamHelper s(t_base);
-    return t_read(s);
-}
-
-std::pair<tokens, std::string> TokenStream::t_read(EndlessStreamHelper& s)
-{
-    while (is_skip_symbol(s.get())) {
-        if (!s) {
+    t_base.next();
+    while (t_is_skip_symbol(t_base.get()) || t_is_ignore_symbol(t_base.get())) {
+        if (!t_base) {
             throw throw_token_stream_empty{};
         }
-        s.next();
+        t_base.next();
     }
-    
+
     string exp;
-    while (!is_skip_symbol(s.get()) && !is_break_symbol(s.get())) {
-        exp += s.get();
-        if (s) {
-            s.next();
+    while (t_base && !t_is_skip_symbol(t_base.get()) && !t_is_break_symbol(t_base.get())) {
+        if (t_is_ignore_symbol(t_base.get())) {
+            t_base.next();
+            continue;
+        }
+        exp += t_base.get();
+        if (t_base) {
+            t_base.next();
         }
         else {
             break;
         }
     }
-    s.unread_last();
     if (exp.empty()) {
-        return read_break_symbol(s);
+        return t_read_break_symbol();
     }
     else {
+        if(t_base) t_base.unread_last();
         return { tokens::Expr, exp };
     }
 }
 
-std::string TokenStream::read_expr_under_DoubleQuote(EndlessStreamHelper& s) {
-    string result;
-    while (s.get() != '"') {
-        if (s.get() == '\\') {
-            s.next();
-        }
-        result += s.get();
-        s.next();
-    }
-    s.next();
-    return result;
-}
-
-std::string TokenStream::read_expr_under_VerticalLine(EndlessStreamHelper& s) {
-    string result;
-    while (s.get() != '|') {
-        if (s.get() == '\\') {
-            s.next();
-        }
-        result += s.get();
-        s.next();
-    }
-    s.next();
-    return result;
-}
-
-std::pair<tokens, std::string> TokenStream::read_break_symbol(EndlessStreamHelper& s)
+bool TokenStream::alive() const
 {
-    if (s.get() == '\'') {
+    return bool(t_base);
+}
+
+bool TokenStream::ready() const
+{
+    return bool(t_base);
+}
+
+std::string TokenStream::t_read_expr_under_DoubleQuote() {
+    string result;
+    while (t_base.get() != '"') {
+        if (t_base.get() == '\\') {
+            t_base.next();
+        }
+        result += t_base.get();
+        t_base.next();
+    }
+    return result;
+}
+
+std::string TokenStream::t_read_expr_under_VerticalLine() {
+    string result;
+    while (t_base.get() != '|') {
+        if (t_base.get() == '\\') {
+            t_base.next();
+        }
+        result += t_base.get();
+        t_base.next();
+    }
+    return result;
+}
+
+std::pair<tokens, std::string> TokenStream::t_read_break_symbol()
+{
+    if (t_base.get() == '\'') {
         return { tokens::Quote, "" };
     }
-    else if (s.get() == '(') {
+    else if (t_base.get() == '(') {
         return { tokens::OpenBracket, "" };
     }
-    else if (s.get() == ')') {
+    else if (t_base.get() == ')') {
         return { tokens::CloseBracket, "" };
     }
-    else if (s.get() == '"') {
-        s.next();
-        return { tokens::QExpr, read_expr_under_DoubleQuote(s) };
+    else if (t_base.get() == '"') {
+        t_base.next();
+        return { tokens::QExpr, t_read_expr_under_DoubleQuote() };
     }
-    else if (s.get() == '|') {
-        s.next();
-        return { tokens::QExpr,read_expr_under_VerticalLine(s) };
+    else if (t_base.get() == '|') {
+        t_base.next();
+        return { tokens::QExpr, t_read_expr_under_VerticalLine() };
     }
-    else if (s.get() == ';') {
+    else if (t_base.get() == ';') {
         if (t_skip_comments) {
-            while (s.get() != '\n') {
-                s.next();
+            while (t_base.get() != '\n') {
+                t_base.next();
             }
         }
         return read();
@@ -288,15 +311,26 @@ std::pair<tokens, std::string> TokenStream::read_break_symbol(EndlessStreamHelpe
     }
 }
 
-const std::unordered_set<char> skip_symbols = { ' ', '\t', '\n' };
+const std::unordered_set<char> skip_symbols = { ' ', '\t'};
 const std::unordered_set<char> break_sybols = { '"', '(', ')', '\'', '|', ';'};
 
-bool TokenStream::is_break_symbol(char symbol) const {
+bool TokenStream::t_is_break_symbol(char symbol) const {
     return break_sybols.find(symbol) != end(break_sybols);
 }
 
-bool TokenStream::is_skip_symbol(char symbol) const {
+bool TokenStream::t_is_skip_symbol(char symbol) const {
+    if (symbol == '\n') {
+        return t_stream.get_mode() != CoreData::stream_read_mode::new_string;
+    }
     return skip_symbols.find(symbol) != end(skip_symbols);
+}
+
+bool TokenStream::t_is_ignore_symbol(char symbol) const
+{
+    if (symbol == '\n') {
+        return t_stream.get_mode() == CoreData::stream_read_mode::new_string;
+    }
+    return false;
 }
 
 EndlessStream::EndlessStream(CoreInputStreamInt& stream):
@@ -310,7 +344,8 @@ EndlessStream::EndlessStream(CoreInputStreamInt& stream):
 
 EndlessStream::~EndlessStream() {
     if (!t_view_buf.empty()) {
-        t_base.unread_some(t_view_buf.size() - int(t_view_buf.find('\n') != t_view_buf.npos));
+        t_base.erase_atlast(t_base.last_line().size() - 1 - (t_view_buf.size() - int(t_view_buf.find('\n') != t_view_buf.npos)));
+        t_base.unread_last_line();
     }
 }
 
@@ -341,27 +376,30 @@ void EndlessStream::unread_last() {
         t_view_buf.remove_prefix((t_buffer.size() - size) - 1);
     }
     else {
-        t_base.unread_some(1);
+        t_base.erase_atlast(t_base.last_line().size() - 2);
+        t_base.unread_last_line();
         t_buffer.clear();
         t_view_buf = t_buffer;
     }
+    --t_pos;
 }
 
-EndlessStreamHelper::EndlessStreamHelper(EndlessStream& s) :
-    t_base(s)
+EndlessStreamHelper::EndlessStreamHelper(CoreInputStreamInt& s) :
+    t_base(s),
+    t_readed(false)
 {
 
 }
 
 char EndlessStreamHelper::get() {
     if (!t_readed) {
-        t_now = t_base.read();
-        t_readed = true;
+        throw "EndlessStreamHelper: unreaded get";
     }
     return t_now;
 }
 
 void EndlessStreamHelper::next() {
+    if (!t_readed) t_readed = true;
     t_now = t_base.read();
 }
 
@@ -372,4 +410,26 @@ void EndlessStreamHelper::unread_last() {
 
 EndlessStreamHelper::operator bool() const {
     return bool(t_base);
+}
+
+SExprStream::SExprStream(Syntaxer& owner, CoreInputStreamInt& stream):
+    t_owner(owner),
+    t_base(owner.skip_comments_mode(), stream)
+{
+
+}
+
+std::pair<read_reason, Cell> SExprStream::read()
+{
+    return t_owner.gen_cell(t_base);;
+}
+
+bool SExprStream::alive() const
+{
+    return t_base.alive();
+}
+
+bool SExprStream::ready() const
+{
+    return t_base.ready();
 }

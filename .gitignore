@@ -343,3 +343,4 @@ healthchecksdb
 #my
 /out/**/*.exe
 /~compile_dir/*
+/IMPORTED/*

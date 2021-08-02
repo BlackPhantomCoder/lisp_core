@@ -2,15 +2,26 @@
 #include "test_runner.h"
 #include "Core.h"
 #include "PredLispFuncs.h"
+#include "StdCoreInputMemoryStream.h"
 #include <sstream>
+#include <fstream>
+
+#include "Tester.h"
 using namespace CoreData;
 using std::istringstream;
 using std::ostringstream;
 
+//загрузка файла с пердфанками в оперативу
+static const StdCoreInputMemoryStream predfuncs_mem_stream_global = []() {
+	std::ifstream f(predfuncs_filename);
+	return StdCoreInputMemoryStream(f, stream_read_mode::s_expression);
+}();
+
 //Тест со сравнением результата
 #define simple_core_assert(input, output)\
 {\
-	auto [core, streams] = make_core_w_predfuncs_and_empty_streams();\
+	StdCoreInputMemoryStream predfuncs_mem_stream = predfuncs_mem_stream_global;\
+	auto [core, streams] = make_core_w_custom_predfuncs_and_empty_streams(predfuncs_mem_stream);\
 	auto [result_reason, result] = core.execute_one(input);\
 	ASSERT_EQUAL(result_reason, Core::result_type::success);\
 	ASSERT_EQUAL(result, output);\
@@ -19,7 +30,8 @@ using std::ostringstream;
 //Тест без сравнения результата (проверка на success/fail)
 #define simple_core_assert_reason(input, reason)\
 {\
-	auto [core, streams] = make_core_w_predfuncs_and_empty_streams();\
+	StdCoreInputMemoryStream predfuncs_mem_stream = predfuncs_mem_stream_global;\
+	auto [core, streams] = make_core_w_custom_predfuncs_and_empty_streams(predfuncs_mem_stream);\
 	auto [result_reason, result] = core.execute_one(input);\
 	ASSERT_EQUAL(result_reason,reason);\
 }
@@ -27,7 +39,8 @@ using std::ostringstream;
 //тест вывода
 #define test_output(input, output)\
 {\
-	auto [core, streams] = make_core_w_predfuncs_and_empty_streams(); \
+	StdCoreInputMemoryStream predfuncs_mem_stream = predfuncs_mem_stream_global;\
+	auto [core, streams] = make_core_w_custom_predfuncs_and_empty_streams(predfuncs_mem_stream); \
 	auto [result_reason, result] = core.execute_one(input); \
 	ASSERT_EQUAL(result_reason, Core::result_type::success); \
 	ASSERT_EQUAL(streams->out.str(), output);\
@@ -36,9 +49,10 @@ using std::ostringstream;
 //тест ввода
 #define test_input(input,stream_input, output)\
 {\
+	StdCoreInputMemoryStream predfuncs_mem_stream = predfuncs_mem_stream_global;\
 	istringstream in (stream_input);\
 	ostringstream out;\
-	auto core = make_core_w_predfuncs(in, stream_read_mode::new_string, out);\
+	auto core = make_core_w_custom_predfuncs(predfuncs_mem_stream, in, stream_read_mode::new_string, out);\
 	auto [result_reason, result] = core.execute_one(input);\
 	ASSERT_EQUAL(result_reason, Core::result_type::success);\
 	ASSERT_EQUAL(result, output);\
@@ -47,9 +61,10 @@ using std::ostringstream;
 //тест ввода+вывода+результат
 #define test_io_result(input, stream_input, stream_output, output)\
 {\
+	StdCoreInputMemoryStream predfuncs_mem_stream = predfuncs_mem_stream_global;\
 	istringstream in (stream_input);\
 	ostringstream out;\
-	auto core = make_core_w_predfuncs(in, stream_read_mode::new_string, out);\
+	auto core = make_core_w_custom_predfuncs(predfuncs_mem_stream,in, stream_read_mode::new_string, out);\
 	auto [result_reason, result] = core.execute_one(input);\
 	ASSERT_EQUAL(result_reason, Core::result_type::success);\
 	ASSERT_EQUAL(result, output);\
@@ -59,9 +74,10 @@ using std::ostringstream;
 //тест ввода+причина
 #define test_input_reason(input, stream_input, reason)\
 {\
+	StdCoreInputMemoryStream predfuncs_mem_stream = predfuncs_mem_stream_global;\
 	istringstream in (stream_input);\
 	ostringstream out;\
-	auto core = make_core_w_predfuncs(in, stream_read_mode::new_string, out);\
+	auto core = make_core_w_custom_predfuncs(predfuncs_mem_stream,in, stream_read_mode::new_string, out);\
 	auto [result_reason, result] = core.execute_one(input);\
 	ASSERT_EQUAL(result_reason, reason);\
 }
@@ -316,16 +332,28 @@ void io() {
 	
 }
 
-//тест встроренных функиций
-void test_bifuncs(){
-	TestRunner r;
-	RUN_TEST(r, test_eval_base);
-	RUN_TEST(r, arifm);
-	RUN_TEST(r, logic);
-	RUN_TEST(r, list);
-	RUN_TEST(r, pred);
-	RUN_TEST(r, usl);
-	RUN_TEST(r, calcfun);
-	RUN_TEST(r, control_calc);
-	RUN_TEST(r, io);
+void test_outs(NATests::Tester& tester){
+	bool fail = false;
+	for (const auto& result : tester.execute()) {
+		std::cout << result << std::endl;
+		if (result.fail) fail = true;
+	}
+	if (fail) exit(1);
+}
+
+void test_bifuncs() {
+	// true - асинхронно, false - последовательно
+	NATests::Tester tester(true);
+
+	NATests_RUN_TEST(tester, test_eval_base);
+	NATests_RUN_TEST(tester, arifm);
+	NATests_RUN_TEST(tester, logic);
+	NATests_RUN_TEST(tester, list);
+	NATests_RUN_TEST(tester, pred);
+	NATests_RUN_TEST(tester, usl);
+	NATests_RUN_TEST(tester, calcfun);
+	NATests_RUN_TEST(tester, control_calc);
+	NATests_RUN_TEST(tester, io);
+
+	test_outs(tester);
 }

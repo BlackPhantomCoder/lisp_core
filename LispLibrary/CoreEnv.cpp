@@ -27,7 +27,7 @@ LambdaCell make_spread_lambda_form(
     auto size = std::distance(beg_params, end_params);
     std::vector<Symbol> params;
     params.reserve(size);
-    for (auto it = beg_params; it != end_params; ++it) {
+    for (Cell::olist::const_iterator it = beg_params; it != end_params; ++it) {
         if (!is_symbol(*it)) throw "get_lambda_form error";
         params.emplace_back(to_symbol(*it));
     }
@@ -93,12 +93,14 @@ CoreEnvironment::CoreEnvironment(CoreEnvStreamsProvider& streams) :
 std::vector<Cell> CoreEnvironment::execute_all(CoreInputStreamInt& stream, const IMutexed<bool>& stop_flag)
 {
     t_stop_flag = { stop_flag };
-    auto [read_reason, exprs] = t_syntaxer.read_sexprs(stream);
-    if (read_reason != read_reason::success) throw "input error";
     try
     {
         std::vector<Cell> result;
-        for (const auto&  c: exprs) {
+        auto s = t_syntaxer.read_sexprs_stream(stream);
+        while (s.ready())
+        {
+            auto [reason, c] =  s.read();
+            if (reason != read_reason::success) throw "input error";
             result.emplace_back(eval_quote(c));
         }
         return result;
@@ -531,7 +533,6 @@ Cell CoreEnvironment::nbifunc_loop()
         }
         ++it;
     }
-    throw "CoreEnvironment::nbifunc_loop: ???";
 }
 
 Cell CoreEnvironment::bifunc_print()
@@ -664,11 +665,11 @@ Cell CoreEnvironment::eval_quote(const Cell& arg) {
                     return t_l_evaler.pop_eval();
                 }
                 else {
-                    throw "eval error";
+                    throw "eval error " + to_string(arg);
                 }
             }
 
-            throw "eval error";
+            throw "eval error " + to_string(arg);
         }
 
         {
@@ -700,11 +701,11 @@ Cell CoreEnvironment::eval_quote(const Cell& arg) {
                 return t_l_evaler.pop_eval();
             }
             else {
-                throw "eval error";
+                throw "eval error " + to_string(arg);
             }
         }
         else {
-            throw "eval error";
+            throw "eval error " + to_string(arg);
         }
     }
     else {
@@ -866,11 +867,11 @@ Cell CoreEnvironment::bifunc_apply()
                         return t_l_evaler.pop_eval();
                     }
                     else {
-                        throw "eval error";
+                        throw "apply error";
                     }
                 }
 
-                throw "eval error";
+                throw "apply error";
             }
 
             {
@@ -885,7 +886,7 @@ Cell CoreEnvironment::bifunc_apply()
                 }
             }
 
-
+            throw "apply error";
         }
         else {
             return eval_quote(make_list({ fnc }));

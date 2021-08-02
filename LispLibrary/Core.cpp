@@ -1,7 +1,8 @@
 #include "Core.h"
 #include "Funcs.h"
 #include "STDMutexed.h"
-#include "SimpleCoreStream.h"
+#include "StdCoreInputStream.h"
+#include "StdCoreOutputStream.h"
 
 #include <tuple>
 #include <utility>
@@ -81,6 +82,11 @@ std::pair<Core::result_type, std::vector<std::string>> Core::execute_all(CoreInp
         success = false;
         result = { str };
     }
+    catch (const std::string& str)
+    {
+        success = false;
+        result = { str };
+    }
     catch (const throw_stop_helper&)
     {
         return { Core::result_type::stopped, {""} };
@@ -97,7 +103,7 @@ std::pair<Core::result_type, std::vector<std::string>> Core::execute_all(CoreInp
 std::pair<Core::result_type, std::vector<std::string>> Core::execute_all(const std::string& input)
 {
     stringstream s(input);
-    SimpleInputCoreStream sc(s, stream_read_mode::new_string);
+    StdCoreInputStream sc(s, stream_read_mode::new_string);
     return execute_all(sc);
 }
 
@@ -117,6 +123,11 @@ std::pair<Core::result_type, std::string> Core::execute_one(CoreInputStreamInt& 
         success = false;
         result = str;
     }
+    catch (const std::string& str)
+    {
+        success = false;
+        result = { str };
+    }
     catch (const throw_stop_helper&)
     {
         return { Core::result_type::stopped, "" };
@@ -133,7 +144,7 @@ std::pair<Core::result_type, std::string> Core::execute_one(CoreInputStreamInt& 
 std::pair<Core::result_type, std::string> Core::execute_one(const std::string& input)
 {
     stringstream s(input);
-    SimpleInputCoreStream sc(s, stream_read_mode::new_string);
+    StdCoreInputStream sc(s, stream_read_mode::new_string);
     return execute_one(sc);
 }
 
@@ -175,7 +186,7 @@ std::pair<Core, std::unique_ptr<empty_streams>> make_core_w_empty_streams()
         std::piecewise_construct_t(),
         std::forward_as_tuple(
             make_unique<CoreEnvStreamsProvider>(
-                make_unique<SimpleInputCoreStream>(s->in, stream_read_mode::new_string), make_unique<SimpleOutputCoreStream>(s->out)
+                make_unique<StdCoreInputStream>(s->in, stream_read_mode::new_string), make_unique<StdCoreOutputStream>(s->out)
             )
         ),
         std::forward_as_tuple(move(s)) 
@@ -189,7 +200,7 @@ std::pair<Core, std::unique_ptr<empty_streams>> make_core_w_empty_streams(std::u
         std::piecewise_construct_t(),
         std::forward_as_tuple(
             make_unique<CoreEnvStreamsProvider>(
-                make_unique<SimpleInputCoreStream>(s->in, stream_read_mode::new_string), make_unique<SimpleOutputCoreStream>(s->out)
+                make_unique<StdCoreInputStream>(s->in, stream_read_mode::new_string), make_unique<StdCoreOutputStream>(s->out)
             ),
             move(custom_mutex)
         ),
