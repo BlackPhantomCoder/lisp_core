@@ -11,28 +11,24 @@ Cell::Cell(const Cell& rh) :
 {
 }
 
-Cell::Cell(oatom&& atom) noexcept :
+Cell::Cell(Atom&& atom) noexcept :
     t_data(make_shared<var_type>(std::move(atom)))
 {
 }
 
-Cell::Cell(olist&& list) noexcept :
+Cell::Cell(DPair&& list) noexcept :
     t_data(make_shared<var_type>(std::move(list)))
 {
 }
 
-Cell::Cell(const oatom& atom) :
+Cell::Cell(const Atom& atom) :
     t_data(make_shared<var_type>(atom))
 {
 }
 
-Cell::Cell(const olist& list) :
+Cell::Cell(const DPair& list) :
     t_data(make_shared<var_type>(list))
 {
-}
-
-Cell::~Cell() {
-    t_data = nullptr;
 }
 
 Cell& Cell::operator=(const Cell& rh)
@@ -43,29 +39,29 @@ Cell& Cell::operator=(const Cell& rh)
 }
 
 bool Cell::is_atom() const {
-    return t_data &&  std::holds_alternative<oatom>(*t_data); 
+    return t_data &&  std::holds_alternative<Atom>(*t_data);
 }
 
 bool Cell::is_list() const {
-    return !is_atom(); 
+    return t_data && std::holds_alternative<DPair>(*t_data);
 }
 
-Cell::oatom& Cell::to_atom() {
+Atom& Cell::to_atom() {
     if (!is_atom())throw "to_atom";
-    return std::get<oatom>(*t_data); 
+    return std::get<Atom>(*t_data);
 }
 
-Cell::olist& Cell::to_list() {
+DPair& Cell::to_list() {
     if (!is_list())throw "to_list";
-    return std::get<olist>(*t_data); 
+    return std::get<DPair>(*t_data);
 }
 
-const Cell::oatom& Cell::to_atom()const {
+const Atom& Cell::to_atom()const {
     if (!is_atom())throw "to_atom";
-    return std::get<oatom>(*t_data); 
+    return std::get<Atom>(*t_data);
 }
 
-const Cell::olist& Cell::to_list()const {
+const DPair& Cell::to_list()const {
     if (!is_list())throw "to_list";
-    return std::get<olist>(*t_data); 
+    return std::get<DPair>(*t_data);
 }

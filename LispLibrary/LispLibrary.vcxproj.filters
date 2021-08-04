@@ -108,6 +108,12 @@
     <ClInclude Include="StdCoreInputMemoryStream.h">
       <Filter>Файлы заголовков\Platform</Filter>
     </ClInclude>
+    <ClInclude Include="LambdaStorage.h">
+      <Filter>Файлы заголовков\lambda</Filter>
+    </ClInclude>
+    <ClInclude Include="ArgsOnStackEvaler.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Atom.cpp">
@@ -177,6 +183,9 @@
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="CoreStreamInt.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="LambdaStorage.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>

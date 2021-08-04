@@ -4,42 +4,29 @@
 using namespace std;
 
 BifuncEvaler::BifuncEvaler(CoreEnvironment* env) :
-    t_env(env)
+    ArgsOnStackEvaler(env)
 {
-}
-
-void BifuncEvaler::push_bifunc(CoreData::bifunc fnc, Cell::olist::const_iterator beg_it, Cell::olist::const_iterator end_it, bool eval_args)
-{
-    t_frames.push({ fnc, beg_it , end_it ,eval_args });
-}
-
-void BifuncEvaler::push_nbifunc(CoreData::bifunc fnc, Cell::olist::const_iterator beg_it, Cell::olist::const_iterator end_it)
-{
-    t_frames.push({ fnc, beg_it , end_it ,false });
 }
 
 Cell BifuncEvaler::pop_eval()
 {
-    if (t_frames.top().eval_args) {
-        t_frames.top().args = t_env->eval_args(t_frames.top().beg_it, t_frames.top().end_it);
-        t_env->t_args.push(begin(t_frames.top().args), end(t_frames.top().args));
-        auto result = (t_env->*(t_frames.top().fnc))();
-        t_env->t_args.pop();
-        t_frames.pop();
-        return result;
+    {
+        auto& last_frame = t_frames.top();
+        if (last_frame.type == bifunc_type::bifunc && !last_frame.forse_nosread_args) {
+            //last_frame.args = t_env->external_eval_args(last_frame.beg_it, last_frame.end_it);
+            last_frame.args.reserve(distance(last_frame.beg_it, last_frame.end_it));
+            for (; last_frame.beg_it != last_frame.end_it; ++last_frame.beg_it) {
+                last_frame.args.emplace_back(t_env->eval_quote(*last_frame.beg_it));
+            }
+            t_env->t_args.push(begin(last_frame.args), end(last_frame.args));
+        }
+        else {
+            t_env->t_args.push(last_frame.beg_it, last_frame.end_it);
+        }
     }
-    else {
-        t_env->t_args.push(t_frames.top().beg_it, t_frames.top().end_it);
-        auto result = (t_env->*(t_frames.top().fnc))();
-        t_env->t_args.pop();
-        t_frames.pop();
-        return result;
-    }
-}
 
-void BifuncEvaler::clear()
-{
-    while (!t_frames.empty()) {
-        t_frames.pop();
-    }
+    auto result = (t_env->*(t_frames.top().fnc))();
+    t_env->t_args.pop();
+    t_frames.pop();
+    return result;
 }

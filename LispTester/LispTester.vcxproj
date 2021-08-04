@@ -105,6 +105,11 @@
       </StackCommitSize>
     </Link>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Link>
+      <Profile>true</Profile>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BIFuncsTest.cpp" />
     <ClCompile Include="Source.cpp" />

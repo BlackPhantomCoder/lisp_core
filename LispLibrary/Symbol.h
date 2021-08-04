@@ -4,7 +4,6 @@
 #include <deque>
 #include <unordered_map>
 #include <list>
-#include "profile_advanced.h"
 
 class Symbols {
 public:

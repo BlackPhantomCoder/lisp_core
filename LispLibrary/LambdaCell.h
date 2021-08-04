@@ -2,42 +2,79 @@
 #include "Cell.h"
 #include <vector>
 
-enum class lambda_types : bool { lambda, nlambda };
+enum class lambda_types { lambda, nlambda, macro };
 enum class lambda_args_types : bool { spread, nospread};
 
 struct lambda {
+    lambda_types type;
+    lambda_args_types arg_type;
     //args symbs
     std::vector<Symbol> params;
-    Cell::olist body;
+    DPair body;
 };
 
-class LambdaCell
+inline bool is_lambda(const lambda& l);
+inline bool is_nlambda(const lambda& l);
+inline bool is_macro(const lambda& l);
+
+inline bool is_spread(const lambda& l);
+inline bool is_nospread(const lambda& l);
+
+inline lambda make_lambda(lambda_types type, lambda_args_types arg_type, const std::vector<Symbol>& params, const DPair& body);
+inline lambda make_lambda(lambda_types type, lambda_args_types arg_type, std::vector<Symbol>&& params, const DPair& body);
+inline lambda make_lambda(lambda_types type, lambda_args_types arg_type, const std::vector<Symbol>& params, DPair&& body);
+inline lambda make_lambda(lambda_types type, lambda_args_types arg_type, std::vector<Symbol>&& params, DPair&& body);
+std::string to_string(const lambda& fnc);
+
+
+
+
+
+
+
+
+
+inline bool is_lambda(const lambda& l)
 {
-public:
-    LambdaCell(const LambdaCell& rh) = default;
-    LambdaCell() = default;
+    return l.type == lambda_types::lambda;
+}
 
-    LambdaCell(lambda_types type, lambda_args_types args_type, lambda&& func);
-    ~LambdaCell();
+inline bool is_nlambda(const lambda& l)
+{
+    return l.type == lambda_types::nlambda;
+}
 
-    LambdaCell& operator=(const LambdaCell& rh) = default;
+inline bool is_macro(const lambda& l)
+{
+    return l.type == lambda_types::macro;
+}
 
+inline bool is_spread(const lambda& l)
+{
+    return l.arg_type == lambda_args_types::spread;
+}
 
-    bool is_lambda()const;
-    bool is_nlambda()const;
-    bool is_spread()const;
-    bool is_no_spread()const;
+inline bool is_nospread(const lambda& l)
+{
+    return l.arg_type == lambda_args_types::nospread;
+}
 
-    lambda_args_types get_args_type()const;
-    lambda_types get_lambda_type()const;
+inline lambda make_lambda(lambda_types type, lambda_args_types arg_type, const std::vector<Symbol>& params, const DPair& body)
+{
+    return { type, arg_type, params, body };
+}
 
-    const lambda& get() const;
+inline lambda make_lambda(lambda_types type, lambda_args_types arg_type, std::vector<Symbol>&& params, const DPair& body)
+{
+    return  { type, arg_type, move(params), body };
+}
 
-private:
-    lambda_types t_type = lambda_types::lambda;
-    lambda_args_types t_args_type = lambda_args_types::nospread;
-    lambda t_func;
-};
+inline lambda make_lambda(lambda_types type, lambda_args_types arg_type, const std::vector<Symbol>& params, DPair&& body)
+{
+    return  { type, arg_type, params, move(body) };
+}
 
-LambdaCell make_lambda(lambda_types type, lambda_args_types arg_type, std::vector<Symbol> params, Cell::olist body);
-std::string to_string(const LambdaCell& fnc);
+inline lambda make_lambda(lambda_types type, lambda_args_types arg_type, std::vector<Symbol>&& params, DPair&& body)
+{
+    return  { type, arg_type, move(params), move(body) };
+}

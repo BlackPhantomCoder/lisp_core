@@ -12,20 +12,33 @@ CellEnvironment::CellEnvironment(const mp& env):
 {
 }
 
-void CellEnvironment::push(mp&& rh)
+void CellEnvironment::push(frame&& rh)
 {
 	t_stack.push_back(move(rh));
+	for (auto it = begin(t_stack.back()); it != end(t_stack.back()); ++it) {
+		t_all_in_stack[it->first].push_back(&it->second);
+	}
 }
 
-void CellEnvironment::push(const mp& rh)
+void CellEnvironment::push(const frame& rh)
 {
 	t_stack.push_back(rh);
+	for (auto it = begin(t_stack.back()); it != end(t_stack.back()); ++it) {
+		t_all_in_stack[it->first].push_back(&it->second);
+	}
 }
 
 void CellEnvironment::pop()
 {
 	if (t_stack.empty()) {
 		throw "CellEnvironment::pop: empty stack";
+	}
+	for (auto it = begin(t_stack.back()); it != end(t_stack.back()); ++it) {
+		auto it2 = t_all_in_stack.find(it->first);
+		it2->second.pop_back();
+		if (it2->second.empty()) {
+			t_all_in_stack.erase(it2);
+		}
 	}
 	t_stack.pop_back();
 }
@@ -45,47 +58,37 @@ void CellEnvironment::add_global_var(const Symbol& name, const Cell& val)
 	t_glonal.emplace(name, val);
 }
 
-std::optional<std::reference_wrapper<Cell>> CellEnvironment::get_global_var(const Symbol& name)
+Cell* CellEnvironment::get_global_var(const Symbol& name)
 {
 	if (auto it = t_glonal.find(name); it != end(t_glonal)) {
-		return make_optional<std::reference_wrapper<Cell>>(std::reference_wrapper<Cell>{ it->second });
+		return &it->second;
 	}
-	return nullopt;
+	return nullptr;
 }
 
-std::optional<std::reference_wrapper<const Cell>> CellEnvironment::get_global_var(const Symbol& name) const
+const Cell* CellEnvironment::get_global_var(const Symbol& name) const
 {
 	if (auto it = t_glonal.find(name); it != end(t_glonal)) {
-		return make_optional<std::reference_wrapper<const Cell>>(std::reference_wrapper<const Cell>{ it->second });
+		return &it->second;
 	}
-	return nullopt;
+	return nullptr;
 }
 
-std::optional<std::reference_wrapper<Cell>> CellEnvironment::get(const Symbol& name)
+Cell* CellEnvironment::get(const Symbol& name)
 {
 	if (!t_stack.empty()) {
-		for (auto s_it = prev(end(t_stack)); s_it != begin(t_stack); --s_it) {
-			if (auto it = s_it->find(name); it != end(*s_it)) {
-				return make_optional<std::reference_wrapper<Cell>>(std::reference_wrapper< Cell>{ it->second });
-			}
-		}
-		if (auto it = begin(t_stack)->find(name); it != end(*begin(t_stack))) {
-			return make_optional<std::reference_wrapper<Cell>>(std::reference_wrapper< Cell>{ it->second });
+		if (auto it = t_all_in_stack.find(name); it != end(t_all_in_stack)) {
+			return it->second.back();
 		}
 	}
 	return get_global_var(name);
 }
 
-std::optional<std::reference_wrapper<const Cell>> CellEnvironment::get(const Symbol& name) const
+const Cell* CellEnvironment::get(const Symbol& name) const
 {
 	if (!t_stack.empty()) {
-		for (auto s_it = prev(end(t_stack)); s_it != begin(t_stack); --s_it) {
-			if (auto it = s_it->find(name); it != end(*s_it)) {
-				return make_optional<std::reference_wrapper<const Cell>>(std::reference_wrapper<const Cell>{ it->second });
-			}
-		}
-		if (auto it = begin(t_stack)->find(name); it != end(*begin(t_stack))) {
-			return make_optional<std::reference_wrapper<const Cell>>(std::reference_wrapper<const Cell>{ it->second });
+		if (auto it = t_all_in_stack.find(name); it != end(t_all_in_stack)) {
+			return it->second.back();
 		}
 	}
 	return get_global_var(name);
@@ -94,4 +97,5 @@ std::optional<std::reference_wrapper<const Cell>> CellEnvironment::get(const Sym
 void CellEnvironment::clear_subenvs()
 {
 	t_stack.clear();
+	t_all_in_stack.clear();
 }

@@ -1,5 +1,4 @@
 #include "Symbol.h"
-#include "profile_advanced.h"
 using namespace std;
 
 Symbol::Symbol(const Symbol& rh) :

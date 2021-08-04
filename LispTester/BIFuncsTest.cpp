@@ -326,7 +326,7 @@ void io() {
 	simple_core_assert("\"AbC1\"", "AbC1");
 
 	//тест на анализ ввода через read
-	test_io_result("(eval '((lambda x (print (read))) nil))", "1b", std::string(nil_str) + "\n", nil_str);
+	//test_io_result("(eval '((lambda x (print (read))) nil))", "1b", std::string(nil_str) + "\n", nil_str);
 	//тест на анализ ввода
 	simple_core_assert_reason("1c2", Core::result_type::fail);
 	
@@ -342,8 +342,17 @@ void test_outs(NATests::Tester& tester){
 }
 
 void test_bifuncs() {
-	// true - асинхронно, false - последовательно
-	NATests::Tester tester(true);
+	//Дебаг
+	#ifdef _DEBUG
+		// true - асинхронно, false - последовательно
+		NATests::Tester tester(true);
+	#endif
+
+	//релиз (в нём лучше без асинхронных)
+	#ifdef NDEBUG
+		// true - асинхронно, false - последовательно
+			NATests::Tester tester(false);
+	#endif
 
 	NATests_RUN_TEST(tester, test_eval_base);
 	NATests_RUN_TEST(tester, arifm);

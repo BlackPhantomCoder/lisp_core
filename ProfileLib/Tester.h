@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <string>
 #include <future>
+#include <functional>
 
 #include "test_runner.h"
 
@@ -27,8 +28,7 @@ namespace NATests {
         std::vector<test_result> execute();
     private:
         bool t_async_mode;
-        std::vector<std::future<test_result>> t_async_tests;
-        std::vector<test_result> t_non_async_tests;
+        std::vector<std::function<test_result(void)>> t_tests;
     };
 
 
@@ -51,13 +51,7 @@ namespace NATests {
             }
             return result;
         };
-        if (t_async_mode) {
-            t_async_tests.push_back(std::async(fnc));
-        }
-        else {
-            t_non_async_tests.push_back(fnc());
-        }
+        t_tests.push_back(fnc);
     }
-
 }
 

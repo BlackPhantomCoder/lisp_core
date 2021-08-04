@@ -4,18 +4,36 @@ using namespace CoreData;
 std::vector<Symbol> make_symbols(Symbols& symbols) {
     std::vector<Symbol> v;
     v.reserve(bifuncs_count + nbifuncs_count);
-    for (const auto& [name, fnc] : SymbolsProvider::bifuncs) {
+    for (const auto& [name, fnc] : SymbolsProvider::bifuncs_arr) {
         v.emplace_back(make_symbol(name, symbols));
     }
-    for (const auto& [name, fnc] : SymbolsProvider::nbifuncs) {
+    for (const auto& [name, fnc] : SymbolsProvider::nbifuncs_arr) {
         v.emplace_back(make_symbol(name, symbols));
     }
     return v;
 }
 
 
-const bifuncs_array SymbolsProvider::bifuncs = bifunc_setup();
-const nbifuncs_array SymbolsProvider::nbifuncs = nbifunc_setup();
+std::unordered_map<Symbol, CoreData::bifunc> make_bifuncs(Symbols& symbols) {
+    std::unordered_map<Symbol, CoreData::bifunc> v;
+    for (const auto& [name, fnc] : SymbolsProvider::bifuncs_arr) {
+        v.emplace(make_symbol(name, symbols), fnc);
+    }
+    return v;
+}
+
+std::unordered_map<Symbol, CoreData::bifunc> make_nbifuncs(Symbols& symbols) {
+    std::unordered_map<Symbol, CoreData::bifunc> v;
+    for (const auto& [name, fnc] : SymbolsProvider::nbifuncs_arr) {
+        v.emplace(make_symbol(name, symbols), fnc);
+    }
+    return v;
+}
+
+
+
+const bifuncs_array SymbolsProvider::bifuncs_arr = bifunc_setup();
+const nbifuncs_array SymbolsProvider::nbifuncs_arr = nbifunc_setup();
 
 SymbolsProvider::SymbolsProvider():
     nil_symbol(make_symbol(nil_str, symbols)),
@@ -27,7 +45,9 @@ SymbolsProvider::SymbolsProvider():
 
     nil_list(make_symbol_cell(nil_str, symbols)),
     nil(make_list({})),
-    T(make_symbol_cell(T_str, symbols)),
-    t_some_symbols(make_symbols(symbols))
+    T(make_symbol_cell(T_str, symbols))
+    //t_some_symbols(make_symbols(symbols))
 {
+    bifuncs = make_bifuncs(symbols);
+    nbifuncs = make_nbifuncs(symbols);
 }

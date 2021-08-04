@@ -138,6 +138,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="ArgsOnStackEvaler.h" />
     <ClInclude Include="ArgsStack.h" />
     <ClInclude Include="Atom.h" />
     <ClInclude Include="BIFuncEvaler.h" />
@@ -152,6 +153,7 @@
     <ClInclude Include="CoreData.h" />
     <ClInclude Include="LambdaCell.h" />
     <ClInclude Include="LambdaEvaler.h" />
+    <ClInclude Include="LambdaStorage.h" />
     <ClInclude Include="Lexer.h" />
     <ClInclude Include="Mutexed.h" />
     <ClInclude Include="Number.h" />
@@ -179,6 +181,7 @@
     <ClCompile Include="Funcs.cpp" />
     <ClCompile Include="LambdaCell.cpp" />
     <ClCompile Include="LambdaEvaler.cpp" />
+    <ClCompile Include="LambdaStorage.cpp" />
     <ClCompile Include="Lexer.cpp" />
     <ClCompile Include="Number.cpp" />
     <ClCompile Include="PredLispFuncs.cpp" />

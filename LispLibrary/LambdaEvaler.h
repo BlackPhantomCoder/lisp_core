@@ -1,33 +1,26 @@
 #pragma once
 #include "LambdaCell.h"
+#include "CellEnvironment.h"
 #include "Cell.h"
 #include <stack>
-#include <unordered_map>
+#include "ArgsOnStackEvaler.h"
+
+struct lambda_frame {
+	const lambda& fnc;
+	DPair::const_iterator beg_it;
+	DPair::const_iterator end_it;
+	bool forse_nospread_args;
+	CellEnvironment::frame buf;
+};
 
 class CoreEnvironment;
-class LambdaEvaler
+class LambdaEvaler : public ArgsOnStackEvaler< lambda_frame, Cell>
 {
 public:
 	LambdaEvaler(CoreEnvironment* env);
-
-	void push_lambda(
-		const LambdaCell& fnc, Cell::olist::const_iterator beg_it, Cell::olist::const_iterator end_it, bool forse_eval_args = false
-	);
-	Cell pop_eval();
+	virtual Cell pop_eval() override;
 
 	void clear();
 private:
-	void eval_args();
-private:
-	CoreEnvironment* t_env;
-	struct frame {
-		const lambda& fnc;
-		lambda_args_types arg_type;
-		Cell::olist::const_iterator beg_it;
-		Cell::olist::const_iterator end_it;
-		bool eval_args;
-		std::unordered_map<Symbol, Cell> buf;
-	} ;
-	std::stack< frame> t_frames;
+	inline void eval_args();
 };
-

@@ -4,15 +4,8 @@
 using namespace std;
 
 LambdaEvaler::LambdaEvaler(CoreEnvironment* env):
-    t_env(env)
+    ArgsOnStackEvaler(env)
 {
-}
-
-void LambdaEvaler::push_lambda(
-    const LambdaCell& fnc, Cell::olist::const_iterator beg_it, Cell::olist::const_iterator end_it, bool forse_eval_args
-) 
-{
-    t_frames.push({ fnc.get(), fnc.get_args_type(), beg_it , end_it ,forse_eval_args });
 }
 
 Cell LambdaEvaler::pop_eval()
@@ -45,51 +38,43 @@ void LambdaEvaler::clear()
 	}
 }
 
-void LambdaEvaler::eval_args()
+inline void LambdaEvaler::eval_args()
 {
-    Cell::olist::const_iterator it = t_frames.top().beg_it;
-    if (t_frames.top().arg_type == lambda_args_types::spread) {
-        if (t_frames.top().eval_args) {
+    //DPair::const_iterator it = t_frames.top().beg_it;
+    if (is_spread(t_frames.top().fnc)) {
+        if (!t_frames.top().forse_nospread_args) {
             for (auto arg_it = begin(t_frames.top().fnc.params); arg_it != end(t_frames.top().fnc.params); ++arg_it) {
-                if (it == t_frames.top().end_it) {
-                    t_frames.top().buf.emplace(*arg_it, t_env->t_symbols.nil);
+                if (t_frames.top().beg_it == t_frames.top().end_it) {
+                    t_frames.top().buf.emplace_back(*arg_it, t_env->t_symbols.nil);
                 }
                 else {
-                    t_frames.top().buf.emplace(*arg_it, t_env->eval_quote(*it));
-                    ++it;
+                    t_frames.top().buf.emplace_back(*arg_it, t_env->eval_quote(*t_frames.top().beg_it));
+                    ++t_frames.top().beg_it;
                 }
             }
-            for (; it != t_frames.top().end_it; ++it) {
-                t_env->eval_quote(*it);
+            for (; t_frames.top().beg_it != t_frames.top().end_it; ++t_frames.top().beg_it) {
+                t_env->eval_quote(*t_frames.top().beg_it);
             }
         }
         else {
             for (auto arg_it = begin(t_frames.top().fnc.params); arg_it != end(t_frames.top().fnc.params); ++arg_it) {
-                if (it == t_frames.top().end_it) {
-                    t_frames.top().buf.emplace(*arg_it, t_env->t_symbols.nil);
+                if (t_frames.top().beg_it == t_frames.top().end_it) {
+                    t_frames.top().buf.emplace_back(*arg_it, t_env->t_symbols.nil);
                 }
                 else {
-                    t_frames.top().buf.emplace(*arg_it, *it);
-                    ++it;
+                    t_frames.top().buf.emplace_back(*arg_it, *t_frames.top().beg_it);
+                    ++t_frames.top().beg_it;
                 }
             }
         }
     }
-    else if(t_frames.top().arg_type == lambda_args_types::nospread){
+    else if(is_spread(t_frames.top().fnc)){
         if (t_frames.top().fnc.params.empty()) throw "LambdaEvaler::eval_args: nospread without arg";
-        Cell::olist params_list;
-        if (t_frames.top().eval_args) {
-            for (; it != t_frames.top().end_it; ++it) {
-                params_list.emplace_back(t_env->eval_quote(*it));
-            }
-            t_frames.top().buf.emplace(t_frames.top().fnc.params[0], make_list(move(params_list)));
+        DPair params_list;
+        for (; t_frames.top().beg_it != t_frames.top().end_it; ++t_frames.top().beg_it) {
+            params_list.emplace_back(*t_frames.top().beg_it);
         }
-        else {
-            for (; it != t_frames.top().end_it; ++it) {
-                params_list.emplace_back(*it);
-            }
-            t_frames.top().buf.emplace(t_frames.top().fnc.params[0], make_list(move(params_list)));
-        }
+        t_frames.top().buf.emplace_back(t_frames.top().fnc.params[0], make_list(move(params_list)));
     }
     else {
         throw "LambdaEvaler::eval_args: unknown args_type";

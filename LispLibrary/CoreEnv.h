@@ -17,6 +17,7 @@
 #include "SymbolsProvider.h"
 #include "Lexer.h"
 #include "ArgsStack.h"
+#include "LambdaStorage.h"
 
 #define eval_direct_bifunc(f, b, e)\
     (\
@@ -34,12 +35,42 @@
     env_ptr->t_direct_call_buf\
     )
 
+//#define func1_arg_evaer(name, arg_type, result_type)\
+//struct name##_evaler_frame{\
+//	arg_type arg;\
+//};\
+//	class name##_evaler : public ArgsOnStackEvaler< name##_evaler_frame, result_type>\
+//{\
+//public:\
+//	name##_evaler(CoreEnvironment* env) : \
+//		ArgsOnStackEvaler(env)\
+//	{\
+//	}\
+//	virtual result_type pop_eval() override;\
+//};\
+//friend name##_evaler;\
+//name##_evaler t_##name##_evaler\
+
 class  CoreEnvironment {
 	friend CoreData::bifuncs_array CoreData::bifunc_setup();
 	friend CoreData::nbifuncs_array CoreData::nbifunc_setup();
 
 	friend class LambdaEvaler;
 	friend class BifuncEvaler;
+	//func1_arg_evaer(eval_atom, const Atom&, Cell);
+
+	friend __forceinline Cell eval_atom(CoreEnvironment& env, const Atom& atom);
+	friend __forceinline Cell eval_symbol(CoreEnvironment& env, const Symbol& symbol);
+	friend __forceinline std::optional<Cell> eval_implicit_cond(CoreEnvironment& env, const Cell& atom);
+	friend __forceinline void find_bifunc(CoreEnvironment& env, const Symbol& str);
+	friend __forceinline void set_value(CoreEnvironment& env, const Cell& name, const Cell& val);
+	friend __forceinline Cell eval_fnc(
+		CoreEnvironment& env, 
+		const Cell& fnc,
+		DPair::const_iterator args_beg_it,
+		DPair::const_iterator args_end_it,
+		bool forse_nospread_args
+	);
 public:
 	CoreEnvironment(CoreEnvStreamsProvider& streams);
 	~CoreEnvironment() = default;
@@ -47,7 +78,7 @@ public:
 	std::vector<Cell> execute_all(CoreInputStreamInt& stream, const IMutexed<bool>& stop_flag);
 	Cell execute_one(CoreInputStreamInt& stream, const IMutexed<bool>& stop_flag);
 
-	const std::unordered_map < Symbol, LambdaCell>& lambdas() const;
+	//const std::unordered_map < Symbol, LambdaCell>& lambdas() const;
 	const CellEnvironment::mp& vars() const;
 private:
 	enum class find_bifunc_result {bi, nbi, null};
@@ -93,17 +124,10 @@ private:
 	Cell nbifunc_setq();
 	Cell nbifunc_loop();
 
-
-	Cell eval_quote(const Cell& atom);
-	Cell eval_atom(const Cell& atom);
-	std::optional<Cell> eval_implicit_cond(const Cell& atom);
-	std::pair<find_bifunc_result, CoreData::bifunc> find_bifunc(const Symbol& str);
-
-	std::vector<Cell> eval_args(Cell::olist::const_iterator beg_it, Cell::olist::const_iterator end_it);
-
+	Cell eval_quote(const Cell& arg);
 private:
 	SymbolsProvider t_symbols;
-	std::unordered_map < Symbol, LambdaCell> t_lambdas;
+	LambdaStorage t_lambdas;
 	ArgsStack t_args;
 	CellEnvironment t_envs;
 	std::optional<std::reference_wrapper<const IMutexed<bool>>> t_stop_flag;
@@ -115,4 +139,5 @@ private:
 	
 	//optimazed buffer for direct call
 	Cell t_direct_call_buf;
+	std::pair<bool, std::pair<bifunc_type, CoreData::bifunc>> t_findbifunc_buf;
 };

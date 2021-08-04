@@ -2,6 +2,7 @@
 #include "Cell.h"
 #include "CoreData.h"
 #include <vector>
+#include <unordered_map>
 
 class SymbolsProvider {
 public:
@@ -18,13 +19,14 @@ public:
 	const Cell nil;
 	const Cell T;
 
-	static const CoreData::bifuncs_array bifuncs;
-	static const CoreData::nbifuncs_array nbifuncs;
-
+	static const CoreData::bifuncs_array bifuncs_arr;
+	static const CoreData::nbifuncs_array nbifuncs_arr;
+	std::unordered_map<Symbol, CoreData::bifunc> bifuncs;
+	std::unordered_map<Symbol, CoreData::bifunc> nbifuncs;
 public:
 	SymbolsProvider();
 
 private:
-	std::vector<Symbol> t_some_symbols;
+	//std::vector<Symbol> t_some_symbols;
 };
 

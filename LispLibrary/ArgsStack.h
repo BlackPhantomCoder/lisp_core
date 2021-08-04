@@ -5,11 +5,13 @@
 class ArgsStack {
 public:
 	ArgsStack() = default;
-	void push(Cell::olist::const_iterator begin, Cell::olist::const_iterator end);
+	void push(DPair::const_iterator begin, DPair::const_iterator end);
 	void pop();
-	Cell::olist::const_iterator begin();
-	Cell::olist::const_iterator end();
+	DPair::const_iterator begin();
+	DPair::const_iterator end();
 	size_t size() const;
 	void clear();
-	std::stack<std::pair<Cell::olist::const_iterator, Cell::olist::const_iterator>> t_args;
+private:
+	using stack_type = std::pair<DPair::const_iterator, DPair::const_iterator>;
+	std::stack<stack_type, std::vector<stack_type>> t_args;
 };

@@ -18,7 +18,7 @@ using namespace CoreData;
 #include "STDMutexed.h"
 
 void cin_execute_kostil_repl(CoreInputStreamInt& is) {
-    Core core = make_core_w_predfuncs(cin, stream_read_mode::new_string,  cout);
+    auto core = make_core_w_predfuncs(cin, stream_read_mode::new_string, cout);
     if (is.ready()) 
     {
         core.execute_all(is);
@@ -45,35 +45,11 @@ void cin_execute_kostil_repl(CoreInputStreamInt& is) {
 
 int main()
 {
-
     //запуск тестов (в эту функцию писать все запуски тестов)
     run_all_tests();
-
-    //stringstream s(
-    //    "(defun fib3 (n)"
-    //        "(cond"
-    //        "((<= n 0) nil)"
-    //        "((= n 1) 1)"
-    //        "((= n 2) 2)"
-    //        "(T (fib3_rec 1 2 (- n 2)))"
-    //        ")"
-    //    ")"
-    //    "(defun fib3_rec (one two n)"
-    //        "(if (= n 0)"
-    //        "two"
-    //        "(fib3_rec two (+ one two) (- n 1))"
-    //        ")"
-    //    ")"
-    //    "(defun fib (n) (cond ((= n 1) 1) ((= n 2) 2) (T (+ (fib(- n 2)) (fib(- n 1))))))"
-    //);
-
-
     
     //запуск репла с cin + предзагрузка из потока (в данном случае - файл) 
     ifstream f("programs/1.lsp");
     auto cf = StdCoreInputStream(f, stream_read_mode::s_expression);
     cin_execute_kostil_repl(cf);
-
-    //запуск репла с cin + предзагрузка из потока (в данном случае - stringstream) 
-    //cin_execute_kostil_repl(s);
 }
