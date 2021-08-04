@@ -332,6 +332,51 @@ void io() {
 	
 }
 
+void dotpairs() {
+	/*simple_core_assert("'(a . b)", "(A . B)");
+	simple_core_assert("'(a.b)", "(A.B)");
+	simple_core_assert("(car '(a . b))", "A");
+	simple_core_assert("(cdr '(a . b))", "B");
+	simple_core_assert("(cdr '(c a . b))", "(A . B)");
+	simple_core_assert("(car '(a.b))", "A.B");
+
+	simple_core_assert("'(a . nil)", "(A)");
+	simple_core_assert("'(nil . b)", "(NIL . B)");
+	simple_core_assert("'(nil . nil)", "(NIL)");
+	simple_core_assert_reason("'(1 2 3 . 4)", Core::result_type::success);
+	simple_core_assert_reason("'(1 2 . 3 4)", Core::result_type::fail);
+
+	simple_core_assert("'(1 2 (3 . 4) 5 . 6)", "(1 2 (3 . 4) 5 . 6)");
+	simple_core_assert("(last '(1 2 (3 . 4) 5 . 6))", "(5 . 6)");
+	simple_core_assert("(caddr '(1 2 (3 . 4) 5 . 6))", "(3 . 4)");
+	simple_core_assert("(length '(1 2 (3 . 4) 5 . 6))", "4");
+	simple_core_assert("(length '(1 . 2))", "1");
+
+	simple_core_assert("(cons a b)", "(A . B)");
+	simple_core_assert("(cons c (cons a b))", "(C A . B)");
+	simple_core_assert("(car (cons a b))", "A");
+	simple_core_assert("(cdr (cons a b))", "B");
+	simple_core_assert("(cons '(a . b) c)", "((A . B) . C)");
+	simple_core_assert("(cons a (list b))", "(A B)");
+	simple_core_assert("(cons (list a) b)", "((A) . B)");
+	simple_core_assert("(append '(1 . 2) '(3 . 4))", "(1 3 . 4)");  //внезапно
+
+	simple_core_assert("(listp '(1 2 . 3))", T_str);
+	simple_core_assert("(listp '(2 . 3))", T_str);
+	simple_core_assert("(atom '(1 2 . 3))", nil_str);
+	simple_core_assert("(null '(1 2 . 3))", nil_str);
+	simple_core_assert("(null '(nil . 3))", nil_str);
+	simple_core_assert("(null '(1 2 . nil))", nil_str);
+	simple_core_assert("(null '(nil . nil))", nil_str);
+	simple_core_assert("(equal '(1 2 . nil) '(1 2))", T_str);
+	simple_core_assert("(eq '(1 2 . nil) '(1 2))", nil_str);
+
+	simple_core_assert("(progn (setq b 2) (setq a '(b . c)) (car a))", "B");
+	simple_core_assert("(progn (setq b 2) (setq a (cons b c)) (car a))", "2");
+	test_output("(print '(1 . 2))", "(1 . 2)\n");
+	simple_core_assert("(print '(1 . 2))", "(1 . 2)");*/
+}
+
 void test_outs(NATests::Tester& tester){
 	bool fail = false;
 	for (const auto& result : tester.execute()) {
@@ -354,6 +399,7 @@ void test_bifuncs() {
 	NATests_RUN_TEST(tester, calcfun);
 	NATests_RUN_TEST(tester, control_calc);
 	NATests_RUN_TEST(tester, io);
+	NATests_RUN_TEST(tester, dotpairs);
 
 	test_outs(tester);
 }
