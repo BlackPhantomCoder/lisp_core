@@ -67,9 +67,13 @@ class  CoreEnvironment {
 	friend __forceinline Cell eval_fnc(
 		CoreEnvironment& env, 
 		const Cell& fnc,
-		DPair::const_iterator args_beg_it,
-		DPair::const_iterator args_end_it,
+		std::vector<Cell>::const_iterator args_beg_it,
+		std::vector<Cell>::const_iterator args_end_it,
 		bool forse_nospread_args
+	);
+	friend __forceinline lambda get_lambda_form(
+		CoreEnvironment& env,
+		const DotPair& lst
 	);
 public:
 	CoreEnvironment(CoreEnvStreamsProvider& streams);
@@ -116,6 +120,8 @@ private:
 	Cell bifunc_eval();
 	Cell bifunc_integerp();
 	Cell bifunc_oblist();
+	Cell bifunc_rplaca();
+	Cell bifunc_rplacd();
 
 	Cell nbifunc_quote();
 	Cell nbifunc_defun();

@@ -31,6 +31,9 @@
     <Filter Include="Файлы заголовков\Ints">
       <UniqueIdentifier>{2bb36f8e-60d1-452d-838e-612ccda78359}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Файлы заголовков\Cell\DPair">
+      <UniqueIdentifier>{f6471715-e98a-4f7e-9ebf-c5471ab7df58}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cell.h">
@@ -112,7 +115,13 @@
       <Filter>Файлы заголовков\lambda</Filter>
     </ClInclude>
     <ClInclude Include="ArgsOnStackEvaler.h">
-      <Filter>Файлы заголовков</Filter>
+      <Filter>Файлы заголовков\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="DotPair.h">
+      <Filter>Файлы заголовков\Cell\DPair</Filter>
+    </ClInclude>
+    <ClInclude Include="CarCdrIterator.h">
+      <Filter>Файлы заголовков\Cell\DPair</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -186,6 +195,12 @@
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="LambdaStorage.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="DotPair.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="CarCdrIterator.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>

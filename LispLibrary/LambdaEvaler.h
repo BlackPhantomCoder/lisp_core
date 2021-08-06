@@ -3,13 +3,14 @@
 #include "CellEnvironment.h"
 #include "Cell.h"
 #include <stack>
+#include <vector>
 #include "ArgsOnStackEvaler.h"
 
 struct lambda_frame {
 	const lambda& fnc;
-	DPair::const_iterator beg_it;
-	DPair::const_iterator end_it;
-	bool forse_nospread_args;
+	std::vector<Cell>::const_iterator beg_it;
+	std::vector<Cell>::const_iterator end_it;
+	bool forse_noeval_args;
 	CellEnvironment::frame buf;
 };
 

@@ -20,7 +20,7 @@ namespace CoreData {
 	const static char* lambda_str = ("LAMBDA");
 	const static char* nlambda_str = ("NLAMBDA");
 
-	const static auto bifuncs_count = 32;
+	const static auto bifuncs_count = 34;
 	const static auto nbifuncs_count = 6;
 
 	typedef Cell(CoreEnvironment::* bifunc) ();

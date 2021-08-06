@@ -69,15 +69,15 @@ std::pair<Core::result_type, std::vector<std::string>> Core::execute_all(CoreInp
     }
     bool success = true;
     std::vector<std::string> result;
-    try
-    {
+    //try
+    //{
         std::vector<Cell> res_buf = t_env.execute_all(input_s, *t_stop);
         result.reserve(res_buf.size());
         for (const auto& c : res_buf) {
             result.emplace_back(to_string(c));
         }
-    }
-    catch (const char* str)
+    //}
+    /*catch (const char* str)
     {
         success = false;
         result = { str };
@@ -95,7 +95,7 @@ std::pair<Core::result_type, std::vector<std::string>> Core::execute_all(CoreInp
     {
         success = false;
         result = { "unknown error (wrong catch)" };
-    }
+    }*/
     if (!success) return { Core::result_type::fail, std::move(result) };
     return{ Core::result_type::success, std::move(result) };
 }
@@ -132,11 +132,11 @@ std::pair<Core::result_type, std::string> Core::execute_one(CoreInputStreamInt& 
     {
         return { Core::result_type::stopped, "" };
     }
-    catch (...)
+  /*  catch (...)
     {
         success = false;
         result = "unknown error (wrong catch)";
-    }
+    }*/
     if (!success) return { Core::result_type::fail, std::move(result) };
     return{ Core::result_type::success, std::move(result) };
 }

@@ -1,27 +1,27 @@
 #include "ArgsStack.h"
 
-void ArgsStack::push(DPair::const_iterator begin, DPair::const_iterator end)
+void ArgsStack::push(std::vector<Cell>::const_iterator begin, std::vector<Cell>::const_iterator end)
 {
 	t_args.push({ begin, end });
 }
 
 void ArgsStack::pop() {
-	if (t_args.empty()) throw "args stack empty";
+	if (empty(t_args)) throw "args stack empty";
 	t_args.pop();
 }
 
-DPair::const_iterator ArgsStack::begin() {
-	if (t_args.empty()) throw "args stack empty";
+std::vector<Cell>::const_iterator ArgsStack::begin() {
+	if (empty(t_args)) throw "args stack empty";
 	return t_args.top().first;
 }
 
-DPair::const_iterator ArgsStack::end() {
-	if (t_args.empty()) throw "args stack empty";
+std::vector<Cell>::const_iterator ArgsStack::end() {
+	if (empty(t_args)) throw "args stack empty";
 	return t_args.top().second;
 }
 
 size_t ArgsStack::size() const {
-	if (t_args.empty()) throw "args stack empty";
+	if (empty(t_args)) throw "args stack empty";
 	return std::distance(t_args.top().first, t_args.top().second);
 }
 

@@ -333,7 +333,7 @@ void io() {
 }
 
 void dotpairs() {
-	/*simple_core_assert("'(a . b)", "(A . B)");
+	simple_core_assert("'(a . b)", "(A . B)");
 	simple_core_assert("'(a.b)", "(A.B)");
 	simple_core_assert("(car '(a . b))", "A");
 	simple_core_assert("(cdr '(a . b))", "B");
@@ -359,7 +359,7 @@ void dotpairs() {
 	simple_core_assert("(cons '(a . b) c)", "((A . B) . C)");
 	simple_core_assert("(cons a (list b))", "(A B)");
 	simple_core_assert("(cons (list a) b)", "((A) . B)");
-	simple_core_assert("(append '(1 . 2) '(3 . 4))", "(1 3 . 4)");  //внезапно
+	simple_core_assert("(append '(1 . 2) '(3 . 4))", "(1 3 . 4)");
 
 	simple_core_assert("(listp '(1 2 . 3))", T_str);
 	simple_core_assert("(listp '(2 . 3))", T_str);
@@ -374,7 +374,18 @@ void dotpairs() {
 	simple_core_assert("(progn (setq b 2) (setq a '(b . c)) (car a))", "B");
 	simple_core_assert("(progn (setq b 2) (setq a (cons b c)) (car a))", "2");
 	test_output("(print '(1 . 2))", "(1 . 2)\n");
-	simple_core_assert("(print '(1 . 2))", "(1 . 2)");*/
+	simple_core_assert("(print '(1 . 2))", "(1 . 2)");
+
+
+	simple_core_assert(
+		"(progn (setq foo '(a b c)) (rplaca foo d) foo)",
+		"(D B C)"
+	);
+
+	simple_core_assert(
+		"(progn (setq foo '(a b c)) (rplacd foo d) foo)",
+		"(A . D)"
+	);
 }
 
 void test_outs(NATests::Tester& tester){
@@ -390,7 +401,7 @@ void test_bifuncs() {
 	//Дебаг
 	#ifdef _DEBUG
 		// true - асинхронно, false - последовательно
-		NATests::Tester tester(true);
+		NATests::Tester tester(false);
 	#endif
 
 	//релиз (в нём лучше без асинхронных)

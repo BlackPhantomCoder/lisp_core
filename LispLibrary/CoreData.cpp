@@ -43,6 +43,9 @@ bifuncs_array CoreData::bifunc_setup()
         make_pair("APPEND", &CoreEnvironment::bifunc_append),
         make_pair("INTEGERP", &CoreEnvironment::bifunc_integerp),
         make_pair("OBLIST", &CoreEnvironment::bifunc_oblist),
+        make_pair("RPLACA", &CoreEnvironment::bifunc_rplaca),
+        make_pair("RPLACD", &CoreEnvironment::bifunc_rplacd),
+        
     };
 
     std::sort(

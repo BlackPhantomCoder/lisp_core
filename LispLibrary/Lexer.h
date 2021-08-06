@@ -15,7 +15,7 @@ enum class tokens {
 	//BackQuote,		// `
 	//Comma,			// ,
 	//CommercialAt,   // @
-	//Dot,			// .
+	Dot,			// .
 	//Semicolon,		// ;
 	//BackSlash,		/* \  */
 	//VerticalLine,	// |
@@ -74,6 +74,10 @@ private:
 	bool t_is_skip_symbol(char symbol) const;
 	bool t_is_ignore_symbol(char symbol) const;
 private:
+	enum class check_next_reason {skip_s, break_s, ignore_s, empty_stream, another_s};
+private:
+	check_next_reason t_check_next(bool skip_ignorse);
+private:
 	EndlessStreamHelper t_base;
 	CoreInputStreamInt& t_stream;
 	bool t_skip_comments;
@@ -105,7 +109,7 @@ class Syntaxer
 {
 	friend class SExprStream;
 public:
-	Syntaxer(Symbols& symbols, bool skip_comments = true, bool upcase_mode = true);
+	Syntaxer(SymbolsProvider& symbols, bool skip_comments = true, bool upcase_mode = true);
 
 	void set_skip_comments_mode(bool mode);
 	bool skip_comments_mode() const;
@@ -124,7 +128,7 @@ private:
 	std::pair<read_reason, Cell> gen_cell(TokenStream& tokens);
 	std::pair<read_reason, Cell> gen_cell(tokens token, std::string&& val , TokenStream& tokens);
 private:
-	std::reference_wrapper<Symbols> t_symbols;
+	std::reference_wrapper<SymbolsProvider> t_symbols;
 	bool t_skip_comments;
 	bool t_upcase_mode;
 };

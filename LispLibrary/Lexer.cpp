@@ -8,7 +8,7 @@
 #include <sstream>
 using namespace std;
 
-Syntaxer::Syntaxer(Symbols& symbols, bool skip_comments, bool upcase_mode):
+Syntaxer::Syntaxer(SymbolsProvider& symbols, bool skip_comments, bool upcase_mode):
     t_symbols(symbols),
     t_skip_comments(skip_comments),
     t_upcase_mode(upcase_mode)
@@ -47,15 +47,14 @@ std::pair < read_reason, char> Syntaxer::read_char(CoreInputStreamInt& stream)
 std::pair<read_reason, Cell>  Syntaxer::read_sexpr(CoreInputStreamInt& stream)
 {
     if (!stream.ready()) {
-        return { read_reason::empty_input,  make_symbol_cell(CoreData::nil_str, t_symbols) };
+        return { read_reason::empty_input,  t_symbols.get().nil };
     }
     try {
-        //EndlessStream es(stream);
         auto s = TokenStream(t_skip_comments, stream);
         return gen_cell(s);
     }
     catch (const throw_token_stream_empty&) {
-        return { read_reason::empty_input,  make_symbol_cell(CoreData::nil_str, t_symbols) };
+        return { read_reason::empty_input,  t_symbols.get().nil };
     }
 }
 
@@ -112,15 +111,19 @@ inline bool isdig_its(const char* beg, const char* end)
 
 inline bool is_integer_number_its(const char* beg, const char* end)
 {
-    return
-        (
-            (beg != end)
-            &&
-            ((isdig(*beg)) && (((beg + 1) == end) || ((beg + 1) != end) && isdig_its((beg + 1), end)))
-            ||
-            ((*beg == '-' || *beg == '+') && (((beg + 1) != end) && isdig_its((beg + 1), end)))
-        );
-             
+    if (beg == end) return false;
+    if((isdig(*beg)) && (((beg + 1) == end) || ((beg + 1) != end) && isdig_its((beg + 1), end))) return true;
+    if((*beg == '-' || *beg == '+') && (((beg + 1) != end) && isdig_its((beg + 1), end))) return true;
+    return false;
+}
+
+inline bool is_half_integer_num(const char* str) {
+    const char* beg = str; const char* end = str + strlen(str);
+    if (beg == end) return false;
+    if (auto it = find(beg, end, '.');  it != end) {
+        return is_integer_number_its(beg, it) && (it + 1 == end);
+    }
+    return false;
 }
 
 inline bool is_integer_number(const char* str)
@@ -131,7 +134,7 @@ inline bool is_integer_number(const char* str)
 bool is_real_number_its(const char* beg, const char* end)
 {
     if (auto it = find(beg, end, '.');  it != end) {
-        return is_integer_number_its(beg, it) && is_integer_number_its(it + 1, end);
+        return is_integer_number_its(beg, it) && (is_integer_number_its(it + 1, end));
     }
     return false;
 }
@@ -152,22 +155,42 @@ std::pair<read_reason, Cell> Syntaxer::gen_cell(tokens token, std::string&& val,
     if (token == tokens::Quote) {
         auto  result_pair = gen_cell(tokens);
         if (result_pair.first != read_reason::success) return result_pair;
-        return { read_reason::success, make_list({ make_symbol_cell("QUOTE", t_symbols), move(result_pair.second) }) };
+        return { 
+            read_reason::success,
+            make_list_cell({ make_symbol_cell("QUOTE", t_symbols.get().symbols), move(result_pair.second) }, t_symbols.get()),
+        };
     }
 
     if (token == tokens::OpenBracket) {
-        std::list<Cell> lst;
+        std::vector<Cell> lst;
         for (;;) {
             auto [next_token, next_val] = tokens.read();
             if (next_token == tokens::CloseBracket) break;
+            if (next_token == tokens::Dot) {
+                if(lst.empty()) return { read_reason::wrong_input, t_symbols.get().nil };
+                auto [s_pair_token, s_pair_val] = tokens.read();
+                auto  s_pair = gen_cell(s_pair_token, move(s_pair_val), tokens);
+                if (s_pair.first != read_reason::success) return s_pair;
+
+                Cell a = cons_cell(lst.back(), s_pair.second, t_symbols);
+                //cout << a << endl;
+                for (auto it = next(rbegin(lst)); it != rend(lst); ++it) {
+                    a = cons_cell(*it, a, t_symbols);
+                    //cout << a << endl;
+                }
+
+                auto [close_token, close_val] = tokens.read();
+                if (close_token != tokens::CloseBracket) return { read_reason::wrong_input, t_symbols.get().nil };
+                else return { read_reason::success, move(a) };
+            }
             auto  result_pair = gen_cell(next_token, move(next_val), tokens);
             if (result_pair.first != read_reason::success) return result_pair;
             lst.push_back(move(result_pair.second));
         }
-        return { read_reason::success, make_list(std::move(lst)) };
+        return { read_reason::success, make_list_cell(begin(lst), end(lst), t_symbols) };
     }
     else if (token == tokens::QExpr) {
-        return   { read_reason::success , make_symbol_cell(move(val), t_symbols) };
+        return   { read_reason::success , make_symbol_cell(move(val), t_symbols.get().symbols) };
     }
     else if (token == tokens::Expr) {
         if (is_real_number(val.c_str())) {
@@ -188,12 +211,17 @@ std::pair<read_reason, Cell> Syntaxer::gen_cell(tokens token, std::string&& val,
             if (val[0] == '+') val.erase(begin(val));
             return { read_reason::success,make_number(Number(BigInt(move(val)))) };
         }
+        else if (is_half_integer_num(val.c_str())) {
+            if (val[0] == '+') val.erase(begin(val));
+            val.erase(val.find('.'), val.npos);
+            return { read_reason::success,make_number(Number(BigInt(move(val)))) };
+        }
         if (val.empty() || (isdig(val[0]))) {
-            return { read_reason::wrong_input, make_symbol_cell(CoreData::nil_str, t_symbols) };
+            return { read_reason::wrong_input, t_symbols.get().nil };
         }
         process_symbol(val);
-        if (val == CoreData::nil_str) return { read_reason::success , make_list({}) };
-        return   { read_reason::success , make_symbol_cell(move(val), t_symbols) };
+        if (val == CoreData::nil_str) return { read_reason::success , t_symbols.get().nil };
+        return   { read_reason::success , make_symbol_cell(move(val), t_symbols.get().symbols) };
     }
     else {
         throw "unknown token";
@@ -236,7 +264,46 @@ std::pair<tokens, std::string> TokenStream::read()
             break;
         }
     }
-    if (exp.empty()) {
+    if (t_base.get() == '.') {
+        if (!exp.empty()) {
+            auto next = t_check_next(true);
+            if (
+                next == check_next_reason::empty_stream
+                ||
+                next == check_next_reason::skip_s
+                ||
+                next == check_next_reason::break_s
+            ) 
+            {
+                return { tokens::Expr, exp + '.' };
+            }
+            auto [token, result] = read();
+            if (token != tokens::Expr) {
+                throw "input_error";
+            }
+            else {
+                exp += '.';
+                exp += result;
+                return { tokens::Expr, exp };
+            }
+        }
+        else {
+            auto next = t_check_next(true);
+            if (next == check_next_reason::skip_s) {
+                return { tokens::Dot, "" };
+            }
+            if (
+                next == check_next_reason::empty_stream
+                ||
+                next == check_next_reason::break_s
+                )
+            {
+                return { tokens::Expr, "." };
+            }
+            return read();
+        }
+    }
+    else if (exp.empty()) {
         return t_read_break_symbol();
     }
     else {
@@ -306,13 +373,16 @@ std::pair<tokens, std::string> TokenStream::t_read_break_symbol()
         }
         return read();
     }
+    else if (t_base.get() == '.') {
+        return { tokens::Dot, "" };
+    }
     else {
         throw "TokenStream: internal error unknow break symbol";
     }
 }
 
 const std::unordered_set<char> skip_symbols = { ' ', '\t'};
-const std::unordered_set<char> break_sybols = { '"', '(', ')', '\'', '|', ';'};
+const std::unordered_set<char> break_sybols = { '"', '(', ')', '\'', '|', ';', '.'};
 
 bool TokenStream::t_is_break_symbol(char symbol) const {
     return break_sybols.find(symbol) != end(break_sybols);
@@ -331,6 +401,27 @@ bool TokenStream::t_is_ignore_symbol(char symbol) const
         return t_stream.get_mode() == CoreData::stream_read_mode::new_string;
     }
     return false;
+}
+
+TokenStream::check_next_reason TokenStream::t_check_next(bool skip_ignorse)
+{
+    if (!t_base) return check_next_reason::empty_stream;
+    t_base.next();
+    char symbol = t_base.get();
+    t_base.unread_last();
+    if (t_is_skip_symbol(symbol)) return check_next_reason::skip_s;
+    if (t_is_break_symbol(symbol)) return check_next_reason::break_s;
+    if (t_is_ignore_symbol(symbol) && skip_ignorse) {
+        while (t_base && t_is_ignore_symbol(symbol)) {
+            t_base.next();
+            symbol = t_base.get();
+        }
+        if(!t_base)return check_next_reason::empty_stream;
+        t_base.unread_last();
+        return t_check_next(skip_ignorse);
+    }
+    else if (t_is_ignore_symbol(symbol)) return check_next_reason::ignore_s;
+    return check_next_reason::another_s;
 }
 
 EndlessStream::EndlessStream(CoreInputStreamInt& stream):
@@ -421,7 +512,12 @@ SExprStream::SExprStream(Syntaxer& owner, CoreInputStreamInt& stream):
 
 std::pair<read_reason, Cell> SExprStream::read()
 {
-    return t_owner.gen_cell(t_base);;
+    try {
+        return t_owner.gen_cell(t_base);
+    }
+    catch (const throw_token_stream_empty&) {
+        return { read_reason::empty_input,  t_owner.t_symbols.get().nil };
+    }
 }
 
 bool SExprStream::alive() const

@@ -32,11 +32,11 @@ std::string to_string(const lambda& fnc)
         str +=" ";
 
 
-        if (fnc.body.size()) {
-            str += to_string(fnc.body[0]);
+        if (!empty(fnc.body)) {
+            str += to_string(car(fnc.body));
         }
         else {
-            str += to_string(make_list(fnc.body));
+            str += to_string(fnc.body);
         }
         str += ")";
         return str;
@@ -65,11 +65,11 @@ std::string to_string(const lambda& fnc)
         }
         str += " ";
 
-        if (fnc.body.size()) {
-            str += to_string(fnc.body[0]);
+        if (!empty(fnc.body)) {
+            str += to_string(car(fnc.body));
         }
         else {
-            str += to_string(make_list(fnc.body));
+            str += to_string(fnc.body);
         }
         str += ")";
         return str;

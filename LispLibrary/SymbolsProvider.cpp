@@ -1,4 +1,6 @@
 #include "SymbolsProvider.h"
+#include "DotPair.h"
+#include "Funcs.h"
 using namespace CoreData;
 
 std::vector<Symbol> make_symbols(Symbols& symbols) {
@@ -44,7 +46,7 @@ SymbolsProvider::SymbolsProvider():
     nlambda_symbol(make_symbol(nlambda_str, symbols)),
 
     nil_list(make_symbol_cell(nil_str, symbols)),
-    nil(make_list({})),
+    nil(make_empty_list_cell(*this)),
     T(make_symbol_cell(T_str, symbols))
     //t_some_symbols(make_symbols(symbols))
 {

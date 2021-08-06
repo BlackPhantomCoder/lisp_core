@@ -143,12 +143,14 @@
     <ClInclude Include="Atom.h" />
     <ClInclude Include="BIFuncEvaler.h" />
     <ClInclude Include="BigInt.h" />
+    <ClInclude Include="CarCdrIterator.h" />
     <ClInclude Include="Cell.h" />
     <ClInclude Include="CellEnvironment.h" />
     <ClInclude Include="Core.h" />
     <ClInclude Include="CoreEnv.h" />
     <ClInclude Include="CoreEnvStreamsProvider.h" />
     <ClInclude Include="CoreStreamInt.h" />
+    <ClInclude Include="DotPair.h" />
     <ClInclude Include="Funcs.h" />
     <ClInclude Include="CoreData.h" />
     <ClInclude Include="LambdaCell.h" />
@@ -171,6 +173,7 @@
     <ClCompile Include="Atom.cpp" />
     <ClCompile Include="BIFuncEvaler.cpp" />
     <ClCompile Include="BigInt.cpp" />
+    <ClCompile Include="CarCdrIterator.cpp" />
     <ClCompile Include="Cell.cpp" />
     <ClCompile Include="CellEnvironment.cpp" />
     <ClCompile Include="Core.cpp" />
@@ -178,6 +181,7 @@
     <ClCompile Include="CoreEnv.cpp" />
     <ClCompile Include="CoreEnvStreamsProvider.cpp" />
     <ClCompile Include="CoreStreamInt.cpp" />
+    <ClCompile Include="DotPair.cpp" />
     <ClCompile Include="Funcs.cpp" />
     <ClCompile Include="LambdaCell.cpp" />
     <ClCompile Include="LambdaEvaler.cpp" />

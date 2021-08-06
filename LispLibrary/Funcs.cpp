@@ -1,12 +1,19 @@
 #include "Funcs.h"
 
 #include "Number.h"
+#include "CarCdrIterator.h"
 
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
 
 using namespace std;
+
+std::ostream& operator<<(std::ostream& s, const Cell& exp)
+{
+    s << to_string(exp);
+    return s;
+}
 
 // convert given Cell to a Lisp-readable string
 std::string to_string(const Cell& exp)
@@ -22,13 +29,21 @@ std::string to_string(const Cell& exp)
     }
 }
 
-std::string to_string(const DPair& lst)
+std::string to_string(const DotPair& lst)
 {
     if (lst.empty()) return CoreData::nil_str;
     std::string s("(");
-    for (auto e = std::begin(lst); e != std::end(lst); ++e) {
-        s += to_string(*e);
+    CarCdrConstIteration iteration(lst);
+    auto it = begin(iteration);
+    for (; next(it) != end(iteration); ++it) {
+        s += to_string(*it);
         s += ' ';
+    }
+    s += to_string(car(it.get_pair()));
+    s += ' ';
+    if (is_atom(cdr(it.get_pair()))) {
+        s += ". ";
+        s += to_string(cdr(it.get_pair()));
     }
 
     if (s[s.length() - 1] == ' ') {

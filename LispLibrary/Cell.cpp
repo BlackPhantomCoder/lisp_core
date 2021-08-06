@@ -1,5 +1,7 @@
 #include "Cell.h"
+#include "DotPair.h"
 using namespace std;
+
 
 Cell::Cell(Cell&& rh)noexcept :
     t_data(std::move(rh.t_data))
@@ -16,7 +18,7 @@ Cell::Cell(Atom&& atom) noexcept :
 {
 }
 
-Cell::Cell(DPair&& list) noexcept :
+Cell::Cell(DotPair&& list) noexcept :
     t_data(make_shared<var_type>(std::move(list)))
 {
 }
@@ -26,7 +28,7 @@ Cell::Cell(const Atom& atom) :
 {
 }
 
-Cell::Cell(const DPair& list) :
+Cell::Cell(const DotPair& list) :
     t_data(make_shared<var_type>(list))
 {
 }
@@ -43,7 +45,7 @@ bool Cell::is_atom() const {
 }
 
 bool Cell::is_list() const {
-    return t_data && std::holds_alternative<DPair>(*t_data);
+    return t_data && std::holds_alternative<DotPair>(*t_data);
 }
 
 Atom& Cell::to_atom() {
@@ -51,9 +53,9 @@ Atom& Cell::to_atom() {
     return std::get<Atom>(*t_data);
 }
 
-DPair& Cell::to_list() {
+DotPair& Cell::to_list() {
     if (!is_list())throw "to_list";
-    return std::get<DPair>(*t_data);
+    return std::get<DotPair>(*t_data);
 }
 
 const Atom& Cell::to_atom()const {
@@ -61,7 +63,7 @@ const Atom& Cell::to_atom()const {
     return std::get<Atom>(*t_data);
 }
 
-const DPair& Cell::to_list()const {
+const DotPair& Cell::to_list()const {
     if (!is_list())throw "to_list";
-    return std::get<DPair>(*t_data);
+    return std::get<DotPair>(*t_data);
 }
