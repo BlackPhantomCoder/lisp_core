@@ -150,6 +150,9 @@ void logic() {
 	simple_core_assert("(eq a 2)",nil_str);
 	simple_core_assert("(eq '(1 1) '(1 1))",nil_str);
 	simple_core_assert("(eq '(1 1) a)",nil_str);
+	//simple_core_assert("(eq '() nil)", T_str);
+	//simple_core_assert("(eq)", T_str);
+	//simple_core_assert("(eq nil nil)", T_str);
 
 	simple_core_assert("(equal 2 2)",T_str);
 	simple_core_assert("(equal 2.0 2)",T_str);
@@ -161,6 +164,8 @@ void logic() {
 	simple_core_assert("(equal '(1 1) '(1 1))",T_str);
 	simple_core_assert("(equal '(1 1) '(1 2))",nil_str);
 	simple_core_assert("(equal '(1 1) a)",nil_str);
+	simple_core_assert("(equal '() nil)", T_str);
+	simple_core_assert("(equal nil nil)", T_str);
 }
 
 //списковые функции
@@ -201,6 +206,7 @@ void list() {
 void pred() {
 	simple_core_assert("(null (list))",T_str);
 	simple_core_assert("(null '())", T_str);
+	simple_core_assert("(null nil)", T_str);
 	//simple_core_assert("(null `())",T_str); //косой апостроф,
 	simple_core_assert("(null '(0))",nil_str);
 	simple_core_assert("(numberp 26)",T_str);
@@ -236,6 +242,12 @@ void usl() {
 	simple_core_assert("(cond ((null '(2)) 'a) ((numberp r) 'b) ((listp '2) 'c))",nil_str);
 	simple_core_assert("(cond ((null '(2)) 'a) ((numberp r) 'b) ((listp '2) 'c) (T 'da))","DA");
 	simple_core_assert("(cond)",nil_str);
+	simple_core_assert("(cond ((null '(2)) 'a) ((numberp r) 'b) ((listp '2) 'c) (a 'da))", "DA");
+	//simple_core_assert("(cond ((null '(2)) 'a) ((numberp r) 'b) ((listp '2) 'c) (1 'da))", "DA");   //возможно, форис делает \1
+	simple_core_assert("(cond ((null '(2)) 'a) ((numberp r) 'b) ((listp '2) 'c) (nil 'da))", nil_str);
+	//simple_core_assert("(cond ((null '(2)) 'a) ((numberp r) 'b) ((listp '2) 'c) ('(1 2) 'da))", "DA");
+	//simple_core_assert("(cond ((null '(2)) 'a) ((numberp r) 'b) ((listp '2) 'c) ((cons a b) 'da))", "DA");
+
 	simple_core_assert("(if T 'a 'b)","A");
 	simple_core_assert("(if NIL 'a 'b)","B");
 	simple_core_assert("(if (null '()) 'a 'b)","A");
@@ -246,6 +258,9 @@ void usl() {
 	simple_core_assert("(if (null '()) (+ 1 2) 'b)","3");
 	simple_core_assert("(if (null '(2)) (+ 1 2) (+ 3 4))","7");
 	simple_core_assert("(if)",nil_str);
+	//simple_core_assert("(if '(1 2) 'a 'b)", "A");
+	//simple_core_assert("(if '(1 . 2) 'a 'b)", "A");
+	simple_core_assert("(if 1 'a 'b)", "A");
 }
 
 //функции вычислений
@@ -296,10 +311,18 @@ void control_calc() {
 	simple_core_assert("(progn (setq a 2) a)","2");
 	simple_core_assert("(set)",nil_str);
 	simple_core_assert("(set a)",nil_str);
+	test_output("(progn (setq a 1 b 2) (print a) (print b))", "1\n2\n");
+
 	simple_core_assert("(progn (setq a 2) (setq b 'a) (set b 3) a)","3");
 	simple_core_assert("(progn (setq L '(1 2 3 4)) (loop ((null L) 'da) (setq L (cdr L))))","DA");
 	simple_core_assert("(progn (setq N 0) (setq L '(1 2 3 4)) (loop ((null L) N) (setq N (+ 1 N)) (setq L (cdr L))))", "4");
 	simple_core_assert("(progn (setq L '(1 a 2 q kek)) (loop ((null(cdr L)) (car L)) (setq L(cdr L))))","KEK");
+	/*simple_core_assert(
+		"(progn (setq lst '(1 (2 3) (2 . 3) a nil 4 5)) (loop ((not (car lst)) (cdr lst)) (print lst) (setq lst (cdr lst))))",   //умер на листе/паре
+		"(4 5)");*/
+	/*test_output(
+		"(progn (setq lst '(1 (2 3) (2 . 3) a nil 4 5)) (loop ((not (car lst)) (cdr lst)) (print lst) (setq lst (cdr lst))))",
+		"(1 (2 3) (2 . 3) a nil 4 5))\n((2 3) (2 . 3) a nil 4 5))\n((2 . 3) a nil 4 5))\n(a nil 4 5))\n");*/
 }
 
 //ввод/вывод
@@ -323,15 +346,24 @@ void io() {
 
 	//тест | и "
 	simple_core_assert("|AbC1|", "AbC1");
-	simple_core_assert("\"AbC1\"", "AbC1");
+	simple_core_assert("\"AbC1\"", "AbC1");   //вообще говоря, не факт
 
 	//тест на анализ ввода через read
 	//test_io_result("(eval '((lambda x (print (read))) nil))", "1b", std::string(nil_str) + "\n", nil_str);
 	//тест на анализ ввода
 	simple_core_assert_reason("1c2", Core::result_type::fail);
+
+	/*simple_core_assert("a\a12", "|Aa12|");
+	simple_core_assert("|AAC1|", "AAC1");
+	simple_core_assert("|1AAC1|", "|1AAC1|");     //спорно, надо выбирать между методичкой и форисом
+	simple_core_assert("\ \ \ ", "|   |");
+	simple_core_assert("\(\)\ \'\\\;\#", "|() '\;#|");
+	simple_core_assert("A\\B.LSP", "|A\B.LSP|");
+	simple_core_assert("\++++", "|++++|");*/
 	
 }
 
+//точечные пары
 void dotpairs() {
 	simple_core_assert("'(a . b)", "(A . B)");
 	simple_core_assert("'(a.b)", "(A.B)");
@@ -339,6 +371,7 @@ void dotpairs() {
 	simple_core_assert("(cdr '(a . b))", "B");
 	simple_core_assert("(cdr '(c a . b))", "(A . B)");
 	simple_core_assert("(car '(a.b))", "A.B");
+	simple_core_assert("'(1 . (2 . (3 . nil)))", "(1 2 3)");
 
 	simple_core_assert("'(a . nil)", "(A)");
 	simple_core_assert("'(nil . b)", "(NIL . B)");
@@ -381,11 +414,71 @@ void dotpairs() {
 		"(progn (setq foo '(a b c)) (rplaca foo d) foo)",
 		"(D B C)"
 	);
-
 	simple_core_assert(
 		"(progn (setq foo '(a b c)) (rplacd foo d) foo)",
 		"(A . D)"
 	);
+	simple_core_assert(
+		"(progn (setq x (list 'a 'b)) (setq z1 (cons x x)) (defun stk (x) (rplaca (car x) 'kok) x) (stk z1))",
+		"((KOK B) KOK B)"
+	);
+	simple_core_assert(
+		"(progn (setq x (list 'a 'b)) (setq z2 (cons (list 'a 'b) (list 'a 'b))) (defun stk (x) (rplaca (car x) 'kok) x) (stk z2))",
+		"((KOK B) A B)"
+	);
+	/*test_output(
+		"(progn (setq a '(1 . chel) b '(2 . chel) c '(3 . chel)) (nconc a b c) (print a) (print b) (print c))",
+		"(1 2 3 . chel)\n(2 3 . chel)\n(3 . chel)\n"
+	);*/
+}
+
+//макросы
+void macros() {
+	/*simple_core_assert("(defmacro)", nil_str);
+	simple_core_assert("(defmacro kek)", nil_str);
+	simple_core_assert("(defmacro kek (x))", "KEK");
+	simple_core_assert("(defmacro setqq (x y) (list 'setq x (list 'quote y)))", "SETQQ");
+	simple_core_assert("(progn (setq nekok chel) (defmacro setqq (x y) (list 'setq x (list 'quote y))) (setqq kok nekok) kok)", "NEKOK");
+	simple_core_assert(
+		"(progn (defmacro macrocdr (X N) (cond ((eq N 0) (print x) a) (T (append (list 'macrocdr) (list (cdr X)) (list (- N 1)))))) (macrocdr (q w e r) 2))",
+		"A");       //стоит подумать над примером
+	test_output(
+		"(progn (defmacro macrocdr (X N) (cond ((eq N 0) (print x) a) (T (append (list 'macrocdr) (list (cdr X)) (list (- N 1)))))) (macrocdr (q w e r t) 3))",
+		"(R T)\n");
+	simple_core_assert(
+		"(progn (defmacro macrocdr (X) X) (getd macrocdr))",
+		"(MACRO BODY ((LAMBDA (X) X) (CAR (CDR BODY))))");
+	simple_core_assert("(progn (defmacro len lst (length lst)) (len 1 2 3 4 5 6 7 8))", "8");
+	simple_core_assert(
+		"(progn (defmacro when (e . s) (list 'cond (append (list e) s))) (when T (+ 1 2)))",
+		"3");
+	test_output(
+		"(progn (defmacro when (e . s) (list 'cond (append (list e) s))) (when T (print kok) (print (setq b 2))))",
+		"KOK\n2\n");
+	test_output(
+		"(progn (defmacro when (e . s) (list 'cond (append (list e) (print s)))) (when T q w e))",
+		"(Q W E)\n");
+
+
+	simple_core_assert(
+		"(progn (defmacro macrocdr (X N) (cond ((eq N 0) (print x) a) (T (append (list 'macrocdr) (list (cdr X)) (list (- N 1)))))) (macroexpand '(macrocdr (q w e r) 2)))",
+		"A");
+	test_output(
+		"(progn (defmacro macrocdr (X N) (cond ((eq N 0) (print x) a) (T (append (list 'macrocdr) (list (cdr X)) (list (- N 1)))))) (macroexpand '(macrocdr (q w e r) 2)))",
+		"(E R)\n");
+	simple_core_assert(
+		"(progn (defmacro macrocdr (X N) (cond ((eq N 0) (print x) a) (T (append (list 'macrocdr) (list (cdr X)) (list (- N 1)))))) (macroexpand-1 '(macrocdr (q w e r) 2)))",
+		"(MACROCDR (W E R) 1)");
+	simple_core_assert(
+		"(progn (defmacro macrocdr (X N) (cond ((eq N 0) (print x) a) (T (append (list 'macrocdr) (list (cdr X)) (list (- N 1)))))) (macroexpand-1 (macroexpand-1 '(macrocdr (q w e r) 2))))",
+		"(MACROCDR (E R) 0)");  //вроде скобки на месте
+
+	simple_core_assert("(macroexpand)", nil_str);
+	simple_core_assert("(macroexpand '(q w e))", "(Q W E)");
+	simple_core_assert("(macroexpand 1)", "1");
+	simple_core_assert("(macroexpand-1)", nil_str);
+	simple_core_assert("(macroexpand-1 '(q w e))", "(Q W E)");
+	simple_core_assert("(macroexpand-1 1)", "1");*/
 }
 
 void test_outs(NATests::Tester& tester){
@@ -401,7 +494,7 @@ void test_bifuncs() {
 	//Дебаг
 	#ifdef _DEBUG
 		// true - асинхронно, false - последовательно
-		NATests::Tester tester(false);
+		NATests::Tester tester(true);
 	#endif
 
 	//релиз (в нём лучше без асинхронных)
@@ -420,6 +513,7 @@ void test_bifuncs() {
 	NATests_RUN_TEST(tester, control_calc);
 	NATests_RUN_TEST(tester, io);
 	NATests_RUN_TEST(tester, dotpairs);
+	NATests_RUN_TEST(tester, macros);
 
 	test_outs(tester);
 }
