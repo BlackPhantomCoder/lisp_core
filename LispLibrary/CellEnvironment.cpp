@@ -1,5 +1,5 @@
 #include "CellEnvironment.h"
-
+#include "Funcs.h"
 using namespace std;
 
 CellEnvironment::CellEnvironment(mp&& env):

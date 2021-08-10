@@ -27,14 +27,20 @@ static const StdCoreInputMemoryStream predfuncs_mem_stream_global = []() {
 	ASSERT_EQUAL(result, output);\
 }
 
-//Тест без сравнения результата (проверка на success/fail)
+//Тест без сравнения результата (проверка на success/fail) (если ExceptionCaught не задефайнено - не выполняются)
+#ifdef EX_CATCH
 #define simple_core_assert_reason(input, reason)\
-{\
-	StdCoreInputMemoryStream predfuncs_mem_stream = predfuncs_mem_stream_global;\
-	auto [core, streams] = make_core_w_custom_predfuncs_and_empty_streams(predfuncs_mem_stream);\
-	auto [result_reason, result] = core.execute_one(input);\
-	ASSERT_EQUAL(result_reason,reason);\
-}
+	{\
+		StdCoreInputMemoryStream predfuncs_mem_stream = predfuncs_mem_stream_global;\
+		auto [core, streams] = make_core_w_custom_predfuncs_and_empty_streams(predfuncs_mem_stream);\
+		auto [result_reason, result] = core.execute_one(input);\
+		ASSERT_EQUAL(result_reason,reason);\
+	}
+#endif
+#ifndef EX_CATCH
+	#define simple_core_assert_reason(input, reason)
+#endif
+
 
 //тест вывода
 #define test_output(input, output)\
@@ -71,17 +77,21 @@ static const StdCoreInputMemoryStream predfuncs_mem_stream_global = []() {
 	ASSERT_EQUAL(out.str(), stream_output);\
 }
 
-//тест ввода+причина
-#define test_input_reason(input, stream_input, reason)\
-{\
-	StdCoreInputMemoryStream predfuncs_mem_stream = predfuncs_mem_stream_global;\
-	istringstream in (stream_input);\
-	ostringstream out;\
-	auto core = make_core_w_custom_predfuncs(predfuncs_mem_stream,in, stream_read_mode::new_string, out);\
-	auto [result_reason, result] = core.execute_one(input);\
-	ASSERT_EQUAL(result_reason, reason);\
-}
-
+//тест ввода+причина (если ExceptionCaught не задефайнено - не выполняются)
+#ifdef EX_CATCH
+	#define test_input_reason(input, stream_input, reason)\
+	{\
+			StdCoreInputMemoryStream predfuncs_mem_stream = predfuncs_mem_stream_global;\
+			istringstream in (stream_input);\
+			ostringstream out;\
+			auto core = make_core_w_custom_predfuncs(predfuncs_mem_stream,in, stream_read_mode::new_string, out);\
+			auto [result_reason, result] = core.execute_one(input);\
+			ASSERT_EQUAL(result_reason, reason);\
+	}
+#endif
+#ifndef EX_CATCH
+	#define test_input_reason(input, stream_input, reason)
+#endif
 
 //пример теста
 void test_eval_base() {
@@ -401,25 +411,37 @@ void test_bifuncs() {
 	//Дебаг
 	#ifdef _DEBUG
 		// true - асинхронно, false - последовательно
-		NATests::Tester tester(false);
+		NATests::Tester tester(true);
 	#endif
 
 	//релиз (в нём лучше без асинхронных)
 	#ifdef NDEBUG
 		// true - асинхронно, false - последовательно
+		// Асинхронные тесты на релизе не поддерживаются (только если задефайнить TREAT_SAFE_MEMORY_CONTROL в LispLibrary)
 			NATests::Tester tester(false);
 	#endif
 
-	NATests_RUN_TEST(tester, test_eval_base);
-	NATests_RUN_TEST(tester, arifm);
-	NATests_RUN_TEST(tester, logic);
-	NATests_RUN_TEST(tester, list);
-	NATests_RUN_TEST(tester, pred);
-	NATests_RUN_TEST(tester, usl);
-	NATests_RUN_TEST(tester, calcfun);
-	NATests_RUN_TEST(tester, control_calc);
-	NATests_RUN_TEST(tester, io);
-	NATests_RUN_TEST(tester, dotpairs);
+	//ExceptionCaught -- если задефайнено -- ловятся все исключения, выполняются тесты с проверкой на succses/fail
+			//(дефайнить в настройках проекта (2х))
+
+	#ifdef EX_CATCH
+		#define RUN(t, f) NATests_RUN_TEST_catch_ex(t,f)
+	#endif
+
+	#ifndef EX_CATCH
+		#define RUN(t, f) NATests_RUN_TEST_nocatch_ex(t,f)
+	#endif
+
+	RUN(tester, test_eval_base);
+	RUN(tester, arifm);
+	RUN(tester, logic);
+	RUN(tester, list);
+	RUN(tester, pred);
+	RUN(tester, usl);
+	RUN(tester, calcfun);
+	RUN(tester, control_calc);
+	RUN(tester, io);
+	RUN(tester, dotpairs);
 
 	test_outs(tester);
 }

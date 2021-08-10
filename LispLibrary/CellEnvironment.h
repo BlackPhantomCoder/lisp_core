@@ -1,9 +1,9 @@
 #pragma once
+#include "Cell.h"
+#include "Symbol.h"
 #include <string>
 #include <unordered_map>
-#include <optional>
-#include <deque>
-#include "Cell.h"
+#include <vector>
 #include <map>
 
 class CellEnvironment

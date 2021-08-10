@@ -1,10 +1,11 @@
 #pragma once
-#include "Cell.h"
 #include "CoreStreamInt.h"
+#include "SExprsFarm.h"
+
 #include <vector>
-#include <list>
 #include <string>
 #include <stack>
+#include <string>
 
 enum class tokens {
 	OpenBracket,	// (
@@ -109,7 +110,7 @@ class Syntaxer
 {
 	friend class SExprStream;
 public:
-	Syntaxer(SymbolsProvider& symbols, bool skip_comments = true, bool upcase_mode = true);
+	Syntaxer(SExprsFarm& ferm, bool skip_comments = true, bool upcase_mode = true);
 
 	void set_skip_comments_mode(bool mode);
 	bool skip_comments_mode() const;
@@ -128,7 +129,7 @@ private:
 	std::pair<read_reason, Cell> gen_cell(TokenStream& tokens);
 	std::pair<read_reason, Cell> gen_cell(tokens token, std::string&& val , TokenStream& tokens);
 private:
-	std::reference_wrapper<SymbolsProvider> t_symbols;
+	std::reference_wrapper<SExprsFarm> t_farm;
 	bool t_skip_comments;
 	bool t_upcase_mode;
 };

@@ -8,8 +8,10 @@
 
 namespace NATests {
     //Тест функции
-    #define NATests_RUN_TEST(runner, func) \
-        runner.add_test(func, #func)
+    #define NATests_RUN_TEST_catch_ex(runner, func) \
+        runner.add_test(func, #func, false)
+    #define NATests_RUN_TEST_nocatch_ex(runner, func) \
+        runner.add_test(func, #func, true)
 
     struct test_result {
         std::string name;
@@ -52,8 +54,14 @@ namespace NATests {
                 }
             }
             else {
-                func();
-                result.fail = false;
+                try {
+                    func();
+                    result.fail = false;
+                }
+                catch (std::runtime_error& e){
+                    result.fail = true;
+                    result.output = e.what();
+                }
             }
             return result;
         };

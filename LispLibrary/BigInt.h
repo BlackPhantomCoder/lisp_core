@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gmp.h"
+#include "gmp/include/gmp.h"
 #include <string>
 
 class BigInt

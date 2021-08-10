@@ -1,15 +1,15 @@
 #pragma once
+#include "Cell.h"
 #include "LambdaCell.h"
 #include "CellEnvironment.h"
-#include "Cell.h"
-#include <stack>
-#include <vector>
+
 #include "ArgsOnStackEvaler.h"
+#include "CarCdrIterator.h"
 
 struct lambda_frame {
-	const lambda& fnc;
-	std::vector<Cell>::const_iterator beg_it;
-	std::vector<Cell>::const_iterator end_it;
+	lambda& fnc;
+	CarCdrIterator beg_it;
+	CarCdrIterator end_it;
 	bool forse_noeval_args;
 	CellEnvironment::frame buf;
 };

@@ -7,7 +7,7 @@ using namespace CoreData;
 
 bifuncs_array CoreData::bifunc_setup()
 {
-    auto result = bifuncs_array{
+    return {
         make_pair("CAR", &CoreEnvironment::bifunc_car),
         make_pair("CDR", &CoreEnvironment::bifunc_cdr),
         make_pair("CONS", &CoreEnvironment::bifunc_cons),
@@ -45,21 +45,13 @@ bifuncs_array CoreData::bifunc_setup()
         make_pair("OBLIST", &CoreEnvironment::bifunc_oblist),
         make_pair("RPLACA", &CoreEnvironment::bifunc_rplaca),
         make_pair("RPLACD", &CoreEnvironment::bifunc_rplacd),
-        
+        make_pair("COPY-TREE", &CoreEnvironment::bifunc_copy_tree)
     };
-
-    std::sort(
-        begin(result),
-        end(result),
-        bifunc_pair_less{}
-    );
-
-    return result;
 }
 
 nbifuncs_array CoreData::nbifunc_setup()
 {
-    auto result = CoreData::nbifuncs_array{
+    return CoreData::nbifuncs_array{
         make_pair("DEFUN", &CoreEnvironment::nbifunc_defun),
         make_pair("QUOTE", &CoreEnvironment::nbifunc_quote),
         make_pair("COND", &CoreEnvironment::nbifunc_cond),
@@ -67,13 +59,6 @@ nbifuncs_array CoreData::nbifunc_setup()
         make_pair("SETQ", &CoreEnvironment::nbifunc_setq),
         make_pair("LOOP", &CoreEnvironment::nbifunc_loop),
     };
-
-    std::sort(
-        begin(result),
-        end(result),
-        bifunc_pair_less{}
-    );
-    return result;
 }
 
 bool CoreData::bifunc_pair_less::operator()(const pair<const char*, CoreData::bifunc>& lh, const pair<const char*, CoreData::bifunc>& rh) const
@@ -85,4 +70,3 @@ bool CoreData::bifunc_pair_less_w_string::operator()(const pair<const char*, Cor
 {
     return strcmp(lh.first, rh.to_string()) < 0;
 }
-

@@ -15,7 +15,11 @@ public:
     };
 public:
     Core(Core&& rh) noexcept;
-    Core(CoreInputStreamInt& predfuncs, std::unique_ptr<CoreEnvStreamsProvider>&& streams, std::unique_ptr<IMutexed<bool>>&& custom_mutex);
+    Core(
+        CoreInputStreamInt& predfuncs,
+        std::unique_ptr<CoreEnvStreamsProvider>&& streams,
+        std::unique_ptr<IMutexed<bool>>&& custom_mutex
+    );
     Core(std::unique_ptr<CoreEnvStreamsProvider>&& streams, std::unique_ptr<IMutexed<bool>>&& custom_mutex);
 
     Core(CoreInputStreamInt& predfuncs, std::unique_ptr<CoreEnvStreamsProvider>&& streams);
@@ -33,10 +37,11 @@ public:
 
     void stop();
 private:
+    Core();
+private:
     std::unique_ptr<IMutexed<bool>> t_stop;
     std::unique_ptr<CoreEnvStreamsProvider> t_streams;
-    CoreEnvironment t_env;
-    
+    std::unique_ptr <CoreEnvironment> t_env;
 };
 
 std::string to_string(Core::result_type rt);

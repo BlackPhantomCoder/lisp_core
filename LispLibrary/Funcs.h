@@ -1,371 +1,119 @@
 #pragma once
 #include "Cell.h"
 #include "DotPair.h"
+#include "CarCdrIterator.h"
+#include "SExprsFarm.h"
+#include "Number.h"
+#include "Symbol.h"
+#include "CoreEnv.h"
+
 #include <list>
 #include <string>
 #include <iostream>
-#include "PublicCoreEnvironmentProvider.h"
-#include "SymbolsProvider.h"
-#include "CarCdrIterator.h"
-std::ostream& operator<<(std::ostream& s, const Cell& exp);
+#include <deque>
 
-std::string to_string(const Cell& exp);
-std::string to_string(const DotPair& exp);
-std::string to_string(const Atom& exp);
-std::string to_string(const Symbol& exp);
-std::string to_string(const Number& exp);
+//class CoreEnvironment;
+struct lambda;
 
-inline Cell bool_cast(bool val, SymbolsProvider& provider);
-inline bool is_null(const Cell& c, SymbolsProvider& provider);
-inline bool is_null_symbol(const Cell& c, SymbolsProvider& provider);
-inline bool is_null_symbol(const Atom& c, SymbolsProvider& provider);
-inline bool is_null_symbol(const Symbol& c, SymbolsProvider& provider);
-inline bool is_T(const Cell& c, SymbolsProvider& provider);
-inline bool is_implicit_cond(const Cell& arg, SymbolsProvider& provider);
+std::string to_string(const lambda& fnc, SExprsFarm& farm);
+std::string to_string(const Cell& exp, SExprsFarm& farm);
 
-inline bool is_alambda_form(const Cell& arg, SymbolsProvider& provider);
-inline bool is_lambda_form(const Cell& arg, SymbolsProvider& provider);
-inline bool is_nlambda_form(const Cell& arg, SymbolsProvider& provider);
+Cell bool_cast(bool val, SExprsFarm& farm);
+bool is_null(const Cell& c, SExprsFarm& farm);
+bool is_null_symbol(const Symbol& c, SExprsFarm& farm);
+bool is_null_symbol(const Cell& c, SExprsFarm& farm);
 
-inline bool is_alambda_form(const DotPair& arg, SymbolsProvider& provider);
-inline bool is_lambda_form(const DotPair& arg, SymbolsProvider& provider);
-inline bool is_nlambda_form(const DotPair& arg, SymbolsProvider& provider);
+bool is_implicit_cond(const Cell& arg, SExprsFarm& farm);
 
-inline bool is_alambda_symbol(const Symbol& arg, SymbolsProvider& provider);
+bool is_alambda_form(const Cell& arg, SExprsFarm& farm);
+bool is_lambda_form(const Cell& arg, SExprsFarm& farm);
+bool is_nlambda_form(const Cell& arg, SExprsFarm& farm);
 
 
+//not if dp is atom -> result == dp
+Cell& car(Cell& dp);
+Cell& cdr(Cell& dp);
+const Cell& car(const Cell& dp);
+const Cell& cdr(const Cell& dp);
 
-
-
-
-
-
-
-
-inline DotPair& to_list(Cell& c) {
-    return c.to_list();
-}
-
-inline const DotPair& to_list(const Cell& c) {
-    return c.to_list();
-}
-
-
-
-inline bool is_null(const Cell& c, SymbolsProvider& provider) {
-    return (is_null_symbol(c, provider) || (is_list(c) && std::empty(to_list(c))));
-}
-
-inline bool is_null_symbol(const Cell& c, SymbolsProvider& provider) {
-    return is_symbol(c) && is_null_symbol(to_symbol(c), provider);
-}
-
-inline bool is_null_symbol(const Atom& c, SymbolsProvider& provider){
-    return is_symbol(c) && is_null_symbol(to_symbol(c), provider);
-}
-
-inline bool is_null_symbol(const Symbol& c, SymbolsProvider& provider) {
-    return c == provider.nil_symbol;
-}
-
-inline Cell bool_cast(bool val, SymbolsProvider& provider) {
-    return (val) ? provider.T : provider.nil;
-}
-
-inline bool is_T(const Cell& c, SymbolsProvider& provider) {
-    return is_symbol(c) && to_symbol(c) == provider.T_symbol;
-}
-
-inline bool is_implicit_cond(const Cell& arg, SymbolsProvider& provider)
-{
-    if (!is_list(arg)) return false;
-    if (is_null(arg, provider)) return false;
-    if (!is_list(car(to_list(arg)))) return false;
-    if (is_null(car(to_list(arg)), provider)) return true;
-    if (!is_symbol(car(car(to_list(arg))))) return true;
-    if (is_alambda_symbol(to_symbol(car(car(to_list(arg)))), provider)) return false;
-    return true;
-}
-
-inline bool is_alambda_form(const Cell& arg, SymbolsProvider& provider)
-{
-    return is_list(arg) && !is_null_symbol(arg, provider) && is_alambda_form(to_list(arg), provider);
-}
-
-inline bool is_lambda_form(const Cell& arg, SymbolsProvider& provider)
-{
-    return is_list(arg) && !is_null_symbol(arg, provider) && is_nlambda_form(to_list(arg), provider);
-}
-
-inline bool is_nlambda_form(const Cell& arg, SymbolsProvider& provider)
-{
-    return is_list(arg) && !is_null_symbol(arg, provider) && is_nlambda_form(to_list(arg), provider);
-}
-
-inline bool is_alambda_form(const DotPair& arg, SymbolsProvider& provider)
-{
-    return !std::empty(arg) && is_symbol(car(arg)) && is_alambda_symbol(to_symbol(car(arg)), provider);       
-}
-
-inline bool is_lambda_form(const DotPair& arg, SymbolsProvider& provider)
-{
-    return !std::empty(arg) && is_symbol(car(arg)) && to_symbol(car(arg)) == provider.lambda_symbol;
-}
-
-inline bool is_nlambda_form(const DotPair& arg, SymbolsProvider& provider)
-{
-    return !std::empty(arg) && is_symbol(car(arg)) && to_symbol(car(arg)) == provider.nlambda_symbol;
-}
-
-inline bool is_alambda_symbol(const Symbol& arg, SymbolsProvider& provider)
-{
-    return arg == provider.lambda_symbol || arg == provider.nlambda_symbol;
-}
-
-
-
-
-inline Cell deep_copy_list_cell(const DotPair& lst)
-{
-    return Cell(deep_copy_list(lst));
-}
-
-inline Cell make_list_cell(std::initializer_list<Cell> l, SymbolsProvider& provider)
-{
-    return Cell(make_list(l, provider));
-}
-
-inline Cell make_list_cell(DotPair&& objs)
-{
-    return Cell(std::move(objs));
-}
-
-inline Cell make_list_cell(const DotPair& objs)
-{
-    return Cell(objs);
-}
-
-inline Cell make_number(Number&& numb)
-{
-    return Cell(Atom(std::move(numb)));
-}
-
-inline Cell make_number(const Number& numb)
-{
-    return Cell(Atom(numb));
-}
-
-inline Cell make_symbol_cell(Atom&& symbol) {
-    return Cell(std::move(symbol));
-}
-
-inline Cell make_symbol_cell(const Atom& symbol) {
-    return Cell(symbol);
-}
-
-inline Cell make_symbol_cell(Symbol&& symbol)
-{
-    return Cell(Atom(std::move(symbol)));
-}
-
-inline Cell make_symbol_cell(const Symbol& symbol)
-{
-    return Cell(Atom(Symbol(symbol)));
-}
-
-inline Cell make_symbol_cell(std::string&& symbol, Symbols& owner)
-{
-    return Cell(Atom(make_symbol(std::move(symbol), owner)));
-}
-
-inline Cell make_symbol_cell(const std::string& symbol, Symbols& owner)
-{
-    return Cell(Atom(make_symbol(symbol, owner)));
-}
-
-inline bool is_real_number(const Cell& c)
-{
-    return is_number(c) && (to_number(c)).is_real();
-}
-
-inline bool is_int_number(const Cell& c)
-{
-    return is_number(c) && (to_number(c)).is_integer();
-}
-
-inline bool is_number(const Cell& c)
-{
-    return is_atom(c) && to_atom(c).is_number();
-}
-
-inline bool is_number(const Atom& c)
-{
-    return c.is_number();
-}
-
-inline bool is_atom(const Cell& c)
-{
-    return c.is_atom();
-}
-
-inline bool is_symbol(const Cell& c)
-{
-    return is_atom(c) && to_atom(c).is_symbol();
-}
-
-inline bool is_symbol(const Atom& c)
-{
-    return c.is_symbol();
-}
-
-inline bool is_list(const Cell& c)
-{
-    return c.is_list();
-}
-
-inline Cell make_atom(Atom&& atom) {
-    return Cell(std::move(atom));
-}
-
-inline Cell make_atom(const Atom& atom) {
-    return Cell(atom);
-}
-
+Cell cons(const Cell& f, const Cell& s, SExprsFarm& farm);
 template<class InputIt>
-inline Cell make_list_cell(InputIt first, InputIt last, SymbolsProvider& provider)
-{
-    return make_list<InputIt>(first, last, provider);
-}
+Cell cons_range(InputIt beg_it, InputIt end_it, SExprsFarm& farm);
+
+Cell append(const Cell& f, const Cell& s, SExprsFarm& farm);
+
+void rplaca(DotPair& rh, const Cell& exp);
+void rplacd(DotPair& rh, const Cell& exp);
+
+Cell tree_copy(const Cell& rh, SExprsFarm& farm);
+
+
+
+
+
+
+
+
+
 
 
 
 template<class InputIt>
-inline DotPair make_list(InputIt first, InputIt last, SymbolsProvider& provider)
+inline Cell SExprsFarm::make_list_cell(InputIt first, InputIt last)
 {
-    if (first == last) return make_empty_list(provider);
-    --last;
-    DotPair result = make_empty_list(provider);
-    for (; first != last; --last)
-    {
-        result = cons(*last, make_list_cell(result), provider);
+	Cell result = this->make_empty_list_cell();
+    std::vector<const Cell*, CoreData::allocator<const Cell*>> stack;
+    while (first != last) {
+        stack.push_back(&*first);
+        ++first;
     }
-    result = cons(*last, make_list_cell(result), provider);
+    for (auto it = std::rbegin(stack); it != std::rend(stack); ++it) {
+        result = cons(*(*it), result, *this);
+    }
+
+    stack.clear();
+    CoreData::allocator_release_memory<const Cell*>();
     return result;
 }
 
-inline Cell& car(DotPair& dp)
+template<class InputIt>
+inline Cell SExprsFarm::make_list_w_eval_cell(InputIt first, InputIt last)
 {
-    if (std::empty(dp)) throw "";
-    return dp.t_core->t_f;
-}
-
-inline Cell& cdr(DotPair& dp)
-{
-    if (std::empty(dp)) throw "";
-    return dp.t_core->t_s;
-}
-
-inline Cell& car(Cell& dp)
-{
-    if (std::empty(to_list(dp))) return dp;
-    return to_list(dp).t_core->t_f;
-}
-
-inline Cell& cdr(Cell& dp)
-{
-    if (std::empty(to_list(dp))) return dp;
-    return to_list(dp).t_core->t_s;
-}
-
-inline const Cell& car(const DotPair& dp)
-{
-    if (std::empty(dp)) return dp.t_symbols.get().nil;
-    return dp.t_core->t_f;
-}
-
-inline const Cell& cdr(const DotPair& dp)
-{
-    if (std::empty(dp)) return dp.t_symbols.get().nil;
-    return dp.t_core->t_s;
-}
-
-inline const Cell& car(const Cell& dp)
-{
-    if (std::empty(to_list(dp))) return to_list(dp).t_symbols.get().nil;
-    return to_list(dp).t_core->t_f;
-}
-
-inline const Cell& cdr(const Cell& dp)
-{
-    if (std::empty(to_list(dp))) return to_list(dp).t_symbols.get().nil;
-    return to_list(dp).t_core->t_s;
-}
-
-inline DotPair cons(const Cell& f, const Cell& s, SymbolsProvider& provider)
-{
-    return DotPair(DotPairCore(f, s), provider);
-}
-
-inline Cell cons_cell(const Cell& f, const Cell& s, SymbolsProvider& provider)
-{
-    return Cell(cons(f, s, provider));
-}
-
-//inline DotPair append(const Cell& f, const Cell& s)
-//{
-//	if (is_atom(f)) return s;
-//	return cons(car(f), append_cell(cdr(f), s), provider);
-//}
-
-inline Cell append_cell(const Cell& f, const Cell& s, SymbolsProvider& provider)
-{
-    if (is_atom(f) || is_null(to_list(f))) return s;
-    return cons_cell(car(f), append_cell(cdr(f), s, provider), provider);
-}
-
-inline DotPair make_empty_list(SymbolsProvider& provider)
-{
-    return DotPair(provider);
-}
-
-inline Cell make_empty_list_cell(SymbolsProvider& provider)
-{
-    return Cell(DotPair(provider));
-}
-
-inline DotPair make_list(std::initializer_list<Cell> l, SymbolsProvider& provider)
-{
-    DotPair result = make_empty_list(provider);
-    for (auto it = rbegin(l); it != rend(l); ++it)
-    {
-        result = cons(*it, make_list_cell(std::move(result)), provider);
+    Cell result = this->make_empty_list_cell();
+    std::vector<Cell,CoreData::allocator<Cell>> stack;
+    while (first != last) {
+        stack.push_back(t_env->eval_quote(*first));
+        ++first;
     }
+    for (auto it = std::rbegin(stack); it != std::rend(stack); ++it) {
+        result = cons(*it, result, *this);
+    }
+
+    stack.clear();
+    CoreData::allocator_release_memory<Cell>();
     return result;
 }
 
-inline DotPair deep_copy_list(const DotPair& l)
-{
-    throw;
-    //return DotPair();
+template<class  Container>
+inline Cell SExprsFarm::make_list_w_eval_cell(Container c) {
+    return make_list_w_eval_cell(std::begin(c), std::end(c));
 }
 
-inline bool is_null(const DotPair& dp)
+template<class InputIt>
+inline Cell cons_range(InputIt beg_it, InputIt end_it, SExprsFarm& farm)
 {
-    return std::empty(dp);
-}
-
-
-inline std::vector<Cell> copy_dpair_list_to_vector(const Cell& dp, bool skip_last_pair)
-{
-    return copy_dpair_list_to_vector(to_list(dp), skip_last_pair);
-}
-
-inline std::vector<Cell> copy_dpair_list_to_vector(const DotPair& dp, bool skip_last_pair)
-{
-    std::vector<Cell> result;
-    for (const auto& cell : CarCdrConstIteration(dp)) {
-        result.push_back(cell);
+    if (beg_it == end_it) return cons(farm.nil, farm.nil, farm);
+    std::vector<const Cell*, CoreData::allocator<const Cell*>> stack;
+    while (beg_it != end_it) {
+        stack.push_back(&*beg_it);
+        ++beg_it;
     }
+    Cell result = *(*std::rbegin(stack));
+    for (auto it = std::rbegin(stack) + 1; it != std::rend(stack); ++it) {
+        result = cons(*(*it), result, farm);
+    }
+
+    stack.clear();
+    CoreData::allocator_release_memory<const Cell*>();
     return result;
 }
-

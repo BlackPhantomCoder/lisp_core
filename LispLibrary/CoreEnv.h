@@ -1,23 +1,25 @@
 #pragma once
-
 #include "LambdaCell.h"
-#include "Cell.h"
 #include "Mutexed.h"
 #include "CoreEnvStreamsProvider.h"
 #include "CellEnvironment.h"
-#include <unordered_map>
-#include <exception>
-#include <array>
-#include <optional>
-#include <functional>
-#include <variant>
 #include "LambdaEvaler.h"
 #include "CoreData.h"
 #include "BIFuncEvaler.h"
-#include "SymbolsProvider.h"
 #include "Lexer.h"
 #include "ArgsStack.h"
-#include "LambdaStorage.h"
+#include "SExprsFarm.h"
+
+#include "FuncsStorage.h"
+
+#include "Cell.h"
+#include "Number.h"
+#include "Symbol.h"
+#include "DotPair.h"
+
+#include <unordered_map>
+#include <optional>
+#include <functional>
 
 #define eval_direct_bifunc(f, b, e)\
     (\
@@ -35,55 +37,23 @@
     env_ptr->t_direct_call_buf\
     )
 
-//#define func1_arg_evaer(name, arg_type, result_type)\
-//struct name##_evaler_frame{\
-//	arg_type arg;\
-//};\
-//	class name##_evaler : public ArgsOnStackEvaler< name##_evaler_frame, result_type>\
-//{\
-//public:\
-//	name##_evaler(CoreEnvironment* env) : \
-//		ArgsOnStackEvaler(env)\
-//	{\
-//	}\
-//	virtual result_type pop_eval() override;\
-//};\
-//friend name##_evaler;\
-//name##_evaler t_##name##_evaler\
-
 class  CoreEnvironment {
 	friend CoreData::bifuncs_array CoreData::bifunc_setup();
 	friend CoreData::nbifuncs_array CoreData::nbifunc_setup();
 
+	friend class SExprsFarm;
 	friend class LambdaEvaler;
 	friend class BifuncEvaler;
-	//func1_arg_evaer(eval_atom, const Atom&, Cell);
-
-	friend __forceinline Cell eval_atom(CoreEnvironment& env, const Atom& atom);
-	friend __forceinline Cell eval_symbol(CoreEnvironment& env, const Symbol& symbol);
-	friend __forceinline std::optional<Cell> eval_implicit_cond(CoreEnvironment& env, const Cell& atom);
-	friend __forceinline void find_bifunc(CoreEnvironment& env, const Symbol& str);
-	friend __forceinline void set_value(CoreEnvironment& env, const Cell& name, const Cell& val);
-	friend __forceinline Cell eval_fnc(
-		CoreEnvironment& env, 
-		const Cell& fnc,
-		std::vector<Cell>::const_iterator args_beg_it,
-		std::vector<Cell>::const_iterator args_end_it,
-		bool forse_nospread_args
-	);
-	friend __forceinline lambda get_lambda_form(
-		CoreEnvironment& env,
-		const DotPair& lst
-	);
 public:
+	CoreEnvironment();
 	CoreEnvironment(CoreEnvStreamsProvider& streams);
 	~CoreEnvironment() = default;
 
-	std::vector<Cell> execute_all(CoreInputStreamInt& stream, const IMutexed<bool>& stop_flag);
-	Cell execute_one(CoreInputStreamInt& stream, const IMutexed<bool>& stop_flag);
-
-	//const std::unordered_map < Symbol, LambdaCell>& lambdas() const;
+	std::vector<std::string> execute_all(CoreInputStreamInt& stream, const IMutexed<bool>& stop_flag);
+	std::string execute_one(CoreInputStreamInt& stream, const IMutexed<bool>& stop_flag);
 	const CellEnvironment::mp& vars() const;
+
+	void set_streams(CoreEnvStreamsProvider& streams);
 private:
 	enum class find_bifunc_result {bi, nbi, null};
 private:
@@ -122,6 +92,7 @@ private:
 	Cell bifunc_oblist();
 	Cell bifunc_rplaca();
 	Cell bifunc_rplacd();
+	Cell bifunc_copy_tree();
 
 	Cell nbifunc_quote();
 	Cell nbifunc_defun();
@@ -130,17 +101,45 @@ private:
 	Cell nbifunc_setq();
 	Cell nbifunc_loop();
 
-	Cell eval_quote(const Cell& arg);
+	Cell eval_quote(Cell& arg);
+
+	lambda make_spread_lambda_form(
+		lambda_types lambda_type,
+		Cell& params,
+		Cell& body
+	);
+
+	lambda make_nospread_lambda_form(
+		lambda_types lambda_type,
+		const Symbol& param,
+		Cell& body
+	);
+
+	Cell eval_atom(const Cell& atom);
+	Cell eval_symbol(const Cell& symbol);
+	std::optional<Cell> eval_implicit_cond(Cell& atom);
+	void set_value(const Cell& name, const Cell& val);
+	Cell eval_fnc(
+		Cell& fnc,
+		CarCdrIterator args_beg_it,
+		CarCdrIterator args_end_it,
+		bool forse_nospread_args
+	);
+	lambda get_lambda_form(Cell& lst);
+
+	enum class numbers_compare_type {greater, greater_eq, less, less_eq, eq};
+	Cell numbers_compare(numbers_compare_type type);
 private:
-	SymbolsProvider t_symbols;
-	LambdaStorage t_lambdas;
+	SExprsFarm t_farm;
+	std::optional<std::reference_wrapper<CoreEnvStreamsProvider>> t_streams;
+	FuncsStorage t_funcs;
+
 	ArgsStack t_args;
 	CellEnvironment t_envs;
 	std::optional<std::reference_wrapper<const IMutexed<bool>>> t_stop_flag;
 
 	LambdaEvaler t_l_evaler;
 	BifuncEvaler t_bi_evaler;
-	CoreEnvStreamsProvider& t_streams;
 	Syntaxer t_syntaxer;
 	
 	//optimazed buffer for direct call

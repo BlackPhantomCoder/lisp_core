@@ -18,6 +18,7 @@ using namespace CoreData;
 #include "STDMutexed.h"
 
 void cin_execute_kostil_repl(CoreInputStreamInt& is) {
+    cin.get();
     auto core = make_core_w_predfuncs(cin, stream_read_mode::new_string, cout);
     if (is.ready()) 
     {
@@ -47,7 +48,6 @@ int main()
 {
     //запуск тестов (в эту функцию писать все запуски тестов)
     run_all_tests();
-    
     //запуск репла с cin + предзагрузка из потока (в данном случае - файл) 
     ifstream f("programs/1.lsp");
     auto cf = StdCoreInputStream(f, stream_read_mode::s_expression);

@@ -87,12 +87,12 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;LISPLIBRARY_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>TREAT_SAFE_MEMORY_CONTROL;EX_CATCH;WIN32;_DEBUG;LISPLIBRARY_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <DisableSpecificWarnings>4146</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>$(SolutionDir)ProfileLib;$(MyLibsPath)\gmp\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\ProfileLib;$(SolutionDir)\LispLibrary;$(MyLibsPath)\</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -114,12 +114,12 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;LISPLIBRARY_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>EX_CATCH;WIN32;NDEBUG;LISPLIBRARY_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <DisableSpecificWarnings>4146</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>$(SolutionDir)ProfileLib;$(MyLibsPath)\gmp\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\ProfileLib;$(SolutionDir)\LispLibrary;$(MyLibsPath)\</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -140,7 +140,6 @@
   <ItemGroup>
     <ClInclude Include="ArgsOnStackEvaler.h" />
     <ClInclude Include="ArgsStack.h" />
-    <ClInclude Include="Atom.h" />
     <ClInclude Include="BIFuncEvaler.h" />
     <ClInclude Include="BigInt.h" />
     <ClInclude Include="CarCdrIterator.h" />
@@ -153,24 +152,28 @@
     <ClInclude Include="DotPair.h" />
     <ClInclude Include="Funcs.h" />
     <ClInclude Include="CoreData.h" />
+    <ClInclude Include="FuncsStorage.h" />
     <ClInclude Include="LambdaCell.h" />
     <ClInclude Include="LambdaEvaler.h" />
-    <ClInclude Include="LambdaStorage.h" />
     <ClInclude Include="Lexer.h" />
+    <ClInclude Include="MPool.h" />
     <ClInclude Include="Mutexed.h" />
     <ClInclude Include="Number.h" />
     <ClInclude Include="PredLispFuncs.h" />
     <ClInclude Include="PublicCoreEnvironmentProvider.h" />
+    <ClInclude Include="SExprCore.h" />
+    <ClInclude Include="SExprCoreStdVariant.h" />
+    <ClInclude Include="SExprCorePoolVariant.h" />
+    <ClInclude Include="SExprsFArm.h" />
     <ClInclude Include="StdCoreInputMemoryStream.h" />
     <ClInclude Include="StdCoreInputStream.h" />
     <ClInclude Include="StdCoreOutputStream.h" />
     <ClInclude Include="STDMutexed.h" />
     <ClInclude Include="Symbol.h" />
-    <ClInclude Include="SymbolsProvider.h" />
+    <ClInclude Include="SymbolsFarm.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ArgsStack.cpp" />
-    <ClCompile Include="Atom.cpp" />
     <ClCompile Include="BIFuncEvaler.cpp" />
     <ClCompile Include="BigInt.cpp" />
     <ClCompile Include="CarCdrIterator.cpp" />
@@ -183,18 +186,22 @@
     <ClCompile Include="CoreStreamInt.cpp" />
     <ClCompile Include="DotPair.cpp" />
     <ClCompile Include="Funcs.cpp" />
+    <ClCompile Include="FuncsStorage.cpp" />
     <ClCompile Include="LambdaCell.cpp" />
     <ClCompile Include="LambdaEvaler.cpp" />
-    <ClCompile Include="LambdaStorage.cpp" />
     <ClCompile Include="Lexer.cpp" />
     <ClCompile Include="Number.cpp" />
     <ClCompile Include="PredLispFuncs.cpp" />
     <ClCompile Include="PublicCoreEnvironmentProvider.cpp" />
+    <ClCompile Include="SExprCore.cpp" />
+    <ClCompile Include="SExprCoreStdVariant.cpp" />
+    <ClCompile Include="SExprCoreVoidPtrVariant.cpp" />
+    <ClCompile Include="SExprsFarm.cpp" />
     <ClCompile Include="StdCoreInputMemoryStream.cpp" />
     <ClCompile Include="StdCoreInputStream.cpp" />
     <ClCompile Include="StdCoreOutputStream.cpp" />
     <ClCompile Include="Symbol.cpp" />
-    <ClCompile Include="SymbolsProvider.cpp" />
+    <ClCompile Include="SymbolsFerm.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

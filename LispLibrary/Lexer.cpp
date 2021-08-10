@@ -1,15 +1,15 @@
 #include "Lexer.h"
-#include <string>
-#include <list>
-#include <algorithm>
-#include <unordered_set>
+
 #include "CoreData.h"
 #include "Funcs.h"
+
+#include <algorithm>
+#include <unordered_set>
 #include <sstream>
 using namespace std;
 
-Syntaxer::Syntaxer(SymbolsProvider& symbols, bool skip_comments, bool upcase_mode):
-    t_symbols(symbols),
+Syntaxer::Syntaxer(SExprsFarm& farm, bool skip_comments, bool upcase_mode):
+    t_farm(farm),
     t_skip_comments(skip_comments),
     t_upcase_mode(upcase_mode)
 {
@@ -47,14 +47,14 @@ std::pair < read_reason, char> Syntaxer::read_char(CoreInputStreamInt& stream)
 std::pair<read_reason, Cell>  Syntaxer::read_sexpr(CoreInputStreamInt& stream)
 {
     if (!stream.ready()) {
-        return { read_reason::empty_input,  t_symbols.get().nil };
+        return { read_reason::empty_input,  t_farm.get().nil };
     }
     try {
         auto s = TokenStream(t_skip_comments, stream);
         return gen_cell(s);
     }
     catch (const throw_token_stream_empty&) {
-        return { read_reason::empty_input,  t_symbols.get().nil };
+        return { read_reason::empty_input,  t_farm.get().nil };
     }
 }
 
@@ -157,7 +157,7 @@ std::pair<read_reason, Cell> Syntaxer::gen_cell(tokens token, std::string&& val,
         if (result_pair.first != read_reason::success) return result_pair;
         return { 
             read_reason::success,
-            make_list_cell({ make_symbol_cell("QUOTE", t_symbols.get().symbols), move(result_pair.second) }, t_symbols.get()),
+            t_farm.get().make_list_cell({ t_farm.get().make_symbol_cell("QUOTE"), move(result_pair.second) }),
         };
     }
 
@@ -167,30 +167,30 @@ std::pair<read_reason, Cell> Syntaxer::gen_cell(tokens token, std::string&& val,
             auto [next_token, next_val] = tokens.read();
             if (next_token == tokens::CloseBracket) break;
             if (next_token == tokens::Dot) {
-                if(lst.empty()) return { read_reason::wrong_input, t_symbols.get().nil };
+                if(lst.empty()) return { read_reason::wrong_input, t_farm.get().nil };
                 auto [s_pair_token, s_pair_val] = tokens.read();
                 auto  s_pair = gen_cell(s_pair_token, move(s_pair_val), tokens);
                 if (s_pair.first != read_reason::success) return s_pair;
 
-                Cell a = cons_cell(lst.back(), s_pair.second, t_symbols);
+                Cell a = cons(lst.back(), s_pair.second, t_farm.get());
                 //cout << a << endl;
                 for (auto it = next(rbegin(lst)); it != rend(lst); ++it) {
-                    a = cons_cell(*it, a, t_symbols);
+                    a = cons(*it, a, t_farm.get());
                     //cout << a << endl;
                 }
 
                 auto [close_token, close_val] = tokens.read();
-                if (close_token != tokens::CloseBracket) return { read_reason::wrong_input, t_symbols.get().nil };
+                if (close_token != tokens::CloseBracket) return { read_reason::wrong_input, t_farm.get().nil };
                 else return { read_reason::success, move(a) };
             }
             auto  result_pair = gen_cell(next_token, move(next_val), tokens);
             if (result_pair.first != read_reason::success) return result_pair;
             lst.push_back(move(result_pair.second));
         }
-        return { read_reason::success, make_list_cell(begin(lst), end(lst), t_symbols) };
+        return { read_reason::success, t_farm.get().make_list_cell(begin(lst), end(lst)) };
     }
     else if (token == tokens::QExpr) {
-        return   { read_reason::success , make_symbol_cell(move(val), t_symbols.get().symbols) };
+        return   { read_reason::success , t_farm.get().make_symbol_cell(move(val)) };
     }
     else if (token == tokens::Expr) {
         if (is_real_number(val.c_str())) {
@@ -199,29 +199,29 @@ std::pair<read_reason, Cell> Syntaxer::gen_cell(tokens token, std::string&& val,
             s >> n;
             if (s.good())
             {
-                return { read_reason::success, make_number(Number(n)) };
+                return { read_reason::success, t_farm.get().make_number_cell(n) };
             }
             else
             {
                 val.erase(val.find('.'), val.npos);
-                return { read_reason::success, make_number(Number(BigInt(move(val)))) };
+                return { read_reason::success, t_farm.get().make_number_cell(BigInt(move(val))) };
             }
         }
         if (is_integer_number(val.c_str())) {
             if (val[0] == '+') val.erase(begin(val));
-            return { read_reason::success,make_number(Number(BigInt(move(val)))) };
+            return { read_reason::success, t_farm.get().make_number_cell(BigInt(move(val))) };
         }
         else if (is_half_integer_num(val.c_str())) {
             if (val[0] == '+') val.erase(begin(val));
             val.erase(val.find('.'), val.npos);
-            return { read_reason::success,make_number(Number(BigInt(move(val)))) };
+            return { read_reason::success,t_farm.get().make_number_cell(BigInt(move(val))) };
         }
         if (val.empty() || (isdig(val[0]))) {
-            return { read_reason::wrong_input, t_symbols.get().nil };
+            return { read_reason::wrong_input, t_farm.get().nil };
         }
         process_symbol(val);
-        if (val == CoreData::nil_str) return { read_reason::success , t_symbols.get().nil };
-        return   { read_reason::success , make_symbol_cell(move(val), t_symbols.get().symbols) };
+        if (val == CoreData::nil_str) return { read_reason::success , t_farm.get().nil };
+        return   { read_reason::success , t_farm.get().make_symbol_cell(move(val)) };
     }
     else {
         throw "unknown token";
@@ -516,7 +516,7 @@ std::pair<read_reason, Cell> SExprStream::read()
         return t_owner.gen_cell(t_base);
     }
     catch (const throw_token_stream_empty&) {
-        return { read_reason::empty_input,  t_owner.t_symbols.get().nil };
+        return { read_reason::empty_input,  t_owner.t_farm.get().nil };
     }
 }
 

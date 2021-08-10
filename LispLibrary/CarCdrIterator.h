@@ -1,5 +1,6 @@
 #pragma once
-#include "DotPair.h"
+#include "Cell.h"
+#include "SExprsFarm.h"
 
 class CarCdrIterator {
 public:
@@ -9,7 +10,8 @@ public:
     typedef Cell& reference;
     typedef long difference_type;
 public:
-    explicit CarCdrIterator(DotPair* base = nullptr) : t_base(base) {};
+    explicit CarCdrIterator(SExprsFarm& farm);
+    CarCdrIterator(Cell* base, SExprsFarm& farm);
     CarCdrIterator operator++(int);
     CarCdrIterator& operator++();
     Cell& operator*();
@@ -19,10 +21,13 @@ public:
     bool operator!=(const CarCdrIterator& rh) const;
     bool operator==(const CarCdrIterator& rh) const;
 
-    DotPair& get_pair();
-    const DotPair& get_pair()const;
+    //bool empty() const;
+    Cell& get_elem();
+    const Cell& get_elem()const;
 private:
-    DotPair* t_base;
+    Cell* t_base;
+    std::reference_wrapper<SExprsFarm> t_farm;
+    bool t_nil;
 };
 
 struct CarCdrConstIterator {
@@ -33,7 +38,8 @@ public:
     typedef Cell& reference;
     typedef long difference_type;
 public:
-    explicit CarCdrConstIterator(const DotPair* base = nullptr);
+    explicit CarCdrConstIterator(SExprsFarm& farm);
+    CarCdrConstIterator(const Cell* base, SExprsFarm& farm);
     CarCdrConstIterator operator++(int);
     CarCdrConstIterator& operator++();
     const Cell& operator*()const;
@@ -41,14 +47,17 @@ public:
     bool operator!=(const CarCdrConstIterator& rh) const;
     bool operator==(const CarCdrConstIterator& rh) const;
 
-    const DotPair& get_pair()const;
+    //bool empty() const;
+    const Cell& get_elem()const;
 private:
-    const DotPair* t_base;
+    const Cell* t_base;
+    std::reference_wrapper<SExprsFarm> t_farm;
+    bool t_nil;
 };
 
 class CarCdrIteration {
 public:
-    CarCdrIteration(DotPair& dp);
+    CarCdrIteration(Cell& dp, SExprsFarm& farm);
 
     CarCdrIterator begin();
     CarCdrIterator end();
@@ -56,15 +65,17 @@ public:
     CarCdrConstIterator begin()const;
     CarCdrConstIterator end()const;
 private:
-    DotPair* t_base;
+    Cell* t_base;
+    SExprsFarm& t_farm;
 };
 
 class CarCdrConstIteration {
 public:
-    CarCdrConstIteration(const DotPair& dp);
+    CarCdrConstIteration(const Cell& dp, SExprsFarm& farm);
 
     CarCdrConstIterator begin()const;
     CarCdrConstIterator end()const;
 private:
-    const DotPair* t_base;
+    const Cell* t_base;
+    std::reference_wrapper<SExprsFarm> t_farm;
 };

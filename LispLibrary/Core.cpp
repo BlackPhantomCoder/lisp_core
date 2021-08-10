@@ -13,39 +13,44 @@ using namespace CoreData;
 
 Core::Core(Core&& rh) noexcept:
     t_env(move(rh.t_env)),
-    t_stop(move(rh.t_stop))
+    t_stop(move(rh.t_stop)),
+    t_streams(move(rh.t_streams))
 {
 
 }
 
-Core::Core(CoreInputStreamInt& predfuncs, std::unique_ptr<CoreEnvStreamsProvider>&& streams, std::unique_ptr<IMutexed<bool>>&& custom_mutex):
-    t_streams(move(streams)),
-    t_env(*t_streams.get())
+Core::Core(
+    CoreInputStreamInt& predfuncs,
+    std::unique_ptr<CoreEnvStreamsProvider>&& streams,
+    std::unique_ptr<IMutexed<bool>>&& custom_mutex
+):
+    Core(move(streams), move(custom_mutex))
 {
-    t_stop = move(custom_mutex); 
-    t_stop->set(false);
     this->execute_all(predfuncs);
 }
 
 Core::Core(std::unique_ptr<CoreEnvStreamsProvider>&& streams, std::unique_ptr<IMutexed<bool>>&& custom_mutex):
-    t_streams(move(streams)),
-    t_env(*t_streams.get())
+    Core(move(streams))
 {
     t_stop = move(custom_mutex);
     t_stop->set(false);
 }
 
 Core::Core(CoreInputStreamInt& predfuncs, std::unique_ptr<CoreEnvStreamsProvider>&& streams) :
-    t_streams(move(streams)),
-    t_env(*t_streams.get())
+    Core(move(streams))
 {
-    t_stop = make_unique<STDMutexed<bool>>(false);
     this->execute_all(predfuncs);
 }
 
 Core::Core(std::unique_ptr<CoreEnvStreamsProvider>&& streams) :
-    t_streams(move(streams)),
-    t_env(*t_streams.get())
+    Core()
+{
+    t_streams = move(streams);
+    t_env->set_streams(*t_streams);
+}
+
+Core::Core() :
+    t_env(make_unique<CoreEnvironment>())
 {
     t_stop = make_unique<STDMutexed<bool>>(false);
 }
@@ -69,33 +74,36 @@ std::pair<Core::result_type, std::vector<std::string>> Core::execute_all(CoreInp
     }
     bool success = true;
     std::vector<std::string> result;
-    //try
-    //{
-        std::vector<Cell> res_buf = t_env.execute_all(input_s, *t_stop);
-        result.reserve(res_buf.size());
-        for (const auto& c : res_buf) {
-            result.emplace_back(to_string(c));
+
+    #ifndef EX_CATCH
+        result = t_env->execute_all(input_s, *t_stop);;
+    #endif
+
+    #ifdef EX_CATCH
+        try
+        {
+            result = t_env->execute_all(input_s, *t_stop);
         }
-    //}
-    /*catch (const char* str)
-    {
-        success = false;
-        result = { str };
-    }
-    catch (const std::string& str)
-    {
-        success = false;
-        result = { str };
-    }
-    catch (const throw_stop_helper&)
-    {
-        return { Core::result_type::stopped, {""} };
-    }
-    catch (...)
-    {
-        success = false;
-        result = { "unknown error (wrong catch)" };
-    }*/
+        catch (const char* str)
+        {
+            success = false;
+            result = { str };
+        }
+        catch (const std::string& str)
+        {
+            success = false;
+            result = { str };
+        }
+        catch (const throw_stop_helper&)
+        {
+            return { Core::result_type::stopped, {""} };
+        }
+        catch (...)
+        {
+            success = false;
+            result = { "unknown error (wrong catch)" };
+        }
+    #endif
     if (!success) return { Core::result_type::fail, std::move(result) };
     return{ Core::result_type::success, std::move(result) };
 }
@@ -114,29 +122,37 @@ std::pair<Core::result_type, std::string> Core::execute_one(CoreInputStreamInt& 
     }
     bool success = true;
     std::string result;
-    try
-    {
-        result = to_string(t_env.execute_one(input_s, *t_stop));
-    }
-    catch (const char* str)
-    {
-        success = false;
-        result = str;
-    }
-    catch (const std::string& str)
-    {
-        success = false;
-        result = { str };
-    }
-    catch (const throw_stop_helper&)
-    {
-        return { Core::result_type::stopped, "" };
-    }
-  /*  catch (...)
-    {
-        success = false;
-        result = "unknown error (wrong catch)";
-    }*/
+
+
+    #ifndef EX_CATCH
+        result = t_env->execute_one(input_s, *t_stop);
+    #endif
+
+    #ifdef EX_CATCH
+        try
+        {
+            result = t_env->execute_one(input_s, *t_stop);
+        }
+        catch (const char* str)
+        {
+            success = false;
+            result = str;
+        }
+        catch (const std::string& str)
+        {
+            success = false;
+            result = { str };
+        }
+        catch (const throw_stop_helper&)
+        {
+            return { Core::result_type::stopped, "" };
+        }
+        catch (...)
+        {
+            success = false;
+            result = "unknown error (wrong catch)";
+        }
+    #endif
     if (!success) return { Core::result_type::fail, std::move(result) };
     return{ Core::result_type::success, std::move(result) };
 }
@@ -150,7 +166,7 @@ std::pair<Core::result_type, std::string> Core::execute_one(const std::string& i
 
 const CoreEnvironment& Core::get() const
 {
-    return t_env;
+    return *t_env;
 }
 
 void Core::stop()

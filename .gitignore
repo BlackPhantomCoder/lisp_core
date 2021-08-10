@@ -344,3 +344,5 @@ healthchecksdb
 /out/**/*.exe
 /~compile_dir/*
 /IMPORTED/*
+/libs/LispLibrary
+/libs/ProfileLib

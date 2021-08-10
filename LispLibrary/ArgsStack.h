@@ -3,17 +3,26 @@
 #include <vector>
 #include "Cell.h"
 #include "DotPair.h"
+#include "CarCdrIterator.h"
+
 
 class ArgsStack {
 public:
+	using iterator = CarCdrIterator;
+public:
 	ArgsStack() = default;
-	void push(std::vector<Cell>::const_iterator begin, std::vector<Cell>::const_iterator end);
+	void push(iterator begin, iterator end);
 	void pop();
-	std::vector<Cell>::const_iterator begin();
-	std::vector<Cell>::const_iterator end();
-	size_t size() const;
+	iterator begin();
+	iterator end();
+
+	bool operator==(long val) const;
+	bool operator>=(long val) const;
+	bool operator<=(long val) const;
+	bool operator>(long val) const;
+	bool operator<(long val) const;
 	void clear();
 private:
-	using stack_type = std::pair<std::vector<Cell>::const_iterator, std::vector<Cell>::const_iterator>;
+	using stack_type = std::pair<iterator, iterator>;
 	std::stack<stack_type, std::vector<stack_type>> t_args;
 };

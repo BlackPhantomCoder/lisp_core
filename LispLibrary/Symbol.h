@@ -1,47 +1,25 @@
 #pragma once
-#include <string>
-#include <iostream>
-#include <deque>
-#include <unordered_map>
-#include <list>
-
-class Symbols {
-public:
-    using oblist = std::list<std::string_view>;
-    using symb_mp = std::unordered_map<std::string, std::pair<oblist::iterator, size_t>>;
-
-    class symbol_core {
-    public:
-        symbol_core(symb_mp::iterator it, Symbols& owner);
-        symbol_core(const symbol_core& rh);
-        ~symbol_core();
-        const char* str() const;
-        size_t size() const;
-        bool operator==(const symbol_core& rh) const;
-
-    private:
-        symb_mp::iterator t_base;
-        std::reference_wrapper< Symbols> t_owner;
-    };
-public:
-
-    Symbols::symbol_core make_or_copy(std::string&& str);
-    Symbols::symbol_core make_or_copy(const std::string& str);
-    void del_symbol(symb_mp::iterator);
-
-    const oblist& get_lst() const;
-private:
-    symb_mp t_symbol_to_it_and_count;
-    oblist t_oblist;
-};
+#include "SymbolsFarm.h"
+#include "SExprsFarm.h"
 
 
 class Symbol {
-    friend Symbol make_symbol(const std::string& data, Symbols& owner);
-    friend Symbol make_symbol(std::string&& data, Symbols& owner);
+    friend class SExprsFarm;
+    friend class SymbolsFarm;
+    //friend Symbol make_symbol(const std::string& data, SymbolsFarm& owner);
+    //friend Symbol make_symbol(std::string&& data, SymbolsFarm& owner);
+    //friend Symbol make_symbol(const std::string& data, SExprsFarm& owner);
+    //friend Symbol make_symbol(std::string&& data, SExprsFarm& owner);
 public:
-    Symbol(const Symbol& rh);
-    Symbol& operator=(const Symbol& rh);
+    Symbol() = default;
+    ~Symbol();
+
+    Symbol(Symbol&& rh) noexcept = default;
+    Symbol(const Symbol& rh) = default;
+
+
+    Symbol& operator=(Symbol&& rh) noexcept = default;
+    Symbol& operator=(const Symbol& rh) = default;
 
     bool operator<(const Symbol& symb)const;
     bool operator==(const Symbol& symb)const;
@@ -49,16 +27,14 @@ public:
 
     size_t size()const;
     const char* to_string()const;
+
+    bool empty() const;
+    void clear();
 private:
-    Symbol(const Symbols::symbol_core& data);
+    Symbol(const SymbolsFarm::symbol_core& data);
 private:
-    Symbols::symbol_core t_data;
+    SymbolsFarm::symbol_core t_data;
 };
-
-
-
-Symbol make_symbol(const std::string& data, Symbols& owner);
-Symbol make_symbol(std::string&& data, Symbols& owner);
 
 namespace std
 {
@@ -71,10 +47,21 @@ namespace std
     };
 }
 
+bool operator==(const char* lh, const Symbol& rh);
+bool operator==(const Symbol& lh, const char* rh);
 bool operator==(const Symbol& lh, const std::string& rh);
 bool operator==(const std::string& lh, const Symbol& rh);
 
+bool operator!=(const Symbol& lh, const char* rh);
+bool operator!=(const char* lh, const Symbol& rh);
 bool operator!=(const Symbol& lh, const std::string& rh);
 bool operator!=(const std::string& lh, const Symbol& rh);
 
-std::ostream& operator<<(std::ostream& os, const Symbol& rh);
+
+//
+//Symbol make_symbol(Symbol&& rh);
+//Symbol make_symbol(const Symbol& rh);
+//Symbol make_symbol(const std::string& data, SExprsFarm& owner);
+//Symbol make_symbol(std::string&& data, SExprsFarm& owner);
+//Symbol make_symbol(const std::string& data, SymbolsFarm& owner);
+//Symbol make_symbol(std::string&& data, SymbolsFarm& owner);

@@ -22,10 +22,15 @@ unsigned double_macheps()
 
 unsigned Number::epsilon = double_macheps();
 
+Number::~Number()
+{
+    clear();
+}
+
 Number::Number(Number&& rh)noexcept:
     t_data(move(rh.t_data))
 {
-    rh.t_data = nullptr;
+    rh.t_data = monostate{};
 }
 
 Number::Number(const Number& rh):
@@ -46,7 +51,7 @@ Number::Number(const BigInt& val) :
 Number& Number::operator=(Number&& rh)noexcept
 {
     t_data = move(rh.t_data);
-    rh.t_data = nullptr;
+    rh.t_data = monostate{};
     return *this;
 }
 
@@ -252,7 +257,7 @@ bool Number::operator>=(const Number& rh) const
 }
 
 // point must be Number::real
-void sum_double(std::variant<Number::integer, Number::real, void*>& point, double rh) {
+void sum_double(std::variant<Number::integer, Number::real, monostate>& point, double rh) {
     double x = get<double>(point);
 
     int exponent1 = 0;
@@ -273,7 +278,7 @@ void sum_double(std::variant<Number::integer, Number::real, void*>& point, doubl
 }
 
 // point must be Number::real
-void mul_double(std::variant<Number::integer, Number::real, void*>& point, double rh) {
+void mul_double(std::variant<Number::integer, Number::real, monostate>& point, double rh) {
     double x = get<double>(point);
 
     int exponent1 = 0;
@@ -294,7 +299,7 @@ void mul_double(std::variant<Number::integer, Number::real, void*>& point, doubl
 }
 
 // point must be Number::real
-void del_double(std::variant<Number::integer, Number::real, void*>& point, double rh) {
+void del_double(std::variant<Number::integer, Number::real, monostate>& point, double rh) {
     double x = get<double>(point);
 
     int exponent1 = 0;
@@ -598,6 +603,16 @@ const Number::real& Number::to_real() const
     return get<double>(t_data);
 }
 
+ Number::integer& Number::to_integer() 
+{
+    return get<BigInt>(t_data);
+}
+
+ Number::real& Number::to_real() 
+{
+    return get<double>(t_data);
+}
+
 std::string Number::to_string() const
 {
     if (holds_alternative<double>(t_data)) {
@@ -606,4 +621,39 @@ std::string Number::to_string() const
     else {
         return get<BigInt>(t_data).to_string();
     }
+}
+
+bool Number::empty()const
+{
+    return holds_alternative<monostate>(t_data);
+}
+
+void Number::clear()
+{
+    t_data = monostate{};
+}
+
+Number::integer& to_integer(Number& numb) {
+    return numb.to_integer();
+}
+
+Number::real& to_real(Number& numb) {
+    return numb.to_real();
+}
+
+const Number::integer& to_integer(const Number& numb) {
+    return numb.to_integer();
+}
+
+const Number::real& to_real(const Number& numb) {
+    return numb.to_real();
+}
+
+
+bool is_integer(const Number& numb) {
+    return numb.is_integer();
+}
+
+bool is_real(const Number& numb) {
+    return numb.is_real();
 }
