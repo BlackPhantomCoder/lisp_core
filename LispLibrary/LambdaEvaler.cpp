@@ -46,7 +46,7 @@ void LambdaEvaler::clear()
 inline void LambdaEvaler::eval_args()
 {
     if (is_spread(t_frames.top().fnc)) {
-        if (!t_frames.top().forse_noeval_args) {
+        if (t_frames.top().fnc.type == lambda_types::lambda && !t_frames.top().forse_noeval_args) {
             CarCdrIteration iteration(t_frames.top().fnc.params, t_env->t_farm);
             for (auto arg_it = begin(iteration); arg_it != end(iteration); ++arg_it) {
                 if (!is_symbol(*arg_it)) break;
@@ -77,10 +77,18 @@ inline void LambdaEvaler::eval_args()
         }
     }
     else if(is_nospread(t_frames.top().fnc)){
-        t_frames.top().buf.emplace_back(
+        if (t_frames.top().fnc.type == lambda_types::lambda && !t_frames.top().forse_noeval_args) {
+            t_frames.top().buf.emplace_back(
+                to_symbol(car(t_frames.top().fnc.params)),
+                t_env->t_farm.make_list_w_eval_cell(t_frames.top().beg_it, t_frames.top().end_it)
+            );
+        }
+        else {
+            t_frames.top().buf.emplace_back(
                 to_symbol(car(t_frames.top().fnc.params)),
                 t_env->t_farm.make_list_cell(t_frames.top().beg_it, t_frames.top().end_it)
             );
+        }
     }
     else {
         throw "LambdaEvaler::eval_args: unknown args_type";

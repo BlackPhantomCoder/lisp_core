@@ -9,9 +9,9 @@
 namespace NATests {
     //Тест функции
     #define NATests_RUN_TEST_catch_ex(runner, func) \
-        runner.add_test(func, #func, false)
-    #define NATests_RUN_TEST_nocatch_ex(runner, func) \
         runner.add_test(func, #func, true)
+    #define NATests_RUN_TEST_nocatch_ex(runner, func) \
+        runner.add_test(func, #func, false)
 
     struct test_result {
         std::string name;

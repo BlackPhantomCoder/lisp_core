@@ -126,12 +126,14 @@ Cell CoreEnvironment::eval_fnc(
     CarCdrIterator args_end_it,
     bool forse_nospread_args
 )
-{                                                                               
+{        
     if (is_alambda_form(fnc, t_farm)) {
         auto l = get_lambda_form(fnc);
         t_l_evaler.push({ l, args_beg_it,args_end_it,forse_nospread_args });
         return t_l_evaler.pop_eval();
     }   
+
+    if (!is_symbol(fnc)) throw string("eval_fnc: unknown function ") + to_string(fnc, t_farm);
 
     if (auto fnc_r = t_funcs.find(to_symbol(fnc)); !holds_alternative<monostate>(fnc_r)) {
 
@@ -472,6 +474,10 @@ Cell CoreEnvironment::bifunc_equal()
         );
     }
 
+    if (is_null(arg1, t_farm) && is_null(arg2, t_farm)) {
+        return t_farm.T;
+    }
+
     return t_farm.nil;
 }
 
@@ -734,20 +740,18 @@ Cell CoreEnvironment::bifunc_set()
 
 Cell CoreEnvironment::bifunc_eq()
 {
-    if (t_args == 0) return t_farm.nil;
-    if (t_args == 1 && is_list(arg1) && is_null(to_list(arg1))) return t_farm.T;
-    if (t_args == 1) return t_farm.nil;
-    const auto& s1 = arg1;
-    const auto& s2 = arg2;
+    const auto& s1 = (t_args > 0) ? arg1 : t_farm.nil;
+    const auto& s2 = (t_args > 1) ? arg2 : t_farm.nil;
 
-    if (!is_atom(s1) || !is_atom(s2)) {
-        return t_farm.nil;
-    }
-    else if (is_number(s1) && is_number(s2)) {
+
+    if (is_number(s1) && is_number(s2)) {
         return bool_cast(to_number(s1) == to_number(s2), t_farm);
     }
     else if (is_symbol(s1) && is_symbol(s2)) {
         return bool_cast(to_symbol(s1) == to_symbol(s2), t_farm);
+    }
+    else if(is_null(s1, t_farm) && is_null(s2, t_farm)) {
+        return t_farm.T;
     }
     return t_farm.nil;
 }
