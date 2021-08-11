@@ -1,7 +1,6 @@
 #pragma once
 #include "SExprsFarm.h"
 
-class Cell;
 class DotPair
 {
     friend class SExprsFarm;

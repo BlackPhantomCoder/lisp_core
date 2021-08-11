@@ -2,92 +2,31 @@
 
 #include "CarCdrIterator.h"
 #include "CoreData.h"
-#include "LambdaCell.h"
 #include "CoreEnv.h"
 
-#include <sstream>
-#include <iomanip>
-#include <algorithm>
+#include <unordered_set>
+#include <cctype>
 
 using namespace std;
 
-std::string to_string_list(const Cell& exp, SExprsFarm& farm);
-std::string to_string_symbol(const Cell& exp);
-std::string to_string_number(const Cell& exp);
+const unordered_set<char> read_updcase_special_tokens = {'\\', ';', '\"', ',', '\'', '`', '|' , ' ' };
+const unordered_set<char> noread_updcase_special_tokens = { '\\', '\"', '|', ' ' };
 
-std::string to_string(const lambda& fnc, SExprsFarm& farm)
-{
-    if (is_lambda(fnc)) {
-        string str = "(";
-        str += CoreData::lambda_str;
-
-        str += " ";
-        if (is_spread(fnc)) {
-            str += to_string(fnc.params, farm);
+bool is_special_symbol(bool read_upcase, unsigned char token) {
+    if (read_upcase) {
+        if (auto it = read_updcase_special_tokens.find(token); it != end(read_updcase_special_tokens)) {
+            return true;
         }
-        else if (is_nospread(fnc)) {
-            str += to_symbol(car(fnc.params)).to_string();
+        if (islower(token)) {
+            return true;
         }
-        else {
-            throw "to_string: unknown spread type";
-        }
-        str += " ";
-
-
-        if (!is_null(fnc.body, farm)) {
-            str += to_string(car(fnc.body), farm);
-        }
-        else {
-            str += to_string(fnc.body, farm);
-        }
-        str += ")";
-        return str;
-    }
-    else if (is_nlambda(fnc)) {
-        string str = "(";
-        str += CoreData::nlambda_str;
-
-        str += " ";
-        if (is_spread(fnc)) {
-            str += to_string(car(fnc.body), farm);
-        }
-        else  if (is_nospread(fnc)) {
-            str += to_symbol(car(fnc.params)).to_string();
-        }
-        else {
-            throw "to_string: unknown spread type";
-        }
-        str += " ";
-
-        if (!is_null(fnc.body, farm)) {
-            str += to_string(car(fnc.body), farm);
-        }
-        else {
-            str += to_string(fnc.body, farm);
-        }
-        str += ")";
-        return str;
     }
     else {
-        throw "to_string ...?";
+        if (auto it = noread_updcase_special_tokens.find(token); it != end(noread_updcase_special_tokens)) {
+            return true;
+        }
     }
-}
-
-// convert given Cell to a Lisp-readable string
-std::string to_string(const Cell& exp, SExprsFarm& farm)
-{
-    if (is_list(exp)) {
-        return to_string_list(exp, farm);
-    }
-    else if (is_symbol(exp)) {
-        return to_string_symbol(exp);
-    }
-    else if (is_number(exp)) {
-        return to_string_number(exp);
-    }
-    else {
-        throw "to_string: unknown object";
-    }
+    return false;
 }
 
 Cell bool_cast(bool val, SExprsFarm& farm)
@@ -131,9 +70,6 @@ bool is_alambda_symbol(const Symbol& arg, SExprsFarm& farm)
     return is_lambda_symbol(arg, farm) || is_nlambda_symbol(arg, farm);
 }
 
-
-
-
 bool is_implicit_cond(const Cell& arg, SExprsFarm& farm)
 {
     if (!is_list(arg)) return false;
@@ -158,71 +94,6 @@ bool is_lambda_form(const Cell& arg, SExprsFarm& farm)
 bool is_nlambda_form(const Cell& arg, SExprsFarm& farm)
 {
     return is_list(arg) && !is_null(arg, farm) && is_symbol(car(arg)) && is_nlambda_symbol(to_symbol(car(arg)), farm);
-}
-
-std::string to_string_list(const Cell& lst, SExprsFarm& farm)
-{
-    if (is_null(lst, farm)) return CoreData::nil_str;
-    std::string s("(");
-    CarCdrConstIteration iteration(lst, farm);
-    auto it = begin(iteration);
-    for (; next(it) != end(iteration); ++it) {
-        s += to_string(*it, farm);
-        s += ' ';
-    }
-    s += to_string(car(it.get_elem()), farm);
-    s += ' ';
-    if (!is_null(cdr(it.get_elem()), farm)) {
-        s += ". ";
-        s += to_string(cdr(it.get_elem()), farm);
-    }
-
-    if (s[s.length() - 1] == ' ') {
-        s.erase(s.length() - 1);
-    }
-    s += ')';
-    return s;
-}
-
-
-std::string to_string_symbol(const Cell& exp)
-{
-    return to_symbol(exp).to_string();
-}
-
-std::string to_string_number(const Cell& exp)
-{
-    const auto& number = to_number(exp);
-    if (is_integer(number)) {
-        return to_integer(number).to_string();
-    }
-    else if (is_real(number)) {
-        double result = to_real(number);
-        double a = 0;
-        double b = modf(result, &a);
-        unsigned i = 0;
-
-        while (a >= 1) {
-            a /= 10;
-            ++i;
-            if (i == Number::epsilon - 1) break;
-        }
-
-        while (b > 0) {
-            b *= 10;
-            b = modf(b, &a);
-            ++i;
-            if (i == Number::epsilon - 1) break;
-        }
-
-        ostringstream s;
-        s << setprecision(i + 1);
-        s << result;
-        return s.str();
-    }
-    else {
-        throw "to_string: unknown object";
-    }
 }
 
 Cell& car(Cell& dp) {

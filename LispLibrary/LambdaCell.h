@@ -26,6 +26,7 @@ inline bool is_spread(const lambda& l);
 inline bool is_nospread(const lambda& l);
 
 inline lambda make_lambda(lambda_types type, lambda_args_types arg_type, Cell&& params, Cell& body);
+Cell gen_cell(const lambda& l, SExprsFarm& farm);
 
 
 

@@ -73,11 +73,11 @@ std::pair<read_reason, std::vector<Cell>> Syntaxer::read_sexprs(CoreInputStreamI
         return { read_reason::success , move(result) };
     }
     catch (const char* str) {
-        std::cout << str << endl;
+        std::cerr << str << endl;
         throw str;
     }
     catch (...) {
-        std::cout << "wtf" << endl;
+        std::cerr << "wtf" << endl;
         throw;
     }
 }
@@ -94,7 +94,30 @@ void Syntaxer::process_char(char& symbol)
 
 void Syntaxer::process_symbol(std::string& symbol)
 {
-    if (t_upcase_mode) std::transform(symbol.begin(), symbol.end(), symbol.begin(), std::toupper);
+    if (t_upcase_mode) {
+        auto it = begin(symbol);
+        while (it != end(symbol)) {
+            if (*it == '\\') {
+                if (auto n_it = next(it); n_it != end(symbol)) {
+                    if(!is_special_symbol(t_upcase_mode, *n_it))*n_it = std::toupper((unsigned char)*n_it);
+                    it = next(symbol.erase(it));
+                }            
+                else it = symbol.erase(it);
+            }
+            else {
+                *it = std::toupper((unsigned char)*it);
+                ++it;
+            }
+
+        }
+    }
+    else {
+        auto it = find(begin(symbol), end(symbol), '\\');
+        while (it != end(symbol)) {
+            symbol.erase(it);
+            it = find(begin(symbol), end(symbol), '\\');
+        }
+    }
 }
 
 
@@ -171,13 +194,8 @@ std::pair<read_reason, Cell> Syntaxer::gen_cell(tokens token, std::string&& val,
                 auto [s_pair_token, s_pair_val] = tokens.read();
                 auto  s_pair = gen_cell(s_pair_token, move(s_pair_val), tokens);
                 if (s_pair.first != read_reason::success) return s_pair;
-
-                Cell a = cons(lst.back(), s_pair.second, t_farm.get());
-                //cout << a << endl;
-                for (auto it = next(rbegin(lst)); it != rend(lst); ++it) {
-                    a = cons(*it, a, t_farm.get());
-                    //cout << a << endl;
-                }
+                lst.push_back(s_pair.second);
+                Cell a = cons_range(begin(lst), end(lst), t_farm.get());
 
                 auto [close_token, close_val] = tokens.read();
                 if (close_token != tokens::CloseBracket) return { read_reason::wrong_input, t_farm.get().nil };
@@ -220,6 +238,8 @@ std::pair<read_reason, Cell> Syntaxer::gen_cell(tokens token, std::string&& val,
             return { read_reason::wrong_input, t_farm.get().nil };
         }
         process_symbol(val);
+        if (empty(val)) return { read_reason::wrong_input, t_farm.get().nil };
+
         if (val == CoreData::nil_str) return { read_reason::success , t_farm.get().nil };
         return   { read_reason::success , t_farm.get().make_symbol_cell(move(val)) };
     }
@@ -251,12 +271,43 @@ std::pair<tokens, std::string> TokenStream::read()
     }
 
     string exp;
-    while (t_base && !t_is_skip_symbol(t_base.get()) && !t_is_break_symbol(t_base.get())) {
+    bool insta_read_next = false;
+    while (t_base) {
+        if (insta_read_next) {
+            insta_read_next = false;
+            if (t_base.get() == '\n') {
+                throw "input_error";
+            }
+            if (
+                !(
+                    t_is_skip_symbol(t_base.get())
+                    || t_is_break_symbol(t_base.get())
+                    || t_is_ignore_symbol(t_base.get())
+                 ) 
+               )
+            {
+                exp += '\\';
+            }
+            exp += t_base.get();
+                
+            t_base.next();
+            continue;
+        }
+        if (t_is_skip_symbol(t_base.get()) || t_is_break_symbol(t_base.get())) {
+            break;
+        }
         if (t_is_ignore_symbol(t_base.get())) {
             t_base.next();
             continue;
         }
-        exp += t_base.get();
+       
+        if (t_base.get() == '\\') {
+            insta_read_next = true;
+        }
+        else
+        {
+            exp += t_base.get();
+        }
         if (t_base) {
             t_base.next();
         }
@@ -264,6 +315,7 @@ std::pair<tokens, std::string> TokenStream::read()
             break;
         }
     }
+    if(!empty(exp) && exp.back() == '\\') throw "input_error";
     if (t_base.get() == '.') {
         if (!exp.empty()) {
             auto next = t_check_next(true);
@@ -377,12 +429,12 @@ std::pair<tokens, std::string> TokenStream::t_read_break_symbol()
         return { tokens::Dot, "" };
     }
     else {
-        throw "TokenStream: internal error unknow break symbol";
+        throw "TokenStream: internal error unknow break symbol (syntax error maybe)";
     }
 }
 
 const std::unordered_set<char> skip_symbols = { ' ', '\t'};
-const std::unordered_set<char> break_sybols = { '"', '(', ')', '\'', '|', ';', '.'};
+const std::unordered_set<char> break_sybols = { '"', '(', ')', '\'', '|', ';', '.', ','};
 
 bool TokenStream::t_is_break_symbol(char symbol) const {
     return break_sybols.find(symbol) != end(break_sybols);

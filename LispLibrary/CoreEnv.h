@@ -16,6 +16,7 @@
 #include "Number.h"
 #include "Symbol.h"
 #include "DotPair.h"
+#include "OutputController.h"
 
 #include <unordered_map>
 #include <optional>
@@ -141,6 +142,7 @@ private:
 	LambdaEvaler t_l_evaler;
 	BifuncEvaler t_bi_evaler;
 	Syntaxer t_syntaxer;
+	OutputController t_output_control;
 	
 	//optimazed buffer for direct call
 	Cell t_direct_call_buf;

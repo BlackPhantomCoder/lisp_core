@@ -49,12 +49,12 @@ Symbol::Symbol(const SymbolsFarm::symbol_core& data) :
 
 bool operator==(const char* lh, const Symbol& rh)
 {
-    return lh == rh.to_string();
+    return strcmp(lh, rh.to_string()) == 0;
 }
 
 bool operator==(const Symbol& lh, const char* rh)
 {
-    return lh.to_string() == rh;
+    return strcmp(lh.to_string(), rh) == 0;
 }
 
 bool operator==(const Symbol& lh, const std::string& rh)
@@ -69,12 +69,12 @@ bool operator==(const std::string& lh, const Symbol& rh)
 
 bool operator!=(const Symbol& lh, const char* rh)
 {
-    return lh.to_string() != rh;
+    return strcmp(lh.to_string(), rh) != 0;
 }
 
 bool operator!=(const char* lh, const Symbol& rh)
 {
-    return lh == rh.to_string();
+    return strcmp(lh, rh.to_string()) != 0;
 }
 
 bool operator!=(const Symbol& lh, const std::string& rh)

@@ -40,14 +40,14 @@ lambda CoreEnvironment::get_lambda_form(Cell& lst)
     auto& second = car(cdr(lst));
     if (is_list(second)) {
         return make_spread_lambda_form(
-            (to_symbol(car(lst)) == CoreData::lambda_str) ? lambda_types::lambda : lambda_types::nlambda,
+            (to_symbol(car(lst)) == to_symbol(t_farm.lambda_symbol)) ? lambda_types::lambda : lambda_types::nlambda,
             second,
             cdr(cdr(lst))
         );
     }
     else if(is_symbol(second)){
         return make_nospread_lambda_form(
-            (to_symbol(car(lst)) == CoreData::lambda_str) ? lambda_types::lambda : lambda_types::nlambda,
+            (to_symbol(car(lst)) == to_symbol(t_farm.lambda_symbol)) ? lambda_types::lambda : lambda_types::nlambda,
             to_symbol(second),
             cdr(cdr(lst))
         );
@@ -112,10 +112,12 @@ void CoreEnvironment::set_value(const Cell& name, const Cell& val)
         else {
             t_envs.add_global_var(symb, val);
         }
+
+        //special vars
         if (symb == to_symbol(t_farm.read_up_case_symbol)) {
-            if (is_null(val, t_farm)) {
-                t_syntaxer.set_upcase_mode(false);
-            }
+            bool val_b = !is_null(val, t_farm);
+            t_syntaxer.set_upcase_mode(val_b);
+            t_output_control.set_read_upcase(val_b);
         }
     }
 }
@@ -127,13 +129,13 @@ Cell CoreEnvironment::eval_fnc(
     bool forse_nospread_args
 )
 {        
-    if (is_alambda_form(fnc, t_farm)) {
+    if (is_lambda_form(fnc, t_farm)) {
         auto l = get_lambda_form(fnc);
         t_l_evaler.push({ l, args_beg_it,args_end_it,forse_nospread_args });
         return t_l_evaler.pop_eval();
     }   
 
-    if (!is_symbol(fnc)) throw string("eval_fnc: unknown function ") + to_string(fnc, t_farm);
+    if (!is_symbol(fnc)) throw string("eval_fnc: unknown function ") + t_output_control.to_string(fnc);
 
     if (auto fnc_r = t_funcs.find(to_symbol(fnc)); !holds_alternative<monostate>(fnc_r)) {
 
@@ -163,8 +165,8 @@ Cell CoreEnvironment::eval_fnc(
         }
     }                                                                      
     else {                                                                      
-        throw "eval_fnc error " + to_string(
-            t_farm.make_list_cell({ fnc, t_farm.make_list_cell(args_beg_it , args_end_it) }), t_farm
+        throw "eval_fnc error " + t_output_control.to_string(
+            t_farm.make_list_cell({ fnc, t_farm.make_list_cell(args_beg_it , args_end_it) })
         );
     }                                                                           
 }           
@@ -208,6 +210,7 @@ CoreEnvironment::CoreEnvironment():
     t_bi_evaler(this),
     t_streams(nullopt),
     t_syntaxer(t_farm),
+    t_output_control(t_farm),
     t_direct_call_buf(t_farm.nil),
     t_findbifunc_buf(false, { bifunc_type::bifunc, nullptr })
 {
@@ -254,7 +257,7 @@ std::vector<std::string> CoreEnvironment::execute_all(CoreInputStreamInt& stream
                 if (reason != read_reason::success)  {
                     throw "input error";
                 }
-                result.emplace_back(to_string(eval_quote(c), t_farm));
+                result.emplace_back(t_output_control.to_string(eval_quote(c)));
             }
             return result;
         }
@@ -282,7 +285,7 @@ std::string CoreEnvironment::execute_one(CoreInputStreamInt& stream, const IMute
     #ifdef EX_CATCH
         try
         {
-            return to_string(eval_quote(c), t_farm);
+            return t_output_control.to_string(eval_quote(c));
         }
         catch (...)
         {
@@ -439,23 +442,23 @@ Cell CoreEnvironment::bifunc_num_eq()
 
 Cell CoreEnvironment::bifunc_equal()
 {
-    if (t_args == 0) return t_farm.T;
-    if (t_args == 1) return t_farm.T;
-    if (is_number(arg1) && is_number(arg2)) {
+    const auto& s1 = (t_args > 0) ? arg1 : t_farm.nil;
+    const auto& s2 = (t_args > 1) ? arg2 : t_farm.nil;
+    if (is_number(s1) && is_number(s2)) {
         return eval_direct_bifunc(&CoreEnvironment::bifunc_num_eq, begin(t_args), end(t_args));
     }
 
-    if (is_symbol(arg1) && is_symbol(arg2)) {
+    if (is_symbol(s1) && is_symbol(s2)) {
         return eval_direct_bifunc(&CoreEnvironment::bifunc_eq, begin(t_args), end(t_args));
     }
 
-    if (is_list(arg1) && is_list(arg2)) {
-        reference_wrapper<const Cell> s1 = arg1;
-        reference_wrapper<const Cell> s2 = arg2;
+    if (is_list(s1) && is_list(s2)) {
+        reference_wrapper<const Cell> s1_b = s1;
+        reference_wrapper<const Cell> s2_b = s2;
         
-        while (!is_null(s1, t_farm) && !is_null(s2, t_farm))
+        while (!is_null(s1_b, t_farm) && !is_null(s2_b, t_farm))
         {
-            auto lst = t_farm.make_list_cell({ car(s1), car(s2) });
+            auto lst = t_farm.make_list_cell({ car(s1_b), car(s2_b) });
             CarCdrIteration iteration(lst, t_farm);
             if (
                 is_null(eval_direct_bifunc(&CoreEnvironment::bifunc_equal, begin(iteration), end(iteration)), t_farm)
@@ -463,18 +466,18 @@ Cell CoreEnvironment::bifunc_equal()
             {
                 return t_farm.nil;
             }
-            s1 = cdr(s1);
-            s2 = cdr(s2);
+            s1_b = cdr(s1_b);
+            s2_b = cdr(s2_b);
         } 
-        if (is_null(s1, t_farm) && is_null(s2, t_farm)) return t_farm.T;
-        auto lst = t_farm.make_list_cell ({ car(s1), car(s2) });
+        if (is_null(s1_b, t_farm) && is_null(s2_b, t_farm)) return t_farm.T;
+        auto lst = t_farm.make_list_cell ({ car(s1_b), car(s2_b) });
         CarCdrIteration iteration(lst, t_farm);
         return bool_cast(
             !is_null(eval_direct_bifunc(&CoreEnvironment::bifunc_equal, begin(iteration), end(iteration)), t_farm), t_farm
         );
     }
 
-    if (is_null(arg1, t_farm) && is_null(arg2, t_farm)) {
+    if (is_null(s1, t_farm) && is_null(s2, t_farm)) {
         return t_farm.T;
     }
 
@@ -556,7 +559,7 @@ Cell CoreEnvironment::bifunc_getd()
             return t_farm.nil;
         }
         else {
-            return t_farm.make_symbol_cell(to_string(get<std::reference_wrapper<lambda>>(fnc_r).get(), t_farm));
+            return gen_cell(get<std::reference_wrapper<lambda>>(fnc_r).get(), t_farm);
         }
     }
     return t_farm.nil;
@@ -606,7 +609,7 @@ Cell CoreEnvironment::bifunc_print()
             return t_farm.nil;
         }
         else {
-            (*t_streams).get().t_output_stream().out_new_line(to_string(arg1, t_farm));
+            (*t_streams).get().t_output_stream().out_new_line(t_output_control.to_string(arg1));
             return arg1;
         }
     }
@@ -808,7 +811,7 @@ Cell CoreEnvironment::bifunc_apply()
 Cell CoreEnvironment::nbifunc_setq()
 {
     if (t_args == 0) return t_farm.nil;
-    auto it = next(begin(t_args) , 1);
+    auto it = next(begin(t_args));
     auto val = (it == end(t_args)) ? t_farm.nil : eval_quote(*it);
 
     set_value(arg1, val);
@@ -835,8 +838,8 @@ Cell CoreEnvironment::bifunc_integerp()
 Cell CoreEnvironment::bifunc_oblist()
 {
     const auto& lst = t_farm.symbols->get_lst();
-    std::list<Cell> a;
     std::vector <Cell> result;
+    result.reserve(lst.size());
     for (const auto& symb : lst) {
         result.push_back(t_farm.make_symbol_cell(symb.data()));
     }

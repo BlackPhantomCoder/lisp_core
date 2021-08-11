@@ -12,11 +12,7 @@
 #include <iostream>
 #include <deque>
 
-//class CoreEnvironment;
-struct lambda;
-
-std::string to_string(const lambda& fnc, SExprsFarm& farm);
-std::string to_string(const Cell& exp, SExprsFarm& farm);
+bool is_special_symbol(bool read_upcase, unsigned char token);
 
 Cell bool_cast(bool val, SExprsFarm& farm);
 bool is_null(const Cell& c, SExprsFarm& farm);

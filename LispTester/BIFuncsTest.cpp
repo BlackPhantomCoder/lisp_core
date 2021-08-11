@@ -101,9 +101,11 @@ void test_eval_base() {
 	simple_core_assert("+1", "1");
 	simple_core_assert("long_text_With_some_shit1234567890", "LONG_TEXT_WITH_SOME_SHIT1234567890");
 	simple_core_assert("((lambda (x) x) 1)", "1");
-	simple_core_assert("((nlambda (x) x) a)", "A");
-	simple_core_assert("((nlambda (x) x) 1)", "1");
-	simple_core_assert("(if a kok nekok)", "KOK");
+	simple_core_assert("(progn (setq a b) (setq b 1) ((lambda (x) x) a))", "B");
+	simple_core_assert("(if a kok nekok)", "KOK"); 
+	simple_core_assert("((lambda (x) (cdr x)) '(1 2))", "(2)");
+	simple_core_assert_reason("((nlambda (x) x) a)", Core::result_type::fail);
+
 }
 
 //арифметические функции
@@ -327,9 +329,9 @@ void control_calc() {
 	simple_core_assert("(progn (setq L '(1 2 3 4)) (loop ((null L) 'da) (setq L (cdr L))))","DA");
 	simple_core_assert("(progn (setq N 0) (setq L '(1 2 3 4)) (loop ((null L) N) (setq N (+ 1 N)) (setq L (cdr L))))", "4");
 	simple_core_assert("(progn (setq L '(1 a 2 q kek)) (loop ((null(cdr L)) (car L)) (setq L(cdr L))))","KEK");
-	/*simple_core_assert(
+	simple_core_assert(
 		"(progn (setq lst '(1 (2 3) (2 . 3) a nil 4 5)) (loop ((not (car lst)) (cdr lst)) (print lst) (setq lst (cdr lst))))",   //умер на листе/паре
-		"(4 5)");*/
+		"(4 5)");
 	/*test_output(
 		"(progn (setq lst '(1 (2 3) (2 . 3) a nil 4 5)) (loop ((not (car lst)) (cdr lst)) (print lst) (setq lst (cdr lst))))",
 		"(1 (2 3) (2 . 3) a nil 4 5))\n((2 3) (2 . 3) a nil 4 5))\n((2 . 3) a nil 4 5))\n(a nil 4 5))\n");*/
@@ -355,22 +357,31 @@ void io() {
 	test_io_result(std::string("(progn (setq ") + read_up_case_str +  " nil) (print (read)))", "aBc1", "aBc1\n", "aBc1");
 
 	//тест | и "
-	simple_core_assert("|AbC1|", "AbC1");
-	simple_core_assert("\"AbC1\"", "AbC1");   //вообще говоря, не факт
+	simple_core_assert("|AbC1|", "|AbC1|");
+	simple_core_assert("\"AbC1\"", "|AbC1|");
 
 	//тест на анализ ввода через read
 	test_io_result("(eval '((lambda x (print (read))) nil))", "1b", std::string(nil_str) + "\n", nil_str);
 	//тест на анализ ввода
 	simple_core_assert_reason("1c2", Core::result_type::fail);
 
-	/*simple_core_assert("a\a12", "|Aa12|");
+	simple_core_assert("a\\a12", "|Aa12|");
 	simple_core_assert("|AAC1|", "AAC1");
-	simple_core_assert("|1AAC1|", "|1AAC1|");     //спорно, надо выбирать между методичкой и форисом
-	simple_core_assert("\ \ \ ", "|   |");
-	simple_core_assert("\(\)\ \'\\\;\#", "|() '\;#|");
-	simple_core_assert("A\\B.LSP", "|A\B.LSP|");
-	simple_core_assert("\++++", "|++++|");*/
+	simple_core_assert("|1AAC1|", "|1AAC1|");
+	simple_core_assert("\\ \\ \\ ", "|   |");
+	simple_core_assert("\\(\\)\\ \\'\\\\\\;\\#", "|() '\\;#|");
+	simple_core_assert("A\\\\B.LSP", "|A\\B.LSP|");
+	simple_core_assert("\\++++", "++++");
 	
+
+	simple_core_assert("\\ ", "| |");
+	simple_core_assert("\\1", "\\1");
+	simple_core_assert("\\1a", "|1A|");
+
+	simple_core_assert("\\a", "\\a");
+	simple_core_assert("\\A", "A");
+	simple_core_assert(std::string("(progn (setq ") + read_up_case_str + " nil) \\a) ", "a");
+	simple_core_assert(std::string("(progn (setq ") + read_up_case_str + " nil) \\A) ", "A");
 }
 
 //точечные пары
