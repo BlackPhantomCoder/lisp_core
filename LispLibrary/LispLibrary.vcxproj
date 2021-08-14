@@ -138,9 +138,9 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="ArgsOnStackEvaler.h" />
-    <ClInclude Include="ArgsStack.h" />
-    <ClInclude Include="BIFuncEvaler.h" />
+    <ClInclude Include="ArgsCounter.h" />
+    <ClInclude Include="BiFunc.h" />
+    <ClInclude Include="Bifuncs.h" />
     <ClInclude Include="BigInt.h" />
     <ClInclude Include="CarCdrIterator.h" />
     <ClInclude Include="Cell.h" />
@@ -150,16 +150,19 @@
     <ClInclude Include="CoreEnvStreamsProvider.h" />
     <ClInclude Include="CoreStreamInt.h" />
     <ClInclude Include="DotPair.h" />
+    <ClInclude Include="Func.h" />
     <ClInclude Include="Funcs.h" />
     <ClInclude Include="CoreData.h" />
+    <ClInclude Include="FuncsEvaler.h" />
     <ClInclude Include="FuncsStorage.h" />
     <ClInclude Include="LambdaCell.h" />
-    <ClInclude Include="LambdaEvaler.h" />
+    <ClInclude Include="LambdaFunc.h" />
     <ClInclude Include="Lexer.h" />
     <ClInclude Include="MPool.h" />
     <ClInclude Include="Mutexed.h" />
     <ClInclude Include="Number.h" />
     <ClInclude Include="OutputController.h" />
+    <ClInclude Include="PoolDeleter.h" />
     <ClInclude Include="PredLispFuncs.h" />
     <ClInclude Include="PublicCoreEnvironmentProvider.h" />
     <ClInclude Include="SExprCore.h" />
@@ -174,8 +177,9 @@
     <ClInclude Include="SymbolsFarm.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ArgsStack.cpp" />
-    <ClCompile Include="BIFuncEvaler.cpp" />
+    <ClCompile Include="ArgsCounter.cpp" />
+    <ClCompile Include="BiFunc.cpp" />
+    <ClCompile Include="Bifuncs.cpp" />
     <ClCompile Include="BigInt.cpp" />
     <ClCompile Include="CarCdrIterator.cpp" />
     <ClCompile Include="Cell.cpp" />
@@ -186,10 +190,12 @@
     <ClCompile Include="CoreEnvStreamsProvider.cpp" />
     <ClCompile Include="CoreStreamInt.cpp" />
     <ClCompile Include="DotPair.cpp" />
+    <ClCompile Include="Func.cpp" />
     <ClCompile Include="Funcs.cpp" />
+    <ClCompile Include="FuncsEvaler.cpp" />
     <ClCompile Include="FuncsStorage.cpp" />
     <ClCompile Include="LambdaCell.cpp" />
-    <ClCompile Include="LambdaEvaler.cpp" />
+    <ClCompile Include="LambdaFunc.cpp" />
     <ClCompile Include="Lexer.cpp" />
     <ClCompile Include="Number.cpp" />
     <ClCompile Include="OutputController.cpp" />

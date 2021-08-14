@@ -21,6 +21,8 @@ public:
         const char* str() const;
         size_t size() const;
 
+        bool is_nil_symbol() const;
+
         symbol_core& operator=(symbol_core&& rh) noexcept;
         symbol_core& operator=(const symbol_core& rh);
         bool operator==(const symbol_core& rh) const;
@@ -32,7 +34,7 @@ public:
         SymbolsFarm* t_owner;
     };
 public:
-    SymbolsFarm() = default;
+    SymbolsFarm();
 
     SymbolsFarm::symbol_core make_or_copy(std::string&& str);
     SymbolsFarm::symbol_core make_or_copy(const std::string& str);
@@ -42,4 +44,5 @@ public:
 private:
     symb_mp t_symbol_to_it_and_count;
     oblist t_oblist;
+    symbol_core t_nil;
 };

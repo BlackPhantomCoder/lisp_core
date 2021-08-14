@@ -34,25 +34,25 @@ Cell bool_cast(bool val, SExprsFarm& farm)
     return (val) ? farm.T : farm.nil;
 }
 
-bool is_null(const Cell& c, SExprsFarm& farm)
+bool is_null(const Cell& c)
 {
     if (is_list(c)) {
-        return is_null(to_list(c));
+        return is_null_list(to_list(c));
     }
     else if (is_symbol(c)) {
-        return to_symbol(c) == to_symbol(farm.nil);
+        return is_null_symbol(to_symbol(c));
     }
     return false;
 }
 
-bool is_null_symbol(const Symbol& c, SExprsFarm& farm)
+bool is_null_symbol(const Symbol& c)
 {
-    return c == to_symbol(farm.nil);
+    return c.t_data.is_nil_symbol();
 }
 
-bool is_null_symbol(const Cell& c, SExprsFarm& farm)
+bool is_null_symbol(const Cell& c)
 {
-    return is_symbol(c) && to_symbol(c) == to_symbol(farm.nil);
+    return is_symbol(c) && is_null_symbol(to_symbol(c));
 }
 
 bool is_lambda_symbol(const Symbol& arg, SExprsFarm& farm)
@@ -73,9 +73,9 @@ bool is_alambda_symbol(const Symbol& arg, SExprsFarm& farm)
 bool is_implicit_cond(const Cell& arg, SExprsFarm& farm)
 {
     if (!is_list(arg)) return false;
-    if (is_null(arg, farm)) return false;
+    if (is_null(arg)) return false;
     if (!is_list(car(arg))) return false;
-    if (is_null(car(arg), farm)) return true;
+    if (is_null(car(arg))) return true;
     if (!is_symbol(car(car(arg)))) return true;
     if (is_alambda_symbol(to_symbol(car(car(arg))), farm)) return false;
     return true;
@@ -83,42 +83,42 @@ bool is_implicit_cond(const Cell& arg, SExprsFarm& farm)
 
 bool is_alambda_form(const Cell& arg, SExprsFarm& farm)
 {
-    return is_list(arg) && !is_null(arg, farm) && is_symbol(car(arg)) && is_alambda_symbol(to_symbol(car(arg)), farm);
+    return is_list(arg) && !is_null(arg) && is_symbol(car(arg)) && is_alambda_symbol(to_symbol(car(arg)), farm);
 }
 
 bool is_lambda_form(const Cell& arg, SExprsFarm& farm)
 {
-    return is_list(arg) && !is_null(arg, farm) && is_symbol(car(arg)) && is_lambda_symbol(to_symbol(car(arg)), farm);
+    return is_list(arg) && !is_null(arg) && is_symbol(car(arg)) && is_lambda_symbol(to_symbol(car(arg)), farm);
 }
 
 bool is_nlambda_form(const Cell& arg, SExprsFarm& farm)
 {
-    return is_list(arg) && !is_null(arg, farm) && is_symbol(car(arg)) && is_nlambda_symbol(to_symbol(car(arg)), farm);
+    return is_list(arg) && !is_null(arg) && is_symbol(car(arg)) && is_nlambda_symbol(to_symbol(car(arg)), farm);
 }
 
 Cell& car(Cell& dp) {
-    if(is_atom(dp) || is_null(to_list(dp))){
+    if(is_atom(dp) || is_null_list(to_list(dp))){
         return dp;
     }
     return to_list(dp).t_first;
 }
 
 Cell& cdr(Cell& dp) {
-    if (is_atom(dp) || is_null(to_list(dp))) {
+    if (is_atom(dp) || is_null_list(to_list(dp))) {
         return dp;
     }
     return to_list(dp).t_second;
 }
 
 const Cell& car(const Cell& dp) {
-    if (is_atom(dp) || is_null(to_list(dp))) {
+    if (is_atom(dp) || is_null_list(to_list(dp))) {
         return dp;
     }
     return to_list(dp).t_first;
 }
 
 const Cell& cdr(const Cell& dp) {
-    if (is_atom(dp) || is_null(to_list(dp))) {
+    if (is_atom(dp) || is_null_list(to_list(dp))) {
         return dp;
     }
     return to_list(dp).t_second;
@@ -131,26 +131,10 @@ Cell cons(const Cell& f, const Cell& s, SExprsFarm& farm)
 
 Cell append(const Cell& f, const Cell& s, SExprsFarm& farm)
 {
-
+    //need to refactoring
     // ??
-    if (is_atom(f) || is_null(f, farm)) return s;
+    if (is_atom(f) || is_null(f)) return s;
     return cons(car(f), append(cdr(f), s, farm), farm);
-
-    //if (is_atom(f) || is_null(to_list(f))) return s;
-    //std::cout << f << std::endl;
-    //std::cout << s << std::endl;
-    //CarCdrConstIteration interation1(to_list(f));
-    //Cell result = make_list_cell(std::begin(interation1), std::end(interation1), provider);
-    //if (is_atom(s)) {
-    //    CarCdrConstIteration interation2(to_list(s));
-    //    for (const auto& cell : interation2) {
-    //        result = cons_cell(cell, result, provider);
-    //    }
-    //}
-    //else {
-    //    result = cons_cell(s, result, provider);
-    //}
-    //return result;
 }
 
 void rplaca(DotPair& rh, const Cell& exp)
@@ -164,25 +148,25 @@ void rplacd(DotPair& rh, const Cell& exp)
 }
 
 struct tree_copy_frame {
-    CarCdrConstIteration iteration;
     CarCdrConstIterator it;
-
+    CarCdrConstIterator end_it;
     vector<Cell> result;
     bool last = false;
 };
 
 Cell tree_copy(const Cell& rh, SExprsFarm& farm)
 {
-    if(is_null(to_list(rh))) return farm.nil;
+    if (is_null_list(to_list(rh))) return farm.make_empty_list_cell();
 
     stack<tree_copy_frame> stack;
-    stack.push(tree_copy_frame{ {rh, farm}, CarCdrConstIterator{farm}, {} });
-    stack.top().it = begin(stack.top().iteration);
+    stack.push(tree_copy_frame{});
+    stack.top().it = begin(rh);
+    stack.top().end_it = end(rh);
 
-    for(;;) {
+    for (;;) {
         auto& frame = stack.top();
-        if (frame.it == end(frame.iteration)) {
-            if(!frame.last)frame.result.push_back(farm.nil);
+        if (frame.it == frame.end_it) {
+            if (!frame.last)frame.result.push_back(farm.nil);
             if (stack.size() == 1) {
                 return cons_range(begin(frame.result), end(frame.result), farm);
             }
@@ -195,9 +179,9 @@ Cell tree_copy(const Cell& rh, SExprsFarm& farm)
             continue;
         }
 
-        if (next(frame.it) == end(frame.iteration)) {
+        if (next(frame.it) == frame.end_it) {
             frame.result.push_back(car(frame.it.get_elem()));
-            if(!is_null(cdr(frame.it.get_elem()), farm)) {
+            if (!is_null(cdr(frame.it.get_elem()))) {
                 frame.result.push_back(cdr(frame.it.get_elem()));
                 frame.last = true;
             }
@@ -210,13 +194,14 @@ Cell tree_copy(const Cell& rh, SExprsFarm& farm)
             ++frame.it;
         }
         else {
-            if (is_null(to_list(rh))) {
+            if (is_null_list(to_list(rh))) {
                 frame.result.push_back(*stack.top().it);
                 ++frame.it;
             }
             else {
-                stack.push({ {*frame.it, farm}, CarCdrConstIterator{farm}, {} });
-                stack.top().it = begin(stack.top().iteration);
+                stack.push({});
+                stack.top().it = begin(*frame.it);
+                stack.top().end_it = end(*frame.it);
             }
         }
     }

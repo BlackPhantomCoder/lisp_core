@@ -17,8 +17,7 @@ Cell gen_cell(const lambda& fnc, SExprsFarm& farm)
 
     // tree copy or not?
     auto copy = tree_copy(fnc.body, farm);
-    CarCdrConstIteration iteration(copy, farm);
-    for (const auto& c : iteration) {
+    for (const auto& c : copy) {
         lst.push_back(c);
     }
     return farm.make_list_cell(begin(lst), end(lst));

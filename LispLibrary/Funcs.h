@@ -1,7 +1,6 @@
 #pragma once
 #include "Cell.h"
 #include "DotPair.h"
-#include "CarCdrIterator.h"
 #include "SExprsFarm.h"
 #include "Number.h"
 #include "Symbol.h"
@@ -15,9 +14,9 @@
 bool is_special_symbol(bool read_upcase, unsigned char token);
 
 Cell bool_cast(bool val, SExprsFarm& farm);
-bool is_null(const Cell& c, SExprsFarm& farm);
-bool is_null_symbol(const Symbol& c, SExprsFarm& farm);
-bool is_null_symbol(const Cell& c, SExprsFarm& farm);
+bool is_null(const Cell& c);
+bool is_null_symbol(const Symbol& c);
+bool is_null_symbol(const Cell& c);
 
 bool is_implicit_cond(const Cell& arg, SExprsFarm& farm);
 
@@ -57,59 +56,58 @@ Cell tree_copy(const Cell& rh, SExprsFarm& farm);
 template<class InputIt>
 inline Cell SExprsFarm::make_list_cell(InputIt first, InputIt last)
 {
-	Cell result = this->make_empty_list_cell();
-    std::vector<const Cell*, CoreData::allocator<const Cell*>> stack;
-    while (first != last) {
-        stack.push_back(&*first);
-        ++first;
-    }
-    for (auto it = std::rbegin(stack); it != std::rend(stack); ++it) {
-        result = cons(*(*it), result, *this);
-    }
+    if (first == last) return this->make_empty_list_cell();
+    if (std::next(first) == last) return cons(*first, this->make_empty_list_cell(), *this);
+    if constexpr (std::is_convertible<std::iterator_traits<InputIt>::iterator_category, std::bidirectional_iterator_tag >::value) {
+        Cell result = this->make_empty_list_cell();
+        auto r_end = std::make_reverse_iterator(first);
+        auto r_beg = std::make_reverse_iterator(last);
 
-    stack.clear();
-    CoreData::allocator_release_memory<const Cell*>();
-    return result;
-}
-
-template<class InputIt>
-inline Cell SExprsFarm::make_list_w_eval_cell(InputIt first, InputIt last)
-{
-    Cell result = this->make_empty_list_cell();
-    std::vector<Cell,CoreData::allocator<Cell>> stack;
-    while (first != last) {
-        stack.push_back(t_env->eval_quote(*first));
-        ++first;
+        for (; r_beg != r_end; ++r_beg) {
+            result = cons(*r_beg, result, *this);
+        }
+        return result;
     }
-    for (auto it = std::rbegin(stack); it != std::rend(stack); ++it) {
-        result = cons(*it, result, *this);
+    else {
+        Cell result = this->make_empty_list_cell();
+        std::vector<const Cell*, CoreData::allocator<const Cell*>> stack;
+        while (first != last) {
+            stack.push_back(&*first);
+            ++first;
+        }
+        for (auto it = std::rbegin(stack); it != std::rend(stack); ++it) {
+            result = cons(*(*it), result, *this);
+        }
+        return result;
     }
-
-    stack.clear();
-    CoreData::allocator_release_memory<Cell>();
-    return result;
-}
-
-template<class  Container>
-inline Cell SExprsFarm::make_list_w_eval_cell(Container c) {
-    return make_list_w_eval_cell(std::begin(c), std::end(c));
 }
 
 template<class InputIt>
 inline Cell cons_range(InputIt beg_it, InputIt end_it, SExprsFarm& farm)
 {
     if (beg_it == end_it) return cons(farm.nil, farm.nil, farm);
-    std::vector<const Cell*, CoreData::allocator<const Cell*>> stack;
-    while (beg_it != end_it) {
-        stack.push_back(&*beg_it);
-        ++beg_it;
+    if (std::next(beg_it) == end_it) return cons(*beg_it, farm.nil, farm);
+    if constexpr (std::is_convertible<std::iterator_traits<InputIt>::iterator_category, std::bidirectional_iterator_tag >::value) {
+        auto r_end = std::make_reverse_iterator(beg_it);
+        auto r_beg = std::make_reverse_iterator(end_it);
+        Cell result = *r_beg;
+        ++r_beg;
+        for (; r_beg != r_end; ++r_beg) {
+            result = cons(*r_beg, result, farm);
+        }
+        return result;
     }
-    Cell result = *(*std::rbegin(stack));
-    for (auto it = std::rbegin(stack) + 1; it != std::rend(stack); ++it) {
-        result = cons(*(*it), result, farm);
+    else {
+        if (beg_it == end_it) return cons(farm.nil, farm.nil, farm);
+        std::vector<const Cell*, CoreData::allocator<const Cell*>> stack;
+        while (beg_it != end_it) {
+            stack.push_back(&*beg_it);
+            ++beg_it;
+        }
+        Cell result = *(*std::rbegin(stack));
+        for (auto it = std::rbegin(stack) + 1; it != std::rend(stack); ++it) {
+            result = cons(*(*it), result, farm);
+        }
+        return result;
     }
-
-    stack.clear();
-    CoreData::allocator_release_memory<const Cell*>();
-    return result;
 }

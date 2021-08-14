@@ -6,6 +6,26 @@ Cell::Cell(SExprCoreShare core):
 {
 }
 
+CarCdrIterator Cell::begin()
+{
+    return CarCdrIterator(this);
+}
+
+CarCdrIterator Cell::end()
+{
+    return CarCdrIterator();
+}
+
+CarCdrConstIterator Cell::begin() const
+{
+    return CarCdrConstIterator(this);
+}
+
+CarCdrConstIterator Cell::end() const
+{
+    return CarCdrConstIterator();
+}
+
 bool Cell::empty() const
 {
     return !t_data;

@@ -52,10 +52,10 @@ public:
 	template< class InputIt >
 	Cell make_list_cell(InputIt first, InputIt last);
 
-	template< class InputIt >
-	Cell make_list_w_eval_cell(InputIt first, InputIt last);
-	template<class Container>
-	Cell make_list_w_eval_cell(Container c);
+	//template< class InputIt >
+	//Cell make_list_w_eval_cell(InputIt first, InputIt last);
+	//template<class Container>
+	//Cell make_list_w_eval_cell(Container c);
 private:
 	void t_init_list(DotPair& p, const Cell& f, const Cell& s);
 	void t_init_empty_list(DotPair& d);

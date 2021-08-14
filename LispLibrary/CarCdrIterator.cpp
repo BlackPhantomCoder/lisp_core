@@ -2,17 +2,35 @@
 #include "Funcs.h"
 using namespace std;
 
-CarCdrIterator::CarCdrIterator(SExprsFarm& farm) :
+CarCdrIterator::CarCdrIterator(CarCdrIterator&& rh) noexcept :
+    t_base(rh.t_base),
+    t_nil(rh.t_nil)
+{
+    rh.t_base = nullptr;
+    rh.t_nil = false;
+}
+
+CarCdrIterator& CarCdrIterator::operator=(CarCdrIterator&& rh) noexcept
+{
+    if (this != &rh) {
+        t_base = rh.t_base;
+        t_nil = rh.t_nil;
+
+        rh.t_base = nullptr;
+        rh.t_nil = false;
+    }
+    return *this;
+}
+
+CarCdrIterator::CarCdrIterator() :
     t_base(nullptr),
-    t_farm(farm),
     t_nil(false)
 {
 }
 
-CarCdrIterator::CarCdrIterator(Cell* base, SExprsFarm& farm) :
+CarCdrIterator::CarCdrIterator(Cell* base) :
     t_base(base),
-    t_farm(farm),
-    t_nil((base) ? is_null(*base, farm) : false)
+    t_nil((base) ? is_null(*base) : false)
 {
 }
 
@@ -23,7 +41,7 @@ CarCdrIterator CarCdrIterator::operator++(int)
         throw "";
     }
     auto& next = cdr(*t_base);
-    if (!is_list(next) || is_null(next,t_farm)) t_base = nullptr;
+    if (!is_list(next) || is_null(next)) t_base = nullptr;
     else t_base = &next;
     return result;
 }
@@ -34,7 +52,7 @@ CarCdrIterator& CarCdrIterator::operator++()
         throw "";
     }
     auto& next = cdr(*t_base);
-    if (!is_list(next) || is_null(next, t_farm)) t_base = nullptr;
+    if (!is_list(next) || is_null(next)) t_base = nullptr;
     else t_base = &next;
     return *this;
 }
@@ -81,30 +99,60 @@ bool CarCdrIterator::operator==(const CarCdrIterator& rh) const
     return (t_base && t_nil && !rh.t_base) || t_base == rh.t_base;
 }
 
+CarCdrIterator::operator CarCdrConstIterator() const
+{
+    CarCdrConstIterator buf;
+    buf.t_base = t_base;
+    buf.t_nil = t_nil;
+    return buf;
+}
+
 Cell& CarCdrIterator::get_elem()
 {
-    if (!t_base) throw;
+    if (!t_base) {
+        throw "";
+    }
     return *t_base;
 }
 
 const Cell& CarCdrIterator::get_elem() const
 {
-    if (!t_base) throw;
+    if (!t_base) {
+        throw "";
+    }
     return *t_base;
 }
 
-CarCdrConstIterator::CarCdrConstIterator(SExprsFarm& farm):
-    t_base(nullptr),
-    t_farm(farm),
-    t_nil(false)
+CarCdrConstIterator::CarCdrConstIterator(CarCdrConstIterator&& rh) noexcept :
+    t_base(rh.t_base),
+    t_nil(rh.t_nil)
 {
-
+    rh.t_base = nullptr;
+    rh.t_nil = false;
 }
 
-CarCdrConstIterator::CarCdrConstIterator(const Cell* base, SExprsFarm& farm):
+CarCdrConstIterator& CarCdrConstIterator::operator=(CarCdrConstIterator&& rh) noexcept
+{
+    if (this != &rh) {
+        t_base = rh.t_base;
+        t_nil = rh.t_nil;
+
+        rh.t_base = nullptr;
+        rh.t_nil = false;
+    }
+    return *this;
+}
+
+
+CarCdrConstIterator::CarCdrConstIterator():
+    t_base(nullptr),
+    t_nil(false)
+{
+}
+
+CarCdrConstIterator::CarCdrConstIterator(const Cell* base):
     t_base(base),
-    t_farm(farm),
-    t_nil((base) ? is_null(*base, farm) : false)
+    t_nil((base) ? is_null(*base) : false)
 {
 
 }
@@ -116,7 +164,7 @@ CarCdrConstIterator CarCdrConstIterator::operator++(int)
         throw "";
     }
     const auto& next = cdr(*t_base);
-    if (!is_list(next) || is_null(next, t_farm)) t_base = nullptr;
+    if (!is_list(next) || is_null(next)) t_base = nullptr;
     else t_base = &next;
     return result;
 }
@@ -127,7 +175,7 @@ CarCdrConstIterator& CarCdrConstIterator::operator++()
         throw "";
     }
     const auto& next = cdr(*t_base);
-    if (!is_list(next) || is_null(next, t_farm)) t_base = nullptr;
+    if (!is_list(next) || is_null(next)) t_base = nullptr;
     else t_base = &next;
     return *this;
 }
@@ -160,49 +208,62 @@ bool CarCdrConstIterator::operator==(const CarCdrConstIterator& rh) const
 
 const Cell& CarCdrConstIterator::get_elem() const
 {
-    if (!t_base) throw "";
+    if (!t_base) {
+        throw "";
+    }
     return *t_base;
 }
 
-CarCdrIteration::CarCdrIteration(Cell& dp, SExprsFarm& farm):
-    t_base(&dp),
-    t_farm(farm)
-{
-
-}
-
-CarCdrIterator CarCdrIteration::begin()
-{
-    return CarCdrIterator(t_base, t_farm);
-}
-
-CarCdrIterator CarCdrIteration::end()
-{
-    return CarCdrIterator(nullptr, t_farm);
-}
-
-CarCdrConstIterator CarCdrIteration::begin() const
-{
-    return CarCdrConstIterator(t_base, t_farm);
-}
-
-CarCdrConstIterator CarCdrIteration::end() const
-{
-    return CarCdrConstIterator(nullptr, t_farm);
-}
-
-CarCdrConstIteration::CarCdrConstIteration(const Cell& dp, SExprsFarm& farm) :
-    t_base(&dp),
-    t_farm(farm)
-{
-}
-
-CarCdrConstIterator CarCdrConstIteration::begin() const
-{
-    return CarCdrConstIterator(t_base, t_farm);
-}
-
-CarCdrConstIterator CarCdrConstIteration::end() const
-{
-    return CarCdrConstIterator(nullptr, t_farm);
-}
+//
+//CarCdrIteration::CarCdrIteration(Cell& dp, SExprsFarm& farm):
+//    t_base(&dp),
+//    t_farm(farm)
+//{
+//
+//}
+//
+//CarCdrIterator CarCdrIteration::begin()
+//{
+//    return CarCdrIterator(t_base, t_farm);
+//}
+//
+//CarCdrIterator CarCdrIteration::end()
+//{
+//    return CarCdrIterator(nullptr, t_farm);
+//}
+//
+//CarCdrConstIterator CarCdrIteration::begin() const
+//{
+//    return CarCdrConstIterator(t_base, t_farm);
+//}
+//
+//CarCdrConstIterator CarCdrIteration::end() const
+//{
+//    return CarCdrConstIterator(nullptr, t_farm);
+//}
+//
+//CarCdrIteration& CarCdrIteration::operator=(CarCdrIteration&& rh) noexcept
+//{
+//    if (this != &rh) {
+//        t_base = rh.t_base;
+//        t_farm = rh.t_farm;
+//        rh.t_base = nullptr;
+//    }
+//    return *this;
+//}
+//
+//CarCdrConstIteration::CarCdrConstIteration(const Cell& dp, SExprsFarm& farm) :
+//    t_base(&dp),
+//    t_farm(farm)
+//{
+//}
+//
+//CarCdrConstIterator CarCdrConstIteration::begin() const
+//{
+//    return CarCdrConstIterator(t_base, t_farm);
+//}
+//
+//CarCdrConstIterator CarCdrConstIteration::end() const
+//{
+//    return CarCdrConstIterator(nullptr, t_farm);
+//}

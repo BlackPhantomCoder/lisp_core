@@ -1,8 +1,6 @@
 #include "CoreEnv.h"
 #include "Funcs.h"
-#include "CarCdrIterator.h"
-
-#include "Funcs.h"
+#include "ArgsCounter.h"
 
 #include <iostream>
 #include <algorithm>
@@ -11,10 +9,9 @@
 using namespace std;
 using namespace CoreData;
 
-#define arg1 *begin(t_args)
-#define arg2 *(next(begin(t_args), 1))
-#define arg3 *(next(begin(t_args), 2))
-
+#define arg1 *b
+#define arg2 *(next(b, 1))
+#define arg3 *(next(b, 2))
 
 lambda CoreEnvironment::make_spread_lambda_form(
     lambda_types lambda_type,
@@ -36,7 +33,7 @@ lambda CoreEnvironment::make_nospread_lambda_form(
 
 lambda CoreEnvironment::get_lambda_form(Cell& lst)
 {
-    if (is_null(cdr(lst), t_farm)) throw "get_lambda_form error";
+    if (is_null(cdr(lst))) throw "get_lambda_form error";
     auto& second = car(cdr(lst));
     if (is_list(second)) {
         return make_spread_lambda_form(
@@ -55,16 +52,16 @@ lambda CoreEnvironment::get_lambda_form(Cell& lst)
     throw "get_lambda_form error";
 }
 
-Cell CoreEnvironment::numbers_compare(numbers_compare_type type)
+Cell CoreEnvironment::numbers_compare(iter b, iter e, numbers_compare_type type)
 {
-    if (t_args == 0) return t_farm.T;
-    if (t_args == 1) return t_farm.T;
+    if (ArgsCounter{b, e} == 0) return t_farm.T;
+    if (ArgsCounter{b, e} == 1) return t_farm.T;
     if (!is_number(arg1)) throw "numbers_compare: error";
     const auto* n = &to_number(arg1);
 
     bool result = true;
-    auto it = next(begin(t_args));
-    for (; it != end(t_args); ++it) {
+    auto it = next(b);
+    for (; it != e; ++it) {
         if (!is_number(*it)) throw "numbers_compare: error";
         const auto* n2 = &to_number(*it);
 
@@ -100,7 +97,7 @@ Cell CoreEnvironment::numbers_compare(numbers_compare_type type)
 void CoreEnvironment::set_value(const Cell& name, const Cell& val)
 {
     if (!is_symbol(name)) {
-        if (!is_null(name, t_farm)) {
+        if (!is_null(name)) {
             throw "bifunc_set error";
         }
     }
@@ -115,74 +112,11 @@ void CoreEnvironment::set_value(const Cell& name, const Cell& val)
 
         //special vars
         if (symb == to_symbol(t_farm.read_up_case_symbol)) {
-            bool val_b = !is_null(val, t_farm);
+            bool val_b = !is_null(val);
             t_syntaxer.set_upcase_mode(val_b);
             t_output_control.set_read_upcase(val_b);
         }
     }
-}
-
-Cell CoreEnvironment::eval_fnc(
-    Cell& fnc,
-    CarCdrIterator args_beg_it,
-    CarCdrIterator args_end_it,
-    bool forse_nospread_args
-)
-{        
-    if (is_lambda_form(fnc, t_farm)) {
-        auto l = get_lambda_form(fnc);
-        t_l_evaler.push({ l, args_beg_it,args_end_it,forse_nospread_args });
-        return t_l_evaler.pop_eval();
-    }   
-
-    if (!is_symbol(fnc)) throw string("eval_fnc: unknown function ") + t_output_control.to_string(fnc);
-
-    if (auto fnc_r = t_funcs.find(to_symbol(fnc)); !holds_alternative<monostate>(fnc_r)) {
-
-
-        if (holds_alternative<FuncsStorage::bifunc>(fnc_r) || holds_alternative<FuncsStorage::nbifunc>(fnc_r)) {
-            bifunc ptr = nullptr;
-            if (holds_alternative<FuncsStorage::bifunc>(fnc_r)) {
-                ptr = get<FuncsStorage::bifunc>(fnc_r).ptr;
-            }
-            else {
-                ptr = get<FuncsStorage::nbifunc>(fnc_r).ptr;
-            }
-
-            t_bi_evaler.push({
-                (holds_alternative<FuncsStorage::bifunc>(fnc_r)) ? bifunc_type::bifunc: bifunc_type::nbifunc,
-                ptr,
-                args_beg_it,
-                args_end_it,
-                forse_nospread_args,
-                t_farm.make_empty_list_cell()
-                });
-            return t_bi_evaler.pop_eval();
-        }
-        else {
-            t_l_evaler.push({get<std::reference_wrapper<lambda>>(fnc_r).get(),args_beg_it,args_end_it,forse_nospread_args });
-            return t_l_evaler.pop_eval();
-        }
-    }                                                                      
-    else {                                                                      
-        throw "eval_fnc error " + t_output_control.to_string(
-            t_farm.make_list_cell({ fnc, t_farm.make_list_cell(args_beg_it , args_end_it) })
-        );
-    }                                                                           
-}           
-
-std::optional<Cell> CoreEnvironment::eval_implicit_cond(Cell& atom) {
-    auto predicate_val = eval_quote(car(atom));
-    if (!is_null(predicate_val, t_farm)) {
-        auto& cdr_buf = cdr(atom);
-        if (!is_list(cdr_buf) || is_null(cdr_buf, t_farm))
-        {
-            return predicate_val;
-        }
-        CarCdrIteration iteration(cdr_buf, t_farm);
-        return eval_direct_bifunc(&CoreEnvironment::nbifunc_progn, begin(iteration), end(iteration));
-    }
-    return nullopt;
 }
 
 Cell CoreEnvironment::eval_atom(const Cell& atom) {
@@ -193,7 +127,7 @@ Cell CoreEnvironment::eval_atom(const Cell& atom) {
 }
 
 Cell CoreEnvironment::eval_symbol(const Cell& symbol) {
-    if (is_null(symbol, t_farm)) {
+    if (is_null(symbol)) {
         return t_farm.nil;
     }
     if (auto val = t_envs.get(to_symbol(symbol))) {
@@ -206,13 +140,10 @@ Cell CoreEnvironment::eval_symbol(const Cell& symbol) {
 CoreEnvironment::CoreEnvironment():
     t_farm(this),
     t_funcs(t_farm),
-    t_l_evaler(this),
-    t_bi_evaler(this),
     t_streams(nullopt),
     t_syntaxer(t_farm),
     t_output_control(t_farm),
-    t_direct_call_buf(t_farm.nil),
-    t_findbifunc_buf(false, { bifunc_type::bifunc, nullptr })
+    t_funcs_evaler(this)
 {
 }
 
@@ -222,54 +153,23 @@ CoreEnvironment::CoreEnvironment(CoreEnvStreamsProvider& streams) :
     t_streams = streams;
 }
 
-
 std::vector<std::string> CoreEnvironment::execute_all(CoreInputStreamInt& stream, const IMutexed<bool>& stop_flag)
 {
     t_stop_flag = { stop_flag };
-    #ifndef EX_CATCH
-        std::vector<std::string> result;
-        auto s = t_syntaxer.read_sexprs_stream(stream);
-        while (s.ready())
-        {
-            auto [reason, c] = s.read();
-            if (reason == read_reason::empty_input) {
-                break;
-            }
-            if (reason != read_reason::success) {
-                throw "input error";
-            }
-            result.emplace_back(to_string(eval_quote(c), t_farm));
+    std::vector<std::string> result;
+    auto s = t_syntaxer.read_sexprs_stream(stream);
+    while (s.ready())
+    {
+        auto [reason, c] = s.read();
+        if (reason == read_reason::empty_input) {
+            break;
         }
-        return result;
-    #endif
-
-    #ifdef EX_CATCH
-        try
-        {
-            std::vector<std::string> result;
-            auto s = t_syntaxer.read_sexprs_stream(stream);
-            while (s.ready())
-            {
-                auto [reason, c] =  s.read();
-                if (reason == read_reason::empty_input) {
-                    break;
-                }
-                if (reason != read_reason::success)  {
-                    throw "input error";
-                }
-                result.emplace_back(t_output_control.to_string(eval_quote(c)));
-            }
-            return result;
+        if (reason != read_reason::success) {
+            throw "input error";
         }
-        catch (...)
-        {
-            t_envs.clear_subenvs();
-            t_args.clear();
-            t_l_evaler.clear();
-            t_bi_evaler.clear();
-            throw;
-        }
-    #endif
+        result.emplace_back(t_output_control.to_string(t_execute(c)));
+    }
+    return result;
 }
 
 std::string CoreEnvironment::execute_one(CoreInputStreamInt& stream, const IMutexed<bool>& stop_flag)
@@ -278,24 +178,7 @@ std::string CoreEnvironment::execute_one(CoreInputStreamInt& stream, const IMute
     auto [read_reason, c] = t_syntaxer.read_sexpr(stream);
     if (read_reason != read_reason::success) throw "input error";
 
-    #ifndef EX_CATCH
-        return to_string(eval_quote(c), t_farm);
-    #endif
-
-    #ifdef EX_CATCH
-        try
-        {
-            return t_output_control.to_string(eval_quote(c));
-        }
-        catch (...)
-        {
-            t_envs.clear_subenvs();
-            t_args.clear();
-            t_l_evaler.clear();
-            t_bi_evaler.clear();
-            throw;
-        }
-    #endif
+    return t_output_control.to_string(t_execute(c));
 }
 
 const CellEnvironment::mp& CoreEnvironment::vars() const
@@ -308,50 +191,87 @@ void CoreEnvironment::set_streams(CoreEnvStreamsProvider& streams)
     t_streams = streams;
 }
 
-Cell CoreEnvironment::bifunc_atomp() {
-    if (t_args == 0) return t_farm.T;
-    if (is_list(arg1) && is_null(to_list(arg1))) return t_farm.T;
+Cell CoreEnvironment::t_execute(Cell& arg)
+{
+    #ifdef EX_CATCH
+    try
+    {
+        auto result = t_funcs_evaler.eval(arg);
+
+        //release memory
+        t_clear_mem();
+
+        return result;
+    }
+    catch (...)
+    {
+        t_envs.clear_subenvs();
+        t_funcs_evaler.clear();
+       
+        t_clear_mem();
+
+        throw;
+    }
+    #endif
+
+    auto result = t_funcs_evaler.eval(arg);
+
+    t_clear_mem();
+
+    return result;
+}
+
+void CoreEnvironment::t_clear_mem()
+{
+    CoreData::allocator_release_memory<std::pair<Symbol, Cell>>();
+    CoreData::allocator_release_memory<Cell>();
+    CoreData::allocator_release_memory<const Cell*>();
+}
+
+Cell CoreEnvironment::bifunc_atomp(iter b, iter e) {
+    if (ArgsCounter{b, e} == 0) return t_farm.T;
+    if (is_list(arg1) && is_null_list(to_list(arg1))) return t_farm.T;
     return bool_cast(is_atom(arg1), t_farm);
 }
 
-Cell CoreEnvironment::bifunc_symbolp() {
-    if (t_args == 0) return t_farm.T;
-    if (is_list(arg1) && is_null(to_list(arg1))) return t_farm.T;
+Cell CoreEnvironment::bifunc_symbolp(iter b, iter e) {
+    if (ArgsCounter{b, e} == 0) return t_farm.T;
+    if (is_list(arg1) && is_null_list(to_list(arg1))) return t_farm.T;
     return bool_cast(is_symbol(arg1), t_farm);
 }
 
-Cell CoreEnvironment::bifunc_numberp() {
-    if (t_args == 0) return t_farm.nil;
+Cell CoreEnvironment::bifunc_numberp(iter b, iter e) {
+    if (ArgsCounter{b, e}== 0) return t_farm.nil;
     return bool_cast(is_number((arg1)), t_farm);
 }
 
-Cell CoreEnvironment::bifunc_listp() {
-    if (t_args == 0) return t_farm.T;
+Cell CoreEnvironment::bifunc_listp(iter b, iter e) {
+    if (ArgsCounter{b, e}== 0) return t_farm.T;
     return bool_cast(is_list(arg1), t_farm);
 }
 
-Cell CoreEnvironment::bifunc_null() {
-    if (t_args == 0) return t_farm.T;
-    return bool_cast(is_null((arg1), t_farm), t_farm);
+Cell CoreEnvironment::bifunc_null(iter b, iter e) {
+    if (ArgsCounter{b, e}== 0) return t_farm.T;
+    return bool_cast(is_null((arg1)), t_farm);
 }
 
-Cell CoreEnvironment::bifunc_add()
+Cell CoreEnvironment::bifunc_add(iter b, iter e)
 {
-    if (t_args == 0) return t_farm.make_number_cell(BigInt(0l));
+    if (ArgsCounter{b, e}== 0) return t_farm.make_number_cell(BigInt(0l));
     if (!is_number(arg1)) throw "bifunc_add error";
     Number n = to_number(arg1);
 
-    for (auto it = next(begin(t_args) , 1); it != end(t_args); ++it) {
+    for (auto it = next(b); it != e; ++it) {
         if (!is_number(*it)) throw "bifunc_add error";
         n += to_number(*it);
     }
     return t_farm.make_number_cell(move(n));
 }
 
-Cell CoreEnvironment::bifunc_sub()
+Cell CoreEnvironment::bifunc_sub(iter b, iter e)
 {
-    if (t_args == 0) throw "bifunc_sub error";
-    if (t_args == 1) {
+    if (ArgsCounter{b, e}== 0) throw "bifunc_sub error";
+    if (ArgsCounter{b, e}== 1) {
         if (!is_number(arg1)) throw "bifunc_sub error";
         Number n = to_number(arg1);
         n.minus();
@@ -360,35 +280,35 @@ Cell CoreEnvironment::bifunc_sub()
     if (!is_number(arg1)) throw "bifunc_sub error";
     Number n = to_number(arg1);
 
-    for (auto it = next(begin(t_args) , 1); it != end(t_args); ++it) {
+    for (auto it = next(b , 1); it != e; ++it) {
         if (!is_number(*it)) throw "bifunc_sub error";
         n -= to_number(*it);
     }
     return t_farm.make_number_cell(move(n));
 }
 
-Cell CoreEnvironment::bifunc_mul()
+Cell CoreEnvironment::bifunc_mul(iter b, iter e)
 {
-    if (t_args == 0) {
+    if (ArgsCounter{b, e}== 0) {
         return t_farm.make_number_cell(BigInt(1l));
     }
     if (!is_number(arg1)) throw "bifunc_mul error";
-    if (t_args == 1) {
+    if (ArgsCounter{b, e}== 1) {
         return arg1;
     }
     Number n = to_number(arg1);
 
-    for (auto it = next(begin(t_args) , 1); it != end(t_args); ++it) {
+    for (auto it = next(b , 1); it != e; ++it) {
         if (!is_number(*it)) throw "bifunc_mul error";
         n *= to_number(*it);
     }
     return t_farm.make_number_cell(move(n));
 }
 
-Cell CoreEnvironment::bifunc_div()
+Cell CoreEnvironment::bifunc_div(iter b, iter e)
 {
-    if (t_args == 0) throw "bifunc_div error";
-    if (t_args == 1) {
+    if (ArgsCounter{b, e}== 0) throw "bifunc_div error";
+    if (ArgsCounter{b, e}== 1) {
         if (!is_number(arg1)) throw "bifunc_div error";
         Number n = t_farm.make_number(1);
         n /= to_number(arg1);
@@ -401,7 +321,7 @@ Cell CoreEnvironment::bifunc_div()
     if (!is_number(arg2)) throw "bifunc_div error";
     Number n2 = to_number(arg2);
 
-    for (auto it = next(begin(t_args) , 2); it != end(t_args); ++it) {
+    for (auto it = next(b , 2); it != e; ++it) {
         if (!is_number(*it)) throw "bifunc_div error";
         n2 *= to_number(*it);
     }
@@ -415,53 +335,52 @@ Cell CoreEnvironment::bifunc_div()
     return t_farm.make_number_cell(move(n));
 }
 
-Cell CoreEnvironment::bifunc_greater()
+Cell CoreEnvironment::bifunc_greater(iter b, iter e)
 {
-    return numbers_compare(numbers_compare_type::greater);
+    return numbers_compare(b, e, numbers_compare_type::greater);
 }
 
-Cell CoreEnvironment::bifunc_greater_equal()
+Cell CoreEnvironment::bifunc_greater_equal(iter b, iter e)
 {
-    return numbers_compare(numbers_compare_type::greater_eq);
+    return numbers_compare(b, e, numbers_compare_type::greater_eq);
 }
 
-Cell CoreEnvironment::bifunc_less()
+Cell CoreEnvironment::bifunc_less(iter b, iter e)
 {
-    return numbers_compare(numbers_compare_type::less);
+    return numbers_compare(b, e, numbers_compare_type::less);
 }
 
-Cell CoreEnvironment::bifunc_less_equal()
+Cell CoreEnvironment::bifunc_less_equal(iter b, iter e)
 {
-    return numbers_compare(numbers_compare_type::less_eq);
+    return numbers_compare(b, e, numbers_compare_type::less_eq);
 }
 
-Cell CoreEnvironment::bifunc_num_eq()
+Cell CoreEnvironment::bifunc_num_eq(iter b, iter e)
 {
-    return numbers_compare(numbers_compare_type::eq);
+    return numbers_compare(b, e, numbers_compare_type::eq);
 }
 
-Cell CoreEnvironment::bifunc_equal()
+Cell CoreEnvironment::bifunc_equal(iter b, iter e)
 {
-    const auto& s1 = (t_args > 0) ? arg1 : t_farm.nil;
-    const auto& s2 = (t_args > 1) ? arg2 : t_farm.nil;
+    const auto& s1 = (ArgsCounter{b, e} > 0) ? arg1 : t_farm.nil;
+    const auto& s2 = (ArgsCounter{b, e} > 1) ? arg2 : t_farm.nil;
     if (is_number(s1) && is_number(s2)) {
-        return eval_direct_bifunc(&CoreEnvironment::bifunc_num_eq, begin(t_args), end(t_args));
+        return bifunc_num_eq(b, e);
     }
 
     if (is_symbol(s1) && is_symbol(s2)) {
-        return eval_direct_bifunc(&CoreEnvironment::bifunc_eq, begin(t_args), end(t_args));
+        return bifunc_eq(b, e);
     }
 
     if (is_list(s1) && is_list(s2)) {
         reference_wrapper<const Cell> s1_b = s1;
         reference_wrapper<const Cell> s2_b = s2;
         
-        while (!is_null(s1_b, t_farm) && !is_null(s2_b, t_farm))
+        while (!is_null(s1_b) && !is_null(s2_b))
         {
             auto lst = t_farm.make_list_cell({ car(s1_b), car(s2_b) });
-            CarCdrIteration iteration(lst, t_farm);
             if (
-                is_null(eval_direct_bifunc(&CoreEnvironment::bifunc_equal, begin(iteration), end(iteration)), t_farm)
+                is_null(bifunc_equal(begin(lst), end(lst)))
                 )
             {
                 return t_farm.nil;
@@ -469,30 +388,29 @@ Cell CoreEnvironment::bifunc_equal()
             s1_b = cdr(s1_b);
             s2_b = cdr(s2_b);
         } 
-        if (is_null(s1_b, t_farm) && is_null(s2_b, t_farm)) return t_farm.T;
+        if (is_null(s1_b) && is_null(s2_b)) return t_farm.T;
         auto lst = t_farm.make_list_cell ({ car(s1_b), car(s2_b) });
-        CarCdrIteration iteration(lst, t_farm);
         return bool_cast(
-            !is_null(eval_direct_bifunc(&CoreEnvironment::bifunc_equal, begin(iteration), end(iteration)), t_farm), t_farm
+            !is_null(bifunc_equal(begin(lst), end(lst))), t_farm
         );
     }
 
-    if (is_null(s1, t_farm) && is_null(s2, t_farm)) {
+    if (is_null(s1) && is_null(s2)) {
         return t_farm.T;
     }
 
     return t_farm.nil;
 }
 
-Cell CoreEnvironment::bifunc_car()
+Cell CoreEnvironment::bifunc_car(iter b, iter e)
 {
-    Cell s = (t_args >= 1) ? arg1 : t_farm.nil;
+    Cell s = (ArgsCounter{b, e} >= 1) ? arg1 : t_farm.nil;
 
     if (is_atom(s)) {
         return eval_atom(s);
     }
     else {
-        if (is_null(s, t_farm)) {
+        if (is_null_list(to_list(s))) {
             return t_farm.nil;
         }
         else {
@@ -501,10 +419,10 @@ Cell CoreEnvironment::bifunc_car()
     }
 }
 
-Cell CoreEnvironment::bifunc_cdr()
+Cell CoreEnvironment::bifunc_cdr(iter b, iter e)
 {
-    Cell s = (t_args >= 1) ? arg1 : t_farm.nil;
-    if (is_null(s, t_farm)) {
+    Cell s = (ArgsCounter{b, e} >= 1) ? arg1 : t_farm.nil;
+    if (is_null(s)) {
         return t_farm.nil;
     }
     else if (is_atom(s)) {
@@ -515,39 +433,22 @@ Cell CoreEnvironment::bifunc_cdr()
     }
 }
 
-Cell CoreEnvironment::bifunc_append()
+Cell CoreEnvironment::bifunc_cons(iter b, iter e)
 {
-    if (t_args == 0) return t_farm.nil;
-    auto it = begin(t_args);
-    while ((is_atom(*it) || is_null(to_list(*it))) && it != end(t_args)) {
-        ++it;
-    }
-    if(it == end(t_args))return t_farm.nil;
-    if(next(it, 1) == end(t_args))return *it;
-    Cell s = *it;
-    ++it;
-    for(; it != end(t_args); ++it){
-        s = append(s, *it, t_farm);
-    }
-    return s;
-}
-
-Cell CoreEnvironment::bifunc_cons()
-{
-    Cell s1 = (t_args >= 1) ? arg1: t_farm.nil;
-    Cell s2 = (t_args >= 2) ? arg2 : t_farm.nil;
+    Cell s1 = (ArgsCounter{b, e} >= 1) ? arg1: t_farm.nil;
+    Cell s2 = (ArgsCounter{b, e} >= 2) ? arg2 : t_farm.nil;
 
     return cons(s1, s2, t_farm);
 }
 
-Cell CoreEnvironment::bifunc_list()
+Cell CoreEnvironment::bifunc_list(iter b, iter e)
 {
-    return t_farm.make_list_cell(begin(t_args), end(t_args));
+    return t_farm.make_list_cell(b, e);
 }
 
-Cell CoreEnvironment::bifunc_getd()
+Cell CoreEnvironment::bifunc_getd(iter b, iter e)
 {
-    if (t_args == 0) return t_farm.nil;
+    if (ArgsCounter{b, e}== 0) return t_farm.nil;
     if(!is_symbol(arg1)) throw "bifunc_getf error";
     
     auto func = t_funcs.find(to_symbol(arg1));
@@ -565,7 +466,7 @@ Cell CoreEnvironment::bifunc_getd()
     return t_farm.nil;
 }
 
-Cell CoreEnvironment::bifunc_read() {
+Cell CoreEnvironment::bifunc_read(iter b, iter e) {
     if (t_streams) {
         // stop input?
         auto [reason, cell] = t_syntaxer.read_sexpr((*t_streams).get().t_input_stream());
@@ -573,38 +474,14 @@ Cell CoreEnvironment::bifunc_read() {
         else return t_farm.nil;
     }
     return t_farm.nil;
-    //if (t_stop_flag && (*t_stop_flag).get().get()) throw throw_stop_helper{};
-    //if (!t_streams.t_input_stream().alive()) return t_ferm.symbols->nil;
+    //if (t_stop_flag && (*t_stop_flag).get(iter b, iter e).get(iter b, iter e)) throw throw_stop_helper{};
+    //if (!t_streams.t_input_stream(iter b, iter e).alive(iter b, iter e)) return t_ferm.symbols->nil;
 }
 
-Cell CoreEnvironment::bifunc_prog1()
-{
-    if (t_args == 0) return t_farm.nil;
-    Cell result = arg1;
-    eval_direct_bifunc(&CoreEnvironment::nbifunc_progn, next(begin(t_args) , 1), end(t_args));
-    return result;
-}
-
-Cell CoreEnvironment::nbifunc_loop()
-{
-    auto it = begin(t_args);
-    for(;;) {
-        if(it == end(t_args)) it = begin(t_args);
-        if (is_implicit_cond(*it, t_farm)) {
-            auto cellopt = eval_implicit_cond(*it);
-            if (cellopt) return *cellopt;
-        }
-        else {
-            eval_quote(*it);
-        }
-        ++it;
-    }
-}
-
-Cell CoreEnvironment::bifunc_print()
+Cell CoreEnvironment::bifunc_print(iter b, iter e)
 {
     if (t_streams) {
-        if (t_args == 0) {
+        if (ArgsCounter{b, e}== 0) {
             (*t_streams).get().t_output_stream().out_new_line(nil_str);
             return t_farm.nil;
         }
@@ -616,14 +493,14 @@ Cell CoreEnvironment::bifunc_print()
     return t_farm.nil;
 }
 
-Cell CoreEnvironment::nbifunc_quote()
+Cell CoreEnvironment::nbifunc_quote(iter b, iter e)
 {
-    if (t_args == 0) return t_farm.nil;
+    if (ArgsCounter{b, e}== 0) return t_farm.nil;
     return arg1;
 }
 
-Cell CoreEnvironment::nbifunc_defun() {
-    if (t_args < 2)  return t_farm.nil;
+Cell CoreEnvironment::nbifunc_defun(iter b, iter e) {
+    if (ArgsCounter{b, e} < 2)  return t_farm.nil;
     if (!is_symbol(arg1)) return t_farm.nil;
     const auto& name = to_symbol(arg1);
     if (is_list(arg2)) {
@@ -633,8 +510,8 @@ Cell CoreEnvironment::nbifunc_defun() {
         }
         else {
             auto body = t_farm.make_list_cell(
-                next(begin(t_args), 2),
-                end(t_args)
+                next(b, 2),
+                e
             );
             t_funcs.add_lambda(
                 name,
@@ -648,8 +525,8 @@ Cell CoreEnvironment::nbifunc_defun() {
     }
     else if(is_symbol(arg2)) {
         auto body = t_farm.make_list_cell(
-            next(begin(t_args), 2),
-            end(t_args)
+            next(b, 2),
+            e
         );
         t_funcs.add_lambda(
             name,
@@ -666,85 +543,18 @@ Cell CoreEnvironment::nbifunc_defun() {
     return arg1;
 }
 
-Cell CoreEnvironment::eval_quote(Cell& arg) {
-    if ((t_stop_flag) && (*t_stop_flag).get().get()) throw throw_stop_helper{};
-    if (is_list(arg)) {
-        if (is_null(to_list(arg))) return t_farm.nil;
-        if (auto& cdr_buf = cdr(arg); is_list(cdr_buf)) {
-            CarCdrIteration iteration(cdr_buf, t_farm);
-            return eval_fnc(car(arg), begin(iteration), end(iteration), false);
-        }
-        else {
-            auto lst_buf = t_farm.make_list_cell({ cdr_buf });
-            CarCdrIteration iteration(lst_buf, t_farm);
-            return eval_fnc(car(arg), begin(iteration), end(iteration), false);
-        }
-    }
-    else {
-        return eval_atom(arg);
-    }
-}
-
-Cell CoreEnvironment::nbifunc_cond()
+Cell CoreEnvironment::bifunc_set(iter b, iter e)
 {
-    for (auto it = begin(t_args); it != end(t_args); ++it) {
-        auto& elem = *it;
-        if (!is_list(elem)) {
-            if(is_null_symbol(elem, t_farm)) continue;
-            else throw "bifunc_cond error";
-        }
-
-        auto predicate_val = eval_quote(car(elem));
-        if (!is_null(predicate_val, t_farm)) {
-            auto& cdr_buf = cdr(elem);
-            if (!is_list(cdr_buf) || is_null(to_list(cdr_buf)))
-            {
-                return predicate_val;
-            }
-            CarCdrIteration iteration(cdr_buf, t_farm);
-            return eval_direct_bifunc(&CoreEnvironment::nbifunc_progn, begin(iteration), end(iteration));
-        }
-    }
-    return t_farm.nil;
-}
-
-Cell CoreEnvironment::nbifunc_progn()
-{
-    if (t_args == 0) return t_farm.nil;
-    auto it = begin(t_args);
-    for (; next(it) != end(t_args); ++it) {
-        if (is_implicit_cond(*it, t_farm)) {
-            auto cellopt = eval_implicit_cond(*it);
-            if (cellopt) return *cellopt;
-        }
-        else {
-            eval_quote(*it);
-        }
-    }
-
-    auto& last = *it;
-    if (is_implicit_cond(last, t_farm)) {
-        auto cellopt = eval_implicit_cond(last);
-        if (cellopt) return *cellopt;
-        else throw "nbifunc_progn error -> implicit cond at the end, but t_ferm.symbols->nil";
-    }
-    else {
-        return eval_quote(last);
-    }
-}
-
-Cell CoreEnvironment::bifunc_set()
-{
-    if (t_args == 0) return t_farm.nil;
-    auto& val = (next(begin(t_args)) == end(t_args)) ? t_farm.nil : arg2;
+    if (ArgsCounter{b, e}== 0) return t_farm.nil;
+    auto& val = (next(b) == e) ? t_farm.nil : arg2;
     set_value(arg1, val);
     return val;
 }
 
-Cell CoreEnvironment::bifunc_eq()
+Cell CoreEnvironment::bifunc_eq(iter b, iter e)
 {
-    const auto& s1 = (t_args > 0) ? arg1 : t_farm.nil;
-    const auto& s2 = (t_args > 1) ? arg2 : t_farm.nil;
+    const auto& s1 = (ArgsCounter{b, e} > 0) ? arg1 : t_farm.nil;
+    const auto& s2 = (ArgsCounter{b, e} > 1) ? arg2 : t_farm.nil;
 
 
     if (is_number(s1) && is_number(s2)) {
@@ -753,89 +563,49 @@ Cell CoreEnvironment::bifunc_eq()
     else if (is_symbol(s1) && is_symbol(s2)) {
         return bool_cast(to_symbol(s1) == to_symbol(s2), t_farm);
     }
-    else if(is_null(s1, t_farm) && is_null(s2, t_farm)) {
+    else if(is_null(s1) && is_null(s2)) {
         return t_farm.T;
     }
     return t_farm.nil;
 }
 
-Cell CoreEnvironment::bifunc_last()
+Cell CoreEnvironment::bifunc_last(iter b, iter e)
 {
-    if (t_args == 0) return t_farm.nil;
+    if (ArgsCounter{b, e}== 0) return t_farm.nil;
     if (is_atom(arg1)) {
         return t_farm.nil;
     }
     else {
-        if (is_null(arg1, t_farm)) {
+        if (is_null_list(to_list(arg1))) {
             return t_farm.nil;
         }
-        CarCdrIteration iteration(arg1, t_farm);
-        auto it = begin(iteration);
-        while (next(it) != end(iteration)) {
+        auto it = begin(arg1);
+        while (next(it) != end(arg1)) {
             ++it;
         }
         return it.get_elem();
     } 
 }
 
-Cell CoreEnvironment::bifunc_length()
+Cell CoreEnvironment::bifunc_length(iter b, iter e)
 {
-    if (t_args == 0) return t_farm.make_number_cell(BigInt(0l));
+    if (ArgsCounter{b, e}== 0) return t_farm.make_number_cell(BigInt(0l));
     auto& s = arg1;
     if (is_atom(s)) {
         throw "bifunc_length error (wtf ???)";
     }
     else {
-        CarCdrIteration iteration(s, t_farm);
-        return t_farm.make_number_cell(BigInt(static_cast<long>(std::distance(begin(iteration), end(iteration)))));
+        return t_farm.make_number_cell(BigInt(static_cast<long>(std::distance(begin(s), end(s)))));
     }
  }
 
-Cell CoreEnvironment::bifunc_apply()
+Cell CoreEnvironment::bifunc_integerp(iter b, iter e)
 {
-    if (t_args == 0) throw "bifunc_apply error (unknown function)";
-    if (t_args >= 2) {
-        if(is_list(arg2)) {
-            CarCdrIteration iteration(arg2, t_farm);
-            return eval_fnc(arg1, begin(iteration), end(iteration), true );
-        }
-        auto eval_buf = t_farm.make_list_cell({ arg1 });
-        return eval_quote(eval_buf);
-    }
-    else {
-        auto eval_buf = t_farm.make_list_cell({ arg1 });
-        return eval_quote(eval_buf);
-    }
-}
-
-Cell CoreEnvironment::nbifunc_setq()
-{
-    if (t_args == 0) return t_farm.nil;
-    auto it = next(begin(t_args));
-    auto val = (it == end(t_args)) ? t_farm.nil : eval_quote(*it);
-
-    set_value(arg1, val);
-
-    if (it != end(t_args) && next(it, 1) != end(t_args)) {
-        return eval_direct_bifunc(&CoreEnvironment::nbifunc_setq, next(it, 1), end(t_args));
-    }
-    else {
-        return val;
-    }
-}
-
-Cell CoreEnvironment::bifunc_eval() {
-    if (t_args == 0) return t_farm.nil;
-    return eval_quote(arg1);
-}
-
-Cell CoreEnvironment::bifunc_integerp()
-{
-    if (t_args == 0) return t_farm.nil;
+    if (ArgsCounter{b, e}== 0) return t_farm.nil;
     return bool_cast(is_integer(arg1), t_farm);
 }
 
-Cell CoreEnvironment::bifunc_oblist()
+Cell CoreEnvironment::bifunc_oblist(iter b, iter e)
 {
     const auto& lst = t_farm.symbols->get_lst();
     std::vector <Cell> result;
@@ -846,35 +616,61 @@ Cell CoreEnvironment::bifunc_oblist()
     return t_farm.make_list_cell(begin(result), end(result));
 }
 
-Cell CoreEnvironment::bifunc_rplaca()
+Cell CoreEnvironment::bifunc_rplaca(iter b, iter e)
 {
-    Cell s1 = (t_args >= 1) ? arg1 : t_farm.nil;
-    Cell s2 = (t_args >= 2) ? arg2 : t_farm.nil;
+    Cell s1 = (ArgsCounter{b, e} >= 1) ? arg1 : t_farm.nil;
+    Cell s2 = (ArgsCounter{b, e} >= 2) ? arg2 : t_farm.nil;
 
-    if (!is_symbol(s1) && !is_null(to_list(s1))) {
+    if (!is_symbol(s1) && !is_null_list(to_list(s1))) {
         rplaca(to_list(s1), s2);
         return s1;
     }
     return t_farm.nil;
 }
 
-Cell CoreEnvironment::bifunc_rplacd()
+Cell CoreEnvironment::bifunc_rplacd(iter b, iter e)
 {
-    Cell s1 = (t_args >= 1) ? arg1 : t_farm.nil;
-    Cell s2 = (t_args >= 2) ? arg2 : t_farm.nil;
+    Cell s1 = (ArgsCounter{b, e} >= 1) ? arg1 : t_farm.nil;
+    Cell s2 = (ArgsCounter{b, e} >= 2) ? arg2 : t_farm.nil;
 
-    if (!is_symbol(s1) && !is_null(to_list(s1))) {
+    if (!is_symbol(s1) && !is_null_list(to_list(s1))) {
         rplacd(to_list(s1), s2);
         return s1;
     }
     return t_farm.nil;
 }
 
-Cell CoreEnvironment::bifunc_copy_tree()
+Cell CoreEnvironment::bifunc_copy_tree(iter b, iter e)
 {
-    Cell s1 = (t_args >= 1) ? arg1 : t_farm.nil;
-    if (!is_list(s1) || is_null_symbol(s1, t_farm)) {
+    Cell s1 = (ArgsCounter{b, e} >= 1) ? arg1 : t_farm.nil;
+    if (!is_list(s1) || is_null_symbol(s1)) {
         return s1;
     }
     return tree_copy(s1, t_farm);
+}
+
+Cell CoreEnvironment::bifunc_pack(iter b, iter e)
+{
+    if (b == e || !is_list(arg1) || is_null(arg1)) return t_farm.make_symbol_cell("");
+    std::string s;
+    auto it = begin(*b);
+    auto e_it = end(*b);
+    for (; it != e_it; ++it) {
+        if (is_atom(*it)) {
+            s += t_output_control.to_string_raw(*it);
+        }
+    }
+    return t_farm.make_symbol_cell(move(s));
+}
+
+Cell CoreEnvironment::bifunc_unpack(iter b, iter e)
+{
+    if (b == e || is_list(arg1) || is_null_symbol(arg1)) return t_farm.nil;
+    string s = t_output_control.to_string_raw(arg1);
+    vector<Cell> buf;
+    buf.reserve(s.size());
+    for (char c : s) {
+        buf.push_back(t_farm.make_symbol_cell(string() + c));
+    }
+    return t_farm.make_list_cell(begin(buf), end(buf));
 }

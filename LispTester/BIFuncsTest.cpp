@@ -105,7 +105,12 @@ void test_eval_base() {
 	simple_core_assert("(if a kok nekok)", "KOK"); 
 	simple_core_assert("((lambda (x) (cdr x)) '(1 2))", "(2)");
 	simple_core_assert_reason("((nlambda (x) x) a)", Core::result_type::fail);
-
+	simple_core_assert("(copy-tree '(1))", "(1)");
+	simple_core_assert("(copy-tree '(1 2))", "(1 2)");
+	simple_core_assert("(copy-tree '(1 2 . 3))", "(1 2 . 3)");
+	simple_core_assert("(copy-tree '((1 2 . 3) (4 . 5)))", "((1 2 . 3) (4 . 5))");
+	simple_core_assert("(copy-tree '((1 2 3) (4 (5 (6) 7) 8) . (10 (5))))", "((1 2 3) (4 (5 (6) 7) 8) 10 (5))");
+	
 }
 
 //арифметические функции

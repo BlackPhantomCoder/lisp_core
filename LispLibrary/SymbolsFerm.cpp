@@ -8,6 +8,15 @@
 using namespace std;
 using namespace CoreData;
 
+SymbolsFarm::SymbolsFarm()
+{
+    auto [it, reason] = t_symbol_to_it_and_count.insert({ CoreData::nil_str, { end(t_oblist), 0 } });
+    t_oblist.push_front(it->first);
+    it->second.first = begin(t_oblist);
+    it->second.second = 0;
+    t_nil = symbol_core(it, *this);
+}
+
 SymbolsFarm::symbol_core SymbolsFarm::make_or_copy(std::string&& str)
 {
     auto [it, reason] = t_symbol_to_it_and_count.insert({ move(str), { end(t_oblist), 0 } });
@@ -83,6 +92,11 @@ const char* SymbolsFarm::symbol_core::str() const
 size_t SymbolsFarm::symbol_core::size() const
 {
     return t_base->second.first->size();
+}
+
+bool SymbolsFarm::symbol_core::is_nil_symbol() const
+{
+    return t_owner->t_nil == *this;
 }
 
 SymbolsFarm::symbol_core& SymbolsFarm::symbol_core::operator=(symbol_core&& rh) noexcept

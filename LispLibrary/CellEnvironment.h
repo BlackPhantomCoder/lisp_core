@@ -1,6 +1,8 @@
 #pragma once
 #include "Cell.h"
 #include "Symbol.h"
+
+#include "CoreData.h"
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -10,7 +12,7 @@ class CellEnvironment
 {
 public:
 	using mp = std::unordered_map<Symbol, Cell>;
-	using frame = std::vector<std::pair<Symbol, Cell>>;
+	using frame = std::vector<std::pair<Symbol, Cell>, CoreData::allocator<std::pair<Symbol, Cell>>>;
 public:
 	CellEnvironment(mp&& env);
 	CellEnvironment(const mp& env = {});

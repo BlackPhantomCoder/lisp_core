@@ -6,10 +6,7 @@
 class Symbol {
     friend class SExprsFarm;
     friend class SymbolsFarm;
-    //friend Symbol make_symbol(const std::string& data, SymbolsFarm& owner);
-    //friend Symbol make_symbol(std::string&& data, SymbolsFarm& owner);
-    //friend Symbol make_symbol(const std::string& data, SExprsFarm& owner);
-    //friend Symbol make_symbol(std::string&& data, SExprsFarm& owner);
+    friend bool is_null_symbol(const Symbol& c);
 public:
     Symbol() = default;
     ~Symbol();
@@ -56,12 +53,3 @@ bool operator!=(const Symbol& lh, const char* rh);
 bool operator!=(const char* lh, const Symbol& rh);
 bool operator!=(const Symbol& lh, const std::string& rh);
 bool operator!=(const std::string& lh, const Symbol& rh);
-
-
-//
-//Symbol make_symbol(Symbol&& rh);
-//Symbol make_symbol(const Symbol& rh);
-//Symbol make_symbol(const std::string& data, SExprsFarm& owner);
-//Symbol make_symbol(std::string&& data, SExprsFarm& owner);
-//Symbol make_symbol(const std::string& data, SymbolsFarm& owner);
-//Symbol make_symbol(std::string&& data, SymbolsFarm& owner);

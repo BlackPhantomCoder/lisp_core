@@ -22,7 +22,7 @@ public:
     }
 
     T* get_default() {
-        return get();
+        return  get();
     }
     void free(T* val) {
         t_mem.push(val);
@@ -47,8 +47,11 @@ private:
             t_mem.pop();
         }
         else {
+            
+           
             t_block = new T[t_new_block_size];
             t_block_size = t_new_block_size - 1;
+
             t_blocks.push(t_block);
             result = t_block;
             ++t_block;

@@ -39,7 +39,7 @@ void CellEnvironment::pop()
 		if (it2->second.empty()) {
 			t_all_in_stack.erase(it2);
 		}
-	}
+	}	
 	t_stack.pop_back();
 }
 

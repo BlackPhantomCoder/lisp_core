@@ -122,7 +122,7 @@ Cell SExprsFarm::make_list_cell(std::initializer_list<Cell> l)
 
 void SExprsFarm::t_init_list(DotPair& p, const Cell& f, const Cell& s)
 {
-	p.t_symbols = this;
+	p.t_farm = this;
 	p.t_first = f;
 	p.t_second = s;
 }
@@ -164,6 +164,6 @@ Cell SExprsFarm::make_cell_numb_noinit()
 
 void SExprsFarm::t_init_empty_list(DotPair& d)
 {
-	d.t_symbols = this;
+	d.t_farm = this;
 }
 

@@ -13,12 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Файлы заголовков\Cell">
-      <UniqueIdentifier>{e8114819-2388-457c-a236-5b07d5fcce1a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Файлы заголовков\lambda">
-      <UniqueIdentifier>{e041e89c-f961-4db6-9585-3c3886cc91ee}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Файлы заголовков\Core">
       <UniqueIdentifier>{d3012f2c-947b-4150-a66a-b40c251b3067}</UniqueIdentifier>
     </Filter>
@@ -31,46 +25,46 @@
     <Filter Include="Файлы заголовков\Ints">
       <UniqueIdentifier>{2bb36f8e-60d1-452d-838e-612ccda78359}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Файлы заголовков\Cell\DPair">
-      <UniqueIdentifier>{f6471715-e98a-4f7e-9ebf-c5471ab7df58}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Файлы заголовков\SExprCore">
       <UniqueIdentifier>{288023cb-070d-46bc-87a7-666019fd4c3c}</UniqueIdentifier>
     </Filter>
     <Filter Include="Файлы заголовков\Tools">
       <UniqueIdentifier>{36421d7f-557e-4880-bcb9-8c7066a0bcf9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Файлы заголовков\Core\lambda">
+      <UniqueIdentifier>{e041e89c-f961-4db6-9585-3c3886cc91ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Файлы заголовков\Core\Cell">
+      <UniqueIdentifier>{e8114819-2388-457c-a236-5b07d5fcce1a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Файлы заголовков\Core\Support">
+      <UniqueIdentifier>{a8d63215-f477-4d4b-9ec8-312a73eb61f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Файлы заголовков\Core\SpecialFuncs">
+      <UniqueIdentifier>{3acff48e-539b-49c7-9c8c-094183ebd43a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cell.h">
-      <Filter>Файлы заголовков\Cell</Filter>
+      <Filter>Файлы заголовков\Core\Cell</Filter>
     </ClInclude>
     <ClInclude Include="Number.h">
-      <Filter>Файлы заголовков\Cell</Filter>
+      <Filter>Файлы заголовков\Core\Cell</Filter>
     </ClInclude>
     <ClInclude Include="BigInt.h">
-      <Filter>Файлы заголовков\Cell</Filter>
+      <Filter>Файлы заголовков\Core\Cell</Filter>
     </ClInclude>
     <ClInclude Include="LambdaCell.h">
-      <Filter>Файлы заголовков\lambda</Filter>
+      <Filter>Файлы заголовков\Core\lambda</Filter>
     </ClInclude>
     <ClInclude Include="Core.h">
       <Filter>Файлы заголовков\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="CoreEnvStreamsProvider.h">
-      <Filter>Файлы заголовков\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="LambdaEvaler.h">
-      <Filter>Файлы заголовков\lambda</Filter>
     </ClInclude>
     <ClInclude Include="CoreData.h">
       <Filter>Файлы заголовков\Core</Filter>
     </ClInclude>
     <ClInclude Include="STDMutexed.h">
       <Filter>Файлы заголовков\Platform</Filter>
-    </ClInclude>
-    <ClInclude Include="Lexer.h">
-      <Filter>Файлы заголовков\Core</Filter>
     </ClInclude>
     <ClInclude Include="PredLispFuncs.h">
       <Filter>Файлы заголовков\Core</Filter>
@@ -79,15 +73,9 @@
       <Filter>Файлы заголовков\Core</Filter>
     </ClInclude>
     <ClInclude Include="Symbol.h">
-      <Filter>Файлы заголовков\Cell</Filter>
+      <Filter>Файлы заголовков\Core\Cell</Filter>
     </ClInclude>
     <ClInclude Include="CellEnvironment.h">
-      <Filter>Файлы заголовков\Core\Env</Filter>
-    </ClInclude>
-    <ClInclude Include="ArgsStack.h">
-      <Filter>Файлы заголовков\Core\Env</Filter>
-    </ClInclude>
-    <ClInclude Include="BIFuncEvaler.h">
       <Filter>Файлы заголовков\Core\Env</Filter>
     </ClInclude>
     <ClInclude Include="PublicCoreEnvironmentProvider.h">
@@ -108,15 +96,6 @@
     <ClInclude Include="StdCoreInputMemoryStream.h">
       <Filter>Файлы заголовков\Platform</Filter>
     </ClInclude>
-    <ClInclude Include="ArgsOnStackEvaler.h">
-      <Filter>Файлы заголовков\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="DotPair.h">
-      <Filter>Файлы заголовков\Cell\DPair</Filter>
-    </ClInclude>
-    <ClInclude Include="CarCdrIterator.h">
-      <Filter>Файлы заголовков\Cell\DPair</Filter>
-    </ClInclude>
     <ClInclude Include="SExprCoreStdVariant.h">
       <Filter>Файлы заголовков\SExprCore</Filter>
     </ClInclude>
@@ -125,12 +104,6 @@
     </ClInclude>
     <ClInclude Include="MPool.h">
       <Filter>Файлы заголовков\Tools</Filter>
-    </ClInclude>
-    <ClInclude Include="SymbolsFarm.h">
-      <Filter>Файлы заголовков\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="SExprsFArm.h">
-      <Filter>Файлы заголовков\Core</Filter>
     </ClInclude>
     <ClInclude Include="Mutexed.h">
       <Filter>Файлы заголовков\Ints</Filter>
@@ -141,8 +114,47 @@
     <ClInclude Include="FuncsStorage.h">
       <Filter>Файлы заголовков\Core</Filter>
     </ClInclude>
+    <ClInclude Include="PoolDeleter.h">
+      <Filter>Файлы заголовков\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="Func.h">
+      <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
+    </ClInclude>
+    <ClInclude Include="FuncsEvaler.h">
+      <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
+    </ClInclude>
+    <ClInclude Include="LambdaFunc.h">
+      <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
+    </ClInclude>
+    <ClInclude Include="BiFunc.h">
+      <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
+    </ClInclude>
+    <ClInclude Include="Bifuncs.h">
+      <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
+    </ClInclude>
     <ClInclude Include="OutputController.h">
-      <Filter>Файлы заголовков</Filter>
+      <Filter>Файлы заголовков\Core\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="SymbolsFarm.h">
+      <Filter>Файлы заголовков\Core\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="SExprsFArm.h">
+      <Filter>Файлы заголовков\Core\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="CoreEnvStreamsProvider.h">
+      <Filter>Файлы заголовков\Core\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="Lexer.h">
+      <Filter>Файлы заголовков\Core\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="ArgsCounter.h">
+      <Filter>Файлы заголовков\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="DotPair.h">
+      <Filter>Файлы заголовков\Core\Cell</Filter>
+    </ClInclude>
+    <ClInclude Include="CarCdrIterator.h">
+      <Filter>Файлы заголовков\Core\Cell</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -179,12 +191,6 @@
     <ClCompile Include="CellEnvironment.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="LambdaEvaler.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
-    <ClCompile Include="BIFuncEvaler.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
     <ClCompile Include="CoreData.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
@@ -192,9 +198,6 @@
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="Symbol.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
-    <ClCompile Include="ArgsStack.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="StdCoreInputStream.cpp">
@@ -234,6 +237,24 @@
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="OutputController.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="Func.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="BiFunc.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="FuncsEvaler.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="LambdaFunc.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="Bifuncs.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="ArgsCounter.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>

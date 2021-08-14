@@ -14,6 +14,8 @@ OutputController::OutputController(SExprsFarm& farm):
 {
 }
 
+
+//need refactoring (recursion)
 std::string OutputController::to_string(const Cell& exp)
 {
     if (is_list(exp)) {
@@ -30,6 +32,22 @@ std::string OutputController::to_string(const Cell& exp)
     }
 }
 
+std::string OutputController::to_string_raw(const Cell& exp)
+{
+    if (is_list(exp)) {
+        return t_to_string_list_raw(exp);
+    }
+    else if (is_symbol(exp)) {
+        return t_to_string_raw(to_symbol(exp));
+    }
+    else if (is_number(exp)) {
+        return t_to_string_raw(to_number(exp));
+    }
+    else {
+        throw "to_string: unknown object";
+    }
+}
+
 void OutputController::set_read_upcase(bool val)
 {
     t_read_upcase = val;
@@ -37,17 +55,17 @@ void OutputController::set_read_upcase(bool val)
 
 std::string OutputController::t_to_string_list(const Cell& d)
 {
-    if (is_null(to_list(d))) return CoreData::nil_str;
+    if (is_null_list(to_list(d))) return CoreData::nil_str;
     std::string s("(");
-    CarCdrConstIteration iteration(d, t_farm);
-    auto it = begin(iteration);
-    for (; next(it) != end(iteration); ++it) {
+
+    auto it = begin(d);
+    for (; next(it) != end(d); ++it) {
         s += to_string(*it);
         s += ' ';
     }
     s += to_string(car(it.get_elem()));
     s += ' ';
-    if (!is_null(cdr(it.get_elem()), t_farm)) {
+    if (!is_null(cdr(it.get_elem()))) {
         s += ". ";
         s += to_string(cdr(it.get_elem()));
     }
@@ -126,4 +144,38 @@ std::string OutputController::t_to_string(const Number& n)
     else {
         throw "to_string: unknown object";
     }
+}
+
+std::string OutputController::t_to_string_list_raw(const Cell& d)
+{
+    if (is_null_list(to_list(d))) return CoreData::nil_str;
+    std::string s("(");
+
+    auto it = begin(d);
+    for (; next(it) != end(d); ++it) {
+        s += to_string_raw(*it);
+        s += ' ';
+    }
+    s += to_string_raw(car(it.get_elem()));
+    s += ' ';
+    if (!is_null(cdr(it.get_elem()))) {
+        s += ". ";
+        s += to_string_raw(cdr(it.get_elem()));
+    }
+
+    if (s[s.length() - 1] == ' ') {
+        s.erase(s.length() - 1);
+    }
+    s += ')';
+    return s;
+}
+
+std::string OutputController::t_to_string_raw(const Symbol& s)
+{
+    return s.to_string();
+}
+
+std::string OutputController::t_to_string_raw(const Number& n)
+{
+    return t_to_string(n);
 }

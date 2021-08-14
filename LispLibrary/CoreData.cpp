@@ -1,9 +1,22 @@
 #include "CoreData.h"
 #include "CoreEnv.h"
+#include "BiFuncs.h"
+
 #include <algorithm>
 
 using namespace std;
 using namespace CoreData;
+
+template<class T>
+CoreData::HolderPtr make_special_bifunc(CoreEnvironment& env, CarCdrIterator b, CarCdrIterator e, bool forse_noeval) {
+    return make_fnc<T>(env, b, e, forse_noeval);
+}
+
+template<class T>
+CoreData::HolderPtr make_special_nbifunc(CoreEnvironment& env, CarCdrIterator b, CarCdrIterator e) {
+    return make_fnc<T>(env, b, e);
+}
+
 
 bifuncs_array CoreData::bifunc_setup()
 {
@@ -29,18 +42,14 @@ bifuncs_array CoreData::bifunc_setup()
         make_pair("GETD", &CoreEnvironment::bifunc_getd),
         make_pair("SET", &CoreEnvironment::bifunc_set),
         make_pair("READ", &CoreEnvironment::bifunc_read),
-        make_pair("PROG1", &CoreEnvironment::bifunc_prog1),
         make_pair("PRINT", &CoreEnvironment::bifunc_print),
         make_pair("EQUAL", &CoreEnvironment::bifunc_equal),
-        make_pair("APPLY", &CoreEnvironment::bifunc_apply),
         make_pair("LAST", &CoreEnvironment::bifunc_last),
         make_pair("LENGTH", &CoreEnvironment::bifunc_length),
-        //make_pair("PACK", &CoreEnvironment::bifunc_pack),
-        //make_pair("UNPACK", &CoreEnvironment::bifunc_unpack),
+        make_pair("PACK", &CoreEnvironment::bifunc_pack),
+        make_pair("UNPACK", &CoreEnvironment::bifunc_unpack),
         make_pair("EQ", &CoreEnvironment::bifunc_eq),
         // make_pair("MOD", &CoreEnvironment::bifunc_mod),
-        make_pair("EVAL", &CoreEnvironment::bifunc_eval),
-        make_pair("APPEND", &CoreEnvironment::bifunc_append),
         make_pair("INTEGERP", &CoreEnvironment::bifunc_integerp),
         make_pair("OBLIST", &CoreEnvironment::bifunc_oblist),
         make_pair("RPLACA", &CoreEnvironment::bifunc_rplaca),
@@ -54,19 +63,25 @@ nbifuncs_array CoreData::nbifunc_setup()
     return CoreData::nbifuncs_array{
         make_pair("DEFUN", &CoreEnvironment::nbifunc_defun),
         make_pair("QUOTE", &CoreEnvironment::nbifunc_quote),
-        make_pair("COND", &CoreEnvironment::nbifunc_cond),
-        make_pair("PROGN", &CoreEnvironment::nbifunc_progn),
-        make_pair("SETQ", &CoreEnvironment::nbifunc_setq),
-        make_pair("LOOP", &CoreEnvironment::nbifunc_loop),
     };
 }
 
-bool CoreData::bifunc_pair_less::operator()(const pair<const char*, CoreData::bifunc>& lh, const pair<const char*, CoreData::bifunc>& rh) const
+special_bifuncs_array CoreData::special_bifunc_setup()
 {
-    return strcmp(lh.first,rh.first) < 0;
+    return CoreData::special_bifuncs_array{
+        make_pair("EVAL", &make_special_bifunc<Eval>),
+        make_pair("APPLY", &make_special_bifunc<Apply>),
+        make_pair("APPEND", &make_special_bifunc<Append>),
+    };
 }
 
-bool CoreData::bifunc_pair_less_w_string::operator()(const pair<const char*, CoreData::bifunc>& lh, const Symbol& rh) const
+special_nbifuncs_array CoreData::special_nbifunc_setup()
 {
-    return strcmp(lh.first, rh.to_string()) < 0;
+    return CoreData::special_nbifuncs_array{
+       make_pair("COND", &make_special_nbifunc<Cond>),
+       make_pair("PROGN", &make_special_nbifunc<ProgN>),
+       make_pair("PROG1", &make_special_nbifunc<Prog1>),
+       make_pair("LOOP", &make_special_nbifunc<Loop>),
+       make_pair("SETQ", &make_special_nbifunc<SetQ>),
+    };
 }

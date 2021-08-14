@@ -4,20 +4,20 @@
 using namespace std;
 
 DotPair::DotPair(SExprsFarm& farm):
-	t_symbols(&farm)
+	t_farm(&farm)
 {
 }
 
 DotPair::DotPair(const Cell& f, const Cell& s, SExprsFarm& farm) :
 	t_first(f),
 	t_second(s),
-	t_symbols(&farm)
+	t_farm(&farm)
 {
 
 }
 
 DotPair::DotPair():
-	t_symbols(nullptr)
+	t_farm(nullptr)
 {
 
 }
@@ -30,9 +30,9 @@ DotPair::~DotPair()
 DotPair::DotPair(DotPair&& rh)noexcept :
 	t_first(move(rh.t_first)),
 	t_second(move(rh.t_second)),
-	t_symbols(rh.t_symbols)
+	t_farm(rh.t_farm)
 {
-	rh.t_symbols = nullptr;
+	rh.t_farm = nullptr;
 }
 
 bool DotPair::empty() const{
@@ -43,7 +43,7 @@ void DotPair::clear() {
 	if (!empty()) {
 		t_first.clear();
 		t_second.clear();
-		t_symbols = nullptr;
+		t_farm = nullptr;
 	}
 }
 
@@ -51,13 +51,13 @@ DotPair& DotPair::operator=(DotPair&& rh)noexcept {
 	if (this != &rh) {
 		t_first = move(rh.t_first);
 		t_second = move(rh.t_second);
-		t_symbols = rh.t_symbols;
-		rh.t_symbols = nullptr;
+		t_farm = rh.t_farm;
+		rh.t_farm = nullptr;
 	}
 	return *this;
 }
 
-bool is_null(const DotPair& lst)
+bool is_null_list(const DotPair& lst)
 {
-	return lst.t_symbols && lst.t_first.empty();
+	return lst.t_farm && lst.t_first.empty();
 }
