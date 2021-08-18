@@ -26,7 +26,7 @@ ALambdaFunc::ALambdaFunc(
     }
 }
 
-stages ALambdaFunc::t_init_before_args()
+void ALambdaFunc::t_init_before_args()
 {
     if (t_args_eval_func) {
         t_eval_next(move(*t_args_eval_func));
@@ -35,7 +35,7 @@ stages ALambdaFunc::t_init_before_args()
     return t_cycle();
 }
 
-stages ALambdaFunc::t_init_after_args()
+void ALambdaFunc::t_init_after_args()
 {
     return t_eval_next(
         make_fnc<ProgN>(
@@ -53,7 +53,7 @@ bool ALambdaFunc::t_eval_args()
     return true;
 }
 
-stages ALambdaFunc::t_internal_execute()
+void ALambdaFunc::t_internal_execute()
 {
     t_env().t_envs.pop();
     return t_return(t_last_eval_val());
@@ -74,41 +74,24 @@ CellEnvironment::frame ALambdaFunc::t_create_frame()
             arg_it = get<pair<CarCdrIterator, CarCdrIterator>>(t_args).first;
             arg_end_it = get<pair<CarCdrIterator, CarCdrIterator>>(t_args).second;
         }
-        auto param_it = begin(t_params_list);
-        while (param_it != end(t_params_list) && arg_it != arg_end_it) {
-            if (!is_symbol(*param_it)) break;
-            buf.emplace_back(
-                to_symbol(*param_it),
-                *arg_it
-            );
-            ++param_it;
-            ++arg_it;
-        }
-        for (; param_it != end(t_params_list); ++param_it) {
-            buf.emplace_back(
-                to_symbol(*param_it),
-                t_env().t_farm.nil
-            );
-        }
-
-
+        buf.first = { begin(t_params_list), end(t_params_list) };
+        buf.second = { arg_it, arg_end_it };
     }
     else {
         if (holds_alternative<Cell>(t_args)) {
-            buf = { {to_symbol(*begin(t_params_list)), get<Cell>(t_args)} };
+            t_temp = t_env().t_farm.make_list_cell({ get<Cell>(t_args) });
+            buf.first = { begin(t_params_list), end(t_params_list) };
+            buf.second = { begin(t_temp), end(t_temp) };
         }
         else {
-            buf = { 
-                {
-                    to_symbol(*begin(t_params_list)),
-                    t_env().t_farm.make_list_cell(
-                        get<pair<CarCdrIterator, CarCdrIterator>>(t_args).first,
-                        get<pair<CarCdrIterator, CarCdrIterator>>(t_args).second
-                    )
-                } 
-            };
+            t_temp = t_env().t_farm.make_list_cell(
+                get<pair<CarCdrIterator, CarCdrIterator>>(t_args).first,
+                get<pair<CarCdrIterator, CarCdrIterator>>(t_args).second
+            );
+            buf.first = { begin(t_params_list), end(t_params_list) };
+            buf.second = { begin(t_temp), end(t_temp) };
         }
-        
+      
     }
     return buf;
 }

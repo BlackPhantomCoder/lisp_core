@@ -54,36 +54,10 @@ void FuncsStorage::add_lambda(const Symbol& symbol, lambda&& cell)
     t_funcs.emplace(symbol, move(cell));
 }
 
-std::variant<
-    std::reference_wrapper<lambda>,
-    FuncsStorage::bifunc,
-    FuncsStorage::nbifunc,
-    CoreData::special_bifunc_make,
-    CoreData::special_nbifunc_make,
-    std::monostate
-> FuncsStorage::find(
-    const Symbol& symbol
-)
+std::optional<std::reference_wrapper<const FuncsStorage::data>> FuncsStorage::find(const Symbol& symbol)
 {
     if (auto it = t_funcs.find(symbol); it != end(t_funcs)) {
-        if (holds_alternative<lambda>(it->second)) {
-            return get<lambda>(it->second);
-        }
-        else if (holds_alternative<bifunc>(it->second)) {
-            return get<bifunc>(it->second);
-        }
-        else if (holds_alternative<nbifunc>(it->second)) {
-            return get<nbifunc>(it->second);
-        }
-        else if (holds_alternative<special_bifunc_make>(it->second)) {
-            return get<special_bifunc_make>(it->second);
-        }
-        else if (holds_alternative<special_nbifunc_make>(it->second)) {
-            return get<special_nbifunc_make>(it->second);
-        }
-        else {
-            throw "";
-        }
+        return { it->second };
     }
-    return monostate{};
+    return nullopt;
 }

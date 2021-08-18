@@ -45,6 +45,9 @@ public:
 
 	//DotPair
 	Cell make_empty_list_cell();
+
+	//list with 1 element
+	Cell make_list_cell(const Cell& f);
 	Cell make_list_cell(const Cell& f, const Cell& s);
 
 	Cell make_list_cell(std::initializer_list<Cell> l);

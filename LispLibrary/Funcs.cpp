@@ -73,11 +73,13 @@ bool is_alambda_symbol(const Symbol& arg, SExprsFarm& farm)
 bool is_implicit_cond(const Cell& arg, SExprsFarm& farm)
 {
     if (!is_list(arg)) return false;
-    if (is_null(arg)) return false;
-    if (!is_list(car(arg))) return false;
-    if (is_null(car(arg))) return true;
-    if (!is_symbol(car(car(arg)))) return true;
-    if (is_alambda_symbol(to_symbol(car(car(arg))), farm)) return false;
+    if (is_null_list(to_list(arg))) return false;
+    const auto& c = car(arg);
+    if (!is_list(c)) return false;
+    if (is_null_list(to_list(c))) return true;
+    const auto& cc = car(c);
+    if (!is_symbol(cc)) return true;
+    if (is_alambda_symbol(to_symbol(cc), farm)) return false;
     return true;
 }
 
@@ -88,7 +90,9 @@ bool is_alambda_form(const Cell& arg, SExprsFarm& farm)
 
 bool is_lambda_form(const Cell& arg, SExprsFarm& farm)
 {
-    return is_list(arg) && !is_null(arg) && is_symbol(car(arg)) && is_lambda_symbol(to_symbol(car(arg)), farm);
+    if (!is_list(arg) || is_null(arg)) return false;
+    const auto& c = car(arg);
+    return is_symbol(c) && is_lambda_symbol(to_symbol(c), farm);
 }
 
 bool is_nlambda_form(const Cell& arg, SExprsFarm& farm)

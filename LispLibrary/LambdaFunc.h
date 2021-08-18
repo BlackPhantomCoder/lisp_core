@@ -16,16 +16,17 @@ public:
 		spread_types stype,
 		bool forse_noeval_func
 	);
-	virtual stages t_init_before_args() override;
-	virtual stages t_init_after_args() override;
+	virtual void t_init_before_args() override;
+	virtual void t_init_after_args() override;
 	virtual bool t_eval_args() override;
-	virtual stages t_internal_execute() override;
+	virtual void t_internal_execute() override;
 
 private:
 	CellEnvironment::frame t_create_frame();
 private:
 	Cell t_params_list;
 	Cell t_body;
+	Cell t_temp;
 	spread_types t_spread_type;
 
 	std::optional<CoreData::HolderPtr> t_args_eval_func;

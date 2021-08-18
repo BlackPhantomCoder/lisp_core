@@ -1,7 +1,7 @@
 #include "Cell.h"
 using namespace std;
 
-Cell::Cell(SExprCoreShare core):
+Cell::Cell(SExprShare core):
     t_data(move(core))
 {
 }
@@ -38,65 +38,65 @@ void Cell::clear()
 
 bool is_real(const Cell& exp)
 {
-    return !exp.empty() && is_real(*exp.t_data);
+    return !exp.empty() && exp.t_data->is_real();
 }
 
 bool is_integer(const Cell& exp)
 {
-    return !exp.empty() && is_integer(*exp.t_data);
+    return !exp.empty() && exp.t_data->is_integer();
 }
 
 bool is_number(const Cell& exp)
 {
-    return !exp.empty() && is_number(*exp.t_data);
+    return !exp.empty() && exp.t_data->is_number();
 }
 
 bool is_symbol(const Cell& exp)
 {
-    return !exp.empty() && is_symbol(*exp.t_data);
+    return !exp.empty() && exp.t_data->is_symbol();
 }
 
 bool is_atom(const Cell& exp)
 {
-    return !exp.empty() && is_atom(*exp.t_data);
+    return !exp.empty() && exp.t_data->is_atom();
 }
 
 bool is_list(const Cell& exp)
 {
-    return !exp.empty() && is_list(*exp.t_data);
+    return !exp.empty() && exp.t_data->is_list();
 }
 
 const DotPair& to_list(const Cell& exp)
 {
-    return to_list(*exp.t_data);
+    return exp.t_data->to_list();
 }
 
 DotPair& to_list(Cell& exp)
 {
-    return to_list(*exp.t_data);
+    return exp.t_data->to_list();
 }
 
 const Symbol& to_symbol(const Cell& exp)
 {
-    return to_symbol(*exp.t_data);
+    return exp.t_data->to_symbol();
 }
 
 Symbol& to_symbol(Cell& exp)
 {
-    return to_symbol(*exp.t_data);
+    return exp.t_data->to_symbol();
 }
 
 const Number& to_number(const Cell& exp)
 {
-    return to_number(*exp.t_data);
+    return exp.t_data->to_number();
 }
 
 Number& to_number(Cell& exp)
 {
-    return to_number(*exp.t_data);
+    return exp.t_data->to_number();
 }
 
-Cell to_cell(SExprCoreShare core)
+Cell to_cell(SExprShare core)
 {
     return Cell(core);
 }

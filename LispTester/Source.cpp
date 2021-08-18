@@ -51,5 +51,7 @@ int main()
     //запуск репла с cin + предзагрузка из потока (в данном случае - файл) 
     ifstream f("programs/1.lsp");
     auto cf = StdCoreInputStream(f, stream_read_mode::s_expression);
+    //for (size_t i = 0; i < 1000000; ++i) new long[480];
     cin_execute_kostil_repl(cf);
+
 }

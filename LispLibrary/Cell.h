@@ -1,6 +1,6 @@
 #pragma once
+#include "SExpr.h"
 #include "CarCdrIterator.h"
-#include "SExprCore.h"
 
 class Cell {
     friend class SExprsFarm;
@@ -23,9 +23,9 @@ class Cell {
     friend Number& to_number(Cell& exp);
     
     
-    friend Cell to_cell(SExprCoreShare core);
+    friend Cell to_cell(SExprShare core);
 public:
-    Cell(SExprCoreShare core = {});
+    Cell(SExprShare core = {});
      
     Cell(Cell&& rh) noexcept  = default;
     Cell(const Cell& rh) = default;
@@ -43,5 +43,5 @@ public:
     bool empty() const;
     void clear();
 private:
-    SExprCoreShare t_data;
+    SExprShare t_data;
 };

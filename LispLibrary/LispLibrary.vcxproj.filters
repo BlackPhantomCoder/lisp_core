@@ -25,9 +25,6 @@
     <Filter Include="Файлы заголовков\Ints">
       <UniqueIdentifier>{2bb36f8e-60d1-452d-838e-612ccda78359}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Файлы заголовков\SExprCore">
-      <UniqueIdentifier>{288023cb-070d-46bc-87a7-666019fd4c3c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Файлы заголовков\Tools">
       <UniqueIdentifier>{36421d7f-557e-4880-bcb9-8c7066a0bcf9}</UniqueIdentifier>
     </Filter>
@@ -96,20 +93,11 @@
     <ClInclude Include="StdCoreInputMemoryStream.h">
       <Filter>Файлы заголовков\Platform</Filter>
     </ClInclude>
-    <ClInclude Include="SExprCoreStdVariant.h">
-      <Filter>Файлы заголовков\SExprCore</Filter>
-    </ClInclude>
-    <ClInclude Include="SExprCore.h">
-      <Filter>Файлы заголовков\SExprCore</Filter>
-    </ClInclude>
     <ClInclude Include="MPool.h">
       <Filter>Файлы заголовков\Tools</Filter>
     </ClInclude>
     <ClInclude Include="Mutexed.h">
       <Filter>Файлы заголовков\Ints</Filter>
-    </ClInclude>
-    <ClInclude Include="SExprCorePoolVariant.h">
-      <Filter>Файлы заголовков\SExprCore</Filter>
     </ClInclude>
     <ClInclude Include="FuncsStorage.h">
       <Filter>Файлы заголовков\Core</Filter>
@@ -154,6 +142,9 @@
       <Filter>Файлы заголовков\Core\Cell</Filter>
     </ClInclude>
     <ClInclude Include="CarCdrIterator.h">
+      <Filter>Файлы заголовков\Core\Cell</Filter>
+    </ClInclude>
+    <ClInclude Include="SExpr.h">
       <Filter>Файлы заголовков\Core\Cell</Filter>
     </ClInclude>
   </ItemGroup>
@@ -218,19 +209,10 @@
     <ClCompile Include="CarCdrIterator.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="SExprCore.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
     <ClCompile Include="SymbolsFerm.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="SExprsFarm.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
-    <ClCompile Include="SExprCoreVoidPtrVariant.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
-    <ClCompile Include="SExprCoreStdVariant.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="FuncsStorage.cpp">
@@ -255,6 +237,9 @@
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="ArgsCounter.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="SExpr.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>

@@ -55,7 +55,9 @@ class  CoreEnvironment {
 public:
 	CoreEnvironment();
 	CoreEnvironment(CoreEnvStreamsProvider& streams);
-	~CoreEnvironment() = default;
+	~CoreEnvironment() {
+
+	}
 
 	std::vector<std::string> execute_all(CoreInputStreamInt& stream, const IMutexed<bool>& stop_flag);
 	std::string execute_one(CoreInputStreamInt& stream, const IMutexed<bool>& stop_flag);
@@ -125,6 +127,8 @@ private:
 
 	enum class numbers_compare_type {greater, greater_eq, less, less_eq, eq};
 	Cell numbers_compare(iter b, iter e, numbers_compare_type type);
+
+	void t_clear();
 private:
 	SExprsFarm t_farm;
 	std::optional<std::reference_wrapper<CoreEnvStreamsProvider>> t_streams;

@@ -8,14 +8,15 @@
 #include <vector>
 #include <map>
 
+class SExprsFarm;
+
 class CellEnvironment
 {
 public:
 	using mp = std::unordered_map<Symbol, Cell>;
-	using frame = std::vector<std::pair<Symbol, Cell>, CoreData::allocator<std::pair<Symbol, Cell>>>;
+	using frame = std::pair<std::pair<CarCdrIterator, CarCdrIterator>, std::pair<CarCdrIterator, CarCdrIterator>>;
 public:
-	CellEnvironment(mp&& env);
-	CellEnvironment(const mp& env = {});
+	CellEnvironment(SExprsFarm& farm);
 
 	void push(frame&& rh);
 	void push(const frame& rh);
@@ -34,6 +35,7 @@ public:
 
 	void clear_subenvs();
 private:
+	SExprsFarm& t_farm;
 	mp t_glonal;
 	std::vector<frame> t_stack;
 	std::unordered_map<Symbol, std::vector<Cell*>> t_all_in_stack;

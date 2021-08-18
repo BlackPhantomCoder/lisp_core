@@ -1,6 +1,9 @@
 #pragma once
+#include "SExpr.h"
 #include "SExprsFarm.h"
-class DotPair
+#include "CoreData.h"
+
+class DotPair : public SExpr
 {
     friend class SExprsFarm;
     friend class CarCdrIterator;
@@ -27,6 +30,14 @@ public:
 
     bool empty() const;
     void clear();
+
+
+    virtual bool is_list() const override;
+
+    //virtual const DotPair& to_list() const override;
+    //virtual DotPair& to_list() override;
+
+    virtual SExpr::del_func_ptr get_del_fnc() const override;
 private:
     DotPair(SExprsFarm& farm);
     DotPair(const Cell& f, const Cell& s, SExprsFarm& farm);

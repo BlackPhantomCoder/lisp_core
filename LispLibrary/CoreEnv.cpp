@@ -94,6 +94,14 @@ Cell CoreEnvironment::numbers_compare(iter b, iter e, numbers_compare_type type)
     return bool_cast(result, t_farm);
 }
 
+void CoreEnvironment::t_clear()
+{
+    t_envs.clear_subenvs();
+    t_funcs_evaler.clear();
+
+    t_clear_mem();
+}
+
 void CoreEnvironment::set_value(const Cell& name, const Cell& val)
 {
     if (!is_symbol(name)) {
@@ -143,7 +151,8 @@ CoreEnvironment::CoreEnvironment():
     t_streams(nullopt),
     t_syntaxer(t_farm),
     t_output_control(t_farm),
-    t_funcs_evaler(this)
+    t_funcs_evaler(this),
+    t_envs(t_farm)
 {
 }
 
@@ -196,29 +205,23 @@ Cell CoreEnvironment::t_execute(Cell& arg)
     #ifdef EX_CATCH
     try
     {
-        auto result = t_funcs_evaler.eval(arg);
-
-        //release memory
-        t_clear_mem();
-
-        return result;
+        return t_funcs_evaler.eval(arg);
+    }
+    catch (std::bad_alloc&) {
+        t_clear();
+        throw "stack overflow";
     }
     catch (...)
     {
-        t_envs.clear_subenvs();
-        t_funcs_evaler.clear();
-       
-        t_clear_mem();
+        t_clear();
 
         throw;
     }
     #endif
 
-    auto result = t_funcs_evaler.eval(arg);
-
-    t_clear_mem();
-
-    return result;
+    #ifndef EX_CATCH
+        return t_funcs_evaler.eval(arg);
+    #endif
 }
 
 void CoreEnvironment::t_clear_mem()
@@ -226,6 +229,7 @@ void CoreEnvironment::t_clear_mem()
     CoreData::allocator_release_memory<std::pair<Symbol, Cell>>();
     CoreData::allocator_release_memory<Cell>();
     CoreData::allocator_release_memory<const Cell*>();
+    CoreData::funcs_pools_clear();
 }
 
 Cell CoreEnvironment::bifunc_atomp(iter b, iter e) {
@@ -453,14 +457,14 @@ Cell CoreEnvironment::bifunc_getd(iter b, iter e)
     
     auto func = t_funcs.find(to_symbol(arg1));
 
-    if (auto fnc_r = t_funcs.find(to_symbol(arg1)); !holds_alternative<monostate>(fnc_r)) {
+    if (auto fnc_r = t_funcs.find(to_symbol(arg1)); fnc_r) {
+        auto& data = fnc_r->get();
 
-
-        if (holds_alternative<FuncsStorage::bifunc>(fnc_r) || holds_alternative<FuncsStorage::nbifunc>(fnc_r)) {
+        if (holds_alternative<FuncsStorage::bifunc>(data) || holds_alternative<FuncsStorage::nbifunc>(data)) {
             return t_farm.nil;
         }
         else {
-            return gen_cell(get<std::reference_wrapper<lambda>>(fnc_r).get(), t_farm);
+            return gen_cell(get<lambda>(data), t_farm);
         }
     }
     return t_farm.nil;
@@ -651,7 +655,7 @@ Cell CoreEnvironment::bifunc_copy_tree(iter b, iter e)
 
 Cell CoreEnvironment::bifunc_pack(iter b, iter e)
 {
-    if (b == e || !is_list(arg1) || is_null(arg1)) return t_farm.make_symbol_cell("");
+    if (b == e || !is_list(arg1) || is_null_symbol(arg1)) return t_farm.make_symbol_cell("");
     std::string s;
     auto it = begin(*b);
     auto e_it = end(*b);
@@ -665,7 +669,7 @@ Cell CoreEnvironment::bifunc_pack(iter b, iter e)
 
 Cell CoreEnvironment::bifunc_unpack(iter b, iter e)
 {
-    if (b == e || is_list(arg1) || is_null_symbol(arg1)) return t_farm.nil;
+    if (b == e || (is_list(arg1) && !is_null_list(to_list(arg1)))) return t_farm.nil;
     string s = t_output_control.to_string_raw(arg1);
     vector<Cell> buf;
     buf.reserve(s.size());

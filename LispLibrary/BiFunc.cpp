@@ -6,72 +6,93 @@ using namespace std;
 
 Func::Func(CoreEnvironment& env):
     t_env_data(env),
-    t_stage(stages::not_started),
     t_next_func_buf(nullptr, nullptr)
 {
 }
 
-stages Func::execute()
+bool Func::execute()
 {
-    if (t_stage == stages::executed) throw "";
-    if (t_stage == stages::not_started) {
-        t_stage = stages::intermediate;
-        auto buf = t_init_before_args();
-        if (buf != stages::intermediate) return t_cycle();
-    }
-    if (t_stage == stages::intermediate) {
-        if (!t_eval_args_flag) {
-            while(!t_eval_args_flag && t_stage == stages::intermediate)
-                t_eval_args_flag = t_eval_args();
-            return t_cycle();
-        }
-        if (!t_inited) {
-            t_inited = true;
-            auto buf = t_init_after_args();
-            if (buf != stages::intermediate) return t_cycle();
-        }
-        return t_internal_execute();
-    }
-    if (t_stage == stages::need_external) {
-            if (t_eval_next_flag) {
-                t_eval_next_flag = false;
-                t_stage = stages::intermediate;
-
-                return t_stage;
+    switch (t_stage)
+    {
+    case stages::executed:
+        throw "";
+        break;
+    case stages::need_external:
+        if (t_eval_next_flag) {
+            t_eval_next_flag = false;
+            if (!t_eval_args_flag) {
+                t_stage = stages::not_args_evaled;
             }
             else {
-                //return t_return(*t_next_result_buf);
-                t_stage = stages::executed;
-
-                return t_stage;
+                t_stage = stages::intermediate;
             }
+        }
+        else {
+            t_stage = stages::executed;
+            return true;
+        }
+        [[fallthrough]];
+    default:
+        for(;;) {
+            switch (t_stage) {
+            case stages::not_started:
+                t_init_before_args();
+                if (t_stage == stages::not_started)t_stage = stages::not_args_evaled;
+                else break;
+                [[fallthrough]];
+            case stages::not_args_evaled:
+                while (t_stage == stages::not_args_evaled && !t_eval_args_flag) {
+                    t_eval_args_flag = t_eval_args();
+                }
+                if (t_stage == stages::not_args_evaled && t_eval_args_flag) t_stage = stages::not_inited;
+                else break;
+                [[fallthrough]];
+            case stages::not_inited:
+                t_init_after_args();
+                if (t_stage == stages::not_inited)t_stage = stages::intermediate;
+                else break;
+                [[fallthrough]];
+            case stages::intermediate:
+                while (t_stage == stages::intermediate) {
+                    t_internal_execute();
+                }
+                break;
+            case stages::executed:
+                return true;
+            case stages::need_external:
+                return false;
+            default:
+                throw "";
+                break;
+            }
+        }
     }
-
-    throw "";
 }
 
-stages Func::stage() const
-{
-    return t_stage;
-}
-
-void Func::push_next(const Cell& result)
+void Func::push_next(Cell&& result)
 {
     if (t_stage != stages::need_external) throw "";
-    t_buf = result;
-    t_next_func_buf.reset();
+    t_buf = move(result);
 }
 
-FuncInt& Func::get_next()
+CoreData::HolderPtr Func::get_next()
 {
     if (t_stage != stages::need_external || !t_next_func_buf) throw "";
-    return (*t_next_func_buf)();
+    return move(t_next_func_buf);
 }
 
-Cell Func::result() const
+Cell Func::result() 
 {
-    if (!t_buf) throw "";
-    return *t_buf;
+    if (empty(t_buf)) throw "";
+    return move(t_buf);
+}
+
+void Func::t_init_before_args()
+{
+}
+
+void Func::t_init_after_args()
+{
 }
 
 CoreEnvironment& Func::t_env()
@@ -84,38 +105,33 @@ const CoreEnvironment& Func::t_env() const
     return t_env_data;
 }
 
-stages Func::t_return(const Cell& result)
+void Func::t_return(const Cell& result)
 {
     t_buf = result;
     t_stage = stages::executed;
-    return t_stage;
 }
 
-stages Func::t_return_next(CoreData::HolderPtr&& next)
+void Func::t_return_next(CoreData::HolderPtr&& next)
 {
-
     t_next_func_buf = move(next);
     t_stage = stages::need_external;
-    return t_stage;
 }
 
-stages Func::t_eval_next(CoreData::HolderPtr&& next)
+void Func::t_eval_next(CoreData::HolderPtr&& next)
 {
     t_eval_next_flag = true;
     t_next_func_buf = move(next);
     t_stage = stages::need_external;
-    return t_stage;
 }
 
-stages Func::t_cycle()
+void Func::t_cycle()
 {
-    return t_stage;
 }
 
 Cell Func::t_last_eval_val()
 {
-    if (!t_buf) throw "";
-    return *t_buf;
+    if (empty(t_buf)) throw "";
+    return t_buf;
 }
 
 RangeBiFunc::RangeBiFunc(CoreEnvironment& env, CarCdrIterator beg_it, CarCdrIterator end_it, bool forse_noeval):
@@ -169,7 +185,7 @@ bool RangeBiFunc::t_eval_args()
     return false;
 }
 
-stages RangeBiFunc::t_internal_execute()
+void RangeBiFunc::t_internal_execute()
 {
     if (holds_alternative<monostate>(t_args)) throw "";
     return t_execute_func();
@@ -206,7 +222,7 @@ bool RangeNBiFunc::t_eval_args()
     return true;
 }
 
-stages RangeNBiFunc::t_internal_execute()
+void RangeNBiFunc::t_internal_execute()
 {
     return t_execute_func();
 }

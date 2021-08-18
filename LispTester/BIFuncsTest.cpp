@@ -110,6 +110,7 @@ void test_eval_base() {
 	simple_core_assert("(copy-tree '(1 2 . 3))", "(1 2 . 3)");
 	simple_core_assert("(copy-tree '((1 2 . 3) (4 . 5)))", "((1 2 . 3) (4 . 5))");
 	simple_core_assert("(copy-tree '((1 2 3) (4 (5 (6) 7) 8) . (10 (5))))", "((1 2 3) (4 (5 (6) 7) 8) 10 (5))");
+	//simple_core_assert("((lambda (x '(n) y) (list x n y)) 1 2 3)", "(1 n 3)");
 	
 }
 

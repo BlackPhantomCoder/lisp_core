@@ -7,52 +7,37 @@ using namespace std;
 FuncsEvaler::FuncsEvaler(CoreEnvironment* env):
 	t_env(env)
 {
-
+  
 }
 
 Cell FuncsEvaler::eval(Cell& arg)
 {
-    auto main_func = EvalQuote(*t_env, arg);
-    t_frames.push(main_func);
+    t_frames.push_back(make_fnc<EvalQuote>(*t_env, arg));
 
-	for(;;) {
-        //mutex maybe here
-        if ((t_env->t_stop_flag) && (*t_env->t_stop_flag).get().get()) throw CoreData::throw_stop_helper{};
-		auto& frame = t_frames.top();
-        auto& fnc = frame.get();
-
-        switch (fnc.stage())
-        {
-        case stages::executed:
-                {
-                    auto buf = fnc.result();
-                    t_frames.pop();
-                    if (!empty(t_frames)) {
-                        t_frames.top().get().push_next(buf);
-                        t_frames.top().get().execute();
-                    }
-                    else {
-                        return buf;
-                    }
-                }
-            break;
-        case stages::need_external:
-                t_frames.push({ fnc.get_next() });
-            break;
-        case stages::intermediate:
-        case stages::not_started:
-                fnc.execute();
-            break;
-        default:
-            throw "unknow stage";
-            break;
+    for (;;) {
+        auto& frame = t_frames.back();
+        if (frame.func.execute()) {
+            if (t_frames.size() == 1) {
+                auto buf = frame.func.result();
+                t_frames.pop_back();
+                return buf;
+            }
+            auto& prev_fnc = (t_frames[t_frames.size() - 2].func);
+            prev_fnc.push_next(frame.func.result());
+            t_frames.pop_back();
         }
-	}
+        else {
+            if ((t_env->t_stop_flag) && (*t_env->t_stop_flag).get().get()) throw CoreData::throw_stop_helper{};
+            t_frames.push_back(frame.func.get_next());
+        }
+    }
 }
 
 void FuncsEvaler::clear()
 {
 	while (!t_frames.empty()) {
-		t_frames.pop();
+		t_frames.pop_back();
 	}
+    t_frames.shrink_to_fit();
+    //CoreData::funcs_pools_clear();
 }

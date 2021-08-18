@@ -85,3 +85,16 @@ special_nbifuncs_array CoreData::special_nbifunc_setup()
        make_pair("SETQ", &make_special_nbifunc<SetQ>),
     };
 }
+
+std::vector<std::function<void(void)>>& CoreData::clear_pool_funcs()
+{
+    static std::vector<std::function<void(void)>> p;
+    return p;
+}
+
+void CoreData::funcs_pools_clear()
+{
+    for (auto& fnc : CoreData::clear_pool_funcs()) {
+        fnc();
+    }
+}

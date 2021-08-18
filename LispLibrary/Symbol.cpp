@@ -1,4 +1,5 @@
 #include "Symbol.h"
+#include "CoreData.h"
 
 using namespace std;
 
@@ -41,6 +42,26 @@ void Symbol::clear()
 {
     t_data.clear();
 }
+
+bool Symbol::is_symbol() const
+{
+    return true;
+}
+
+bool Symbol::is_atom() const
+{
+    return true;
+}
+
+//const Symbol& Symbol::to_symbol() const
+//{
+//    return *this;
+//}
+
+//Symbol& Symbol::to_symbol()
+//{
+//    return *this;
+//}
 
 Symbol::Symbol(const SymbolsFarm::symbol_core& data) :
     t_data(data)
@@ -85,4 +106,9 @@ bool operator!=(const Symbol& lh, const std::string& rh)
 bool operator!=(const std::string& lh, const Symbol& rh)
 {
     return lh != rh.to_string();
+}
+
+SExpr::del_func_ptr Symbol::get_del_fnc() const
+{
+    return &pool_delete_s;
 }

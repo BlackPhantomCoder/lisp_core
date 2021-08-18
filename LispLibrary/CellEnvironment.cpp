@@ -2,29 +2,52 @@
 #include "Funcs.h"
 using namespace std;
 
-CellEnvironment::CellEnvironment(mp&& env):
-	t_glonal(move(env))
-{
-}
-
-CellEnvironment::CellEnvironment(const mp& env):
-	t_glonal(env)
+CellEnvironment::CellEnvironment(SExprsFarm& farm):
+	t_farm(farm)
 {
 }
 
 void CellEnvironment::push(frame&& rh)
 {
 	t_stack.push_back(move(rh));
-	for (auto it = begin(t_stack.back()); it != end(t_stack.back()); ++it) {
-		t_all_in_stack[it->first].push_back(&it->second);
+	auto& [s, c] = t_stack.back();
+	auto [it_s, end_s] = s;
+	auto [it_c, end_c] = c;
+	while (it_s != end_s && it_c != end_c) {
+		if (!is_symbol(*it_s)) {
+			++it_s;
+			continue;
+		}
+		t_all_in_stack[to_symbol(*it_s++)].push_back(&*it_c++);
+	}
+	while (it_s != end_s) {
+		if (!is_symbol(*it_s)) {
+			++it_s;
+			continue;
+		}
+		t_all_in_stack[to_symbol(*it_s++)].push_back(&t_farm.nil);
 	}
 }
 
 void CellEnvironment::push(const frame& rh)
 {
 	t_stack.push_back(rh);
-	for (auto it = begin(t_stack.back()); it != end(t_stack.back()); ++it) {
-		t_all_in_stack[it->first].push_back(&it->second);
+	auto& [s, c] = t_stack.back();
+	auto [it_s, end_s] = s;
+	auto [it_c, end_c] = c;
+	while(it_s != end_s && it_c != end_c){
+		if (!is_symbol(*it_s)) {
+			++it_s;
+			continue;
+		}
+		t_all_in_stack[to_symbol(*it_s++)].push_back(&*it_c++);
+	}
+	while (it_s != end_s) {
+		if (!is_symbol(*it_s)) {
+			++it_s;
+			continue;
+		}
+		t_all_in_stack[to_symbol(*it_s++)].push_back(&t_farm.nil);
 	}
 }
 
@@ -33,13 +56,18 @@ void CellEnvironment::pop()
 	if (t_stack.empty()) {
 		throw "CellEnvironment::pop: empty stack";
 	}
-	for (auto it = begin(t_stack.back()); it != end(t_stack.back()); ++it) {
-		auto it2 = t_all_in_stack.find(it->first);
+
+	auto& [s, c] = t_stack.back();
+	auto [it_s, end_s] = s;
+
+	for (; it_s != end_s; ++it_s) {
+		if (!is_symbol(*it_s)) continue;
+		auto it2 = t_all_in_stack.find(to_symbol(*it_s));
 		it2->second.pop_back();
 		if (it2->second.empty()) {
 			t_all_in_stack.erase(it2);
 		}
-	}	
+	}
 	t_stack.pop_back();
 }
 
@@ -96,6 +124,10 @@ const Cell* CellEnvironment::get(const Symbol& name) const
 
 void CellEnvironment::clear_subenvs()
 {
-	t_stack.clear();
-	t_all_in_stack.clear();
+	t_all_in_stack = {};
+	while (!empty(t_stack)) {
+		t_stack.back() = {};
+		t_stack.pop_back();
+	}
+	t_stack.shrink_to_fit();
 }

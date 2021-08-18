@@ -1,9 +1,10 @@
 #pragma once
+#include "SExpr.h"
 #include "SymbolsFarm.h"
 #include "SExprsFarm.h"
 
 
-class Symbol {
+class Symbol : public SExpr {
     friend class SExprsFarm;
     friend class SymbolsFarm;
     friend bool is_null_symbol(const Symbol& c);
@@ -27,6 +28,11 @@ public:
 
     bool empty() const;
     void clear();
+
+
+    virtual bool is_symbol() const override;
+    virtual bool is_atom() const override;
+    virtual SExpr::del_func_ptr get_del_fnc() const override;
 private:
     Symbol(const SymbolsFarm::symbol_core& data);
 private:

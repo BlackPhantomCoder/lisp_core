@@ -1,10 +1,11 @@
 #pragma once
+#include "SExpr.h"
 #include "BigInt.h"
 
 #include <variant>
 #include <string>
 
-class Number
+class Number : public SExpr
 {
 public:
     using integer = BigInt;
@@ -22,6 +23,7 @@ private:
     friend const Number::integer& to_integer(const Number& numb);
     friend const Number::real& to_real(const Number& numb);
 
+    virtual SExpr::del_func_ptr get_del_fnc() const override;
 public:
     static unsigned epsilon;
 public:
@@ -56,12 +58,20 @@ public:
 
     bool empty() const;
     void clear();
+
+    virtual bool is_real() const override;
+    virtual bool is_integer() const override;
+    virtual bool is_number() const override;
+    virtual bool is_atom() const override;
+
+    //virtual const Number& to_number() const override;
+    //virtual Number& to_number() override;
 private:
     Number(double val);
     Number(const BigInt& val);
 
-    bool is_integer() const;
-    bool is_real() const;
+    bool t_is_integer() const;
+    bool t_is_real() const;
 
     const Number::integer& to_integer() const;
     const Number::real& to_real() const;

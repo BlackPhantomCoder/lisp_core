@@ -1,5 +1,6 @@
 #include "Number.h"
 #include <cmath>
+#include "CoreData.h"
 
 using namespace std;
 
@@ -67,7 +68,7 @@ bool Number::operator<(const Number& rh) const
         if (rh.is_real()) {
             return get<double>(t_data) < get<double>(rh.t_data);
         }
-        else if (rh.is_integer()) {
+        else if (rh.t_is_integer()) {
             if (get<BigInt>(rh.t_data).is_castable_to_double()) {
                 return get<double>(t_data) < get<BigInt>(rh.t_data).to_double();
             }
@@ -88,7 +89,7 @@ bool Number::operator<(const Number& rh) const
                 return false;
             }
         }
-        else if (rh.is_integer()) {
+        else if (rh.t_is_integer()) {
             return get<BigInt>(t_data) < get<BigInt>(rh.t_data);
         }
         else {
@@ -106,7 +107,7 @@ bool Number::operator>(const Number& rh) const
         if (rh.is_real()) {
             return get<double>(t_data) > get<double>(rh.t_data);
         }
-        else if (rh.is_integer()) {
+        else if (rh.t_is_integer()) {
             if (get<BigInt>(rh.t_data).is_castable_to_double()) {
                 return get<double>(t_data) > get<BigInt>(rh.t_data).to_double();
             }
@@ -127,7 +128,7 @@ bool Number::operator>(const Number& rh) const
                 return true;
             }
         }
-        else if (rh.is_integer()) {
+        else if (rh.t_is_integer()) {
             return get<BigInt>(t_data) > get<BigInt>(rh.t_data);
         }
         else {
@@ -145,7 +146,7 @@ bool Number::operator==(const Number& rh) const
         if (rh.is_real()) {
             return get<double>(t_data) == get<double>(rh.t_data);
         }
-        else if (rh.is_integer()) {
+        else if (rh.t_is_integer()) {
             if (get<BigInt>(rh.t_data).is_castable_to_double()) {
                 return get<double>(t_data) == get<BigInt>(rh.t_data).to_double();
             }
@@ -166,7 +167,7 @@ bool Number::operator==(const Number& rh) const
                 return false;
             }
         }
-        else if (rh.is_integer()) {
+        else if (rh.t_is_integer()) {
             return get<BigInt>(t_data) == get<BigInt>(rh.t_data);
         }
         else {
@@ -184,7 +185,7 @@ bool Number::operator<=(const Number& rh) const
         if (rh.is_real()) {
             return get<double>(t_data) <= get<double>(rh.t_data);
         }
-        else if (rh.is_integer()) {
+        else if (rh.t_is_integer()) {
             if (get<BigInt>(rh.t_data).is_castable_to_double()) {
                 return get<double>(t_data) <= get<BigInt>(rh.t_data).to_double();
             }
@@ -205,7 +206,7 @@ bool Number::operator<=(const Number& rh) const
                 return false;
             }
         }
-        else if (rh.is_integer()) {
+        else if (rh.t_is_integer()) {
             return get<BigInt>(t_data) <= get<BigInt>(rh.t_data);
         }
         else {
@@ -223,7 +224,7 @@ bool Number::operator>=(const Number& rh) const
         if (rh.to_real()) {
             return get<double>(t_data) >= get<double>(rh.t_data);
         }
-        else if (rh.is_integer()) {
+        else if (rh.t_is_integer()) {
             if (get<BigInt>(rh.t_data).is_castable_to_double()) {
                 return get<double>(t_data) >= get<BigInt>(rh.t_data).to_double();
             }
@@ -244,7 +245,7 @@ bool Number::operator>=(const Number& rh) const
                 return false;
             }
         }
-        else if (rh.is_integer()) {
+        else if (rh.t_is_integer()) {
             return get<BigInt>(t_data) >= get<BigInt>(rh.t_data);
         }
         else {
@@ -325,7 +326,7 @@ Number& Number::operator+=(const Number& rh)
         if (rh.is_real()) {
             sum_double(t_data, get<double>(rh.t_data));
         }
-        else if (rh.is_integer()) {
+        else if (rh.t_is_integer()) {
             if (get<BigInt>(rh.t_data).is_castable_to_double()) {
                 sum_double(t_data, get<BigInt>(rh.t_data).to_double());
             }
@@ -344,7 +345,7 @@ Number& Number::operator+=(const Number& rh)
             result += *this;
             t_data = result.t_data;
         }
-        else if (rh.is_integer()) {
+        else if (rh.t_is_integer()) {
             get<BigInt>(t_data) += get<BigInt>(rh.t_data);
         }
         else {
@@ -363,7 +364,7 @@ Number& Number::operator-=(const Number& rh)
         if (rh.is_real()) {
             sum_double(t_data, -get<double>(rh.t_data));
         }
-        else if (rh.is_integer()) {
+        else if (rh.t_is_integer()) {
             if (get<BigInt>(rh.t_data).is_castable_to_double()) {
                 sum_double(t_data, -get<BigInt>(rh.t_data).to_double());
             }
@@ -383,7 +384,7 @@ Number& Number::operator-=(const Number& rh)
             result += *this;
             t_data = result.t_data;
         }
-        else if (rh.is_integer()) {
+        else if (rh.t_is_integer()) {
             get<BigInt>(t_data) -= get<BigInt>(rh.t_data);
         }
         else {
@@ -402,7 +403,7 @@ Number& Number::operator*=(const Number& rh)
         if (rh.is_real()) {
             mul_double(t_data, get<double>(rh.t_data));
         }
-        else if (rh.is_integer()) {
+        else if (rh.t_is_integer()) {
             if (get<BigInt>(rh.t_data).is_castable_to_double()) {
                 mul_double(t_data, get<BigInt>(rh.t_data).to_double());
             }
@@ -421,7 +422,7 @@ Number& Number::operator*=(const Number& rh)
             result *= *this;
             t_data = result.t_data;
         }
-        else if (rh.is_integer()) {
+        else if (rh.t_is_integer()) {
             get<BigInt>(t_data) *= get<BigInt>(rh.t_data);
         }
         else {
@@ -440,7 +441,7 @@ Number& Number::operator/=(const Number& rh)
         if (rh.is_real()) {
             del_double(t_data, get<double>(rh.t_data));
         }
-        else if (rh.is_integer()) {
+        else if (rh.t_is_integer()) {
             if (get<BigInt>(rh.t_data).is_castable_to_double()) {
                 del_double(t_data, get<BigInt>(rh.t_data).to_double());
             }
@@ -479,7 +480,7 @@ Number& Number::operator/=(const Number& rh)
                 get<BigInt>(t_data).div(BigInt(get<double>(rh.t_data)));
             }
         }
-        else if (rh.is_integer()) {
+        else if (rh.t_is_integer()) {
             if (
                     get<BigInt>(t_data).is_castable_to_double()
                     &&
@@ -536,7 +537,7 @@ Number Number::mod(const Number& rh)const
 {
     Number result = *this;
     result /= rh;
-    if (result.is_integer()) {
+    if (result.t_is_integer()) {
         return Number(BigInt(0l));
     }
     else if (result.is_real()) {
@@ -583,15 +584,45 @@ void Number::abs()
     }
 }
 
-bool Number::is_integer() const
+bool Number::t_is_integer() const
 {
     return holds_alternative<BigInt>(t_data);
 }
 
-bool Number::is_real() const
+bool Number::t_is_real() const
 {
     return holds_alternative<double>(t_data);
 }
+
+bool Number::is_real() const
+{
+    return t_is_real();
+}
+
+bool Number::is_integer() const
+{
+    return t_is_integer();
+}
+
+bool Number::is_number() const
+{
+    return true;
+}
+
+bool Number::is_atom() const
+{
+    return true;
+}
+
+//const Number& Number::to_number() const
+//{
+//    return *this;
+//}
+//
+//Number& Number::to_number()
+//{
+//    return *this;
+//}
 
 const Number::integer& Number::to_integer() const
 {
@@ -651,9 +682,14 @@ const Number::real& to_real(const Number& numb) {
 
 
 bool is_integer(const Number& numb) {
-    return numb.is_integer();
+    return numb.t_is_integer();
 }
 
 bool is_real(const Number& numb) {
     return numb.is_real();
+}
+
+SExpr::del_func_ptr Number::get_del_fnc() const
+{
+   return &pool_delete_n;
 }

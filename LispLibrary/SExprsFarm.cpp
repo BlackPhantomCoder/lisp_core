@@ -108,6 +108,11 @@ Cell SExprsFarm::make_empty_list_cell()
 	return c;
 }
 
+Cell SExprsFarm::make_list_cell(const Cell& f)
+{
+	return make_list_cell(f, nil);
+}
+
 Cell SExprsFarm::make_list_cell(const Cell& f, const Cell& s)
 {
 	auto c = make_cell_list_noinit();
@@ -147,19 +152,20 @@ void SExprsFarm::t_init_numb(Number& n, const BigInt& val)
 	n.t_data = { val };
 }
 
+
 Cell SExprsFarm::make_cell_list_noinit()
 {
-	return Cell(make_SExprCore_list_noinit());
+	return Cell(make_SExprShare_list_noinit());
 }
 
 Cell SExprsFarm::make_cell_symb_noinit()
 {
-	return Cell(make_SExprCore_symb_noinit());
+	return Cell(make_SExprShare_symb_noinit());
 }
 
 Cell SExprsFarm::make_cell_numb_noinit()
 {
-	return Cell(make_SExprCore_numb_noinit());
+	return Cell(make_SExprShare_numb_noinit());
 }
 
 void SExprsFarm::t_init_empty_list(DotPair& d)

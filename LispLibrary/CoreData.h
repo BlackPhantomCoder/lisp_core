@@ -76,4 +76,31 @@ namespace CoreData {
 
 	special_bifuncs_array special_bifunc_setup();
 	special_nbifuncs_array special_nbifunc_setup();
+
+	std::vector<std::function<void(void)>>& clear_pool_funcs();
+	void funcs_pools_clear();
+
+
+	template<class T>
+	ObjPoll<T>& get_pool();
+
+
+
+
+
+
+
+
+	template<class T>
+	ObjPoll<T> construct_pool() {
+		clear_pool_funcs().push_back([]() { get_pool<T>().clear_free(); });
+		return ObjPoll<T>();
+	}
+
+	template<class T>
+	ObjPoll<T>& get_pool()
+	{
+		static auto p = construct_pool<T>();
+		return p;
+	}
 }

@@ -165,9 +165,7 @@
     <ClInclude Include="PoolDeleter.h" />
     <ClInclude Include="PredLispFuncs.h" />
     <ClInclude Include="PublicCoreEnvironmentProvider.h" />
-    <ClInclude Include="SExprCore.h" />
-    <ClInclude Include="SExprCoreStdVariant.h" />
-    <ClInclude Include="SExprCorePoolVariant.h" />
+    <ClInclude Include="SExpr.h" />
     <ClInclude Include="SExprsFArm.h" />
     <ClInclude Include="StdCoreInputMemoryStream.h" />
     <ClInclude Include="StdCoreInputStream.h" />
@@ -201,9 +199,7 @@
     <ClCompile Include="OutputController.cpp" />
     <ClCompile Include="PredLispFuncs.cpp" />
     <ClCompile Include="PublicCoreEnvironmentProvider.cpp" />
-    <ClCompile Include="SExprCore.cpp" />
-    <ClCompile Include="SExprCoreStdVariant.cpp" />
-    <ClCompile Include="SExprCoreVoidPtrVariant.cpp" />
+    <ClCompile Include="SExpr.cpp" />
     <ClCompile Include="SExprsFarm.cpp" />
     <ClCompile Include="StdCoreInputMemoryStream.cpp" />
     <ClCompile Include="StdCoreInputStream.cpp" />

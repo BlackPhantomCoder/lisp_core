@@ -19,8 +19,13 @@ public:
 	void clear();
 private:
 	CoreEnvironment* t_env;
-	//vector invalidate references
-	using type = std::reference_wrapper<FuncInt>;
-	std::stack< type, std::vector<type>> t_frames;
+	struct frame {
+		frame(CoreData::HolderPtr&& p) : ptr(move(p)), func((*ptr)()){
+
+		}
+		CoreData::HolderPtr ptr;
+		FuncInt& func;
+	};
+	std::vector<frame> t_frames;
 };
 

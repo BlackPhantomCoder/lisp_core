@@ -47,6 +47,11 @@ void DotPair::clear() {
 	}
 }
 
+bool DotPair::is_list() const
+{
+	return true;
+}
+
 DotPair& DotPair::operator=(DotPair&& rh)noexcept {
 	if (this != &rh) {
 		t_first = move(rh.t_first);
@@ -60,4 +65,10 @@ DotPair& DotPair::operator=(DotPair&& rh)noexcept {
 bool is_null_list(const DotPair& lst)
 {
 	return lst.t_farm && lst.t_first.empty();
+}
+
+
+SExpr::del_func_ptr DotPair::get_del_fnc() const
+{
+	return &pool_delete_dp;
 }
