@@ -1,7 +1,8 @@
 #pragma once
-#include "Func.h"
+#include "FuncInt.h"
 #include "CoreData.h"
 #include "PoolDeleter.h"
+#include "CoreEnv.h"
 
 #include <optional>
 #include <variant>
@@ -26,6 +27,13 @@ protected:
 protected:
 	CoreEnvironment& t_env();
 	const CoreEnvironment& t_env() const;
+
+	SExprsFarm& t_farm();
+	FuncsStorage& t_funcs();
+	CellEnvironment& t_envs();
+	Syntaxer& t_syntaxer();
+	OutputController& t_output_control();
+	support_funcs& t_sup_funcs();
 
 	void t_return(const Cell& result);
 	void t_return_next(CoreData::HolderPtr&& next);
@@ -53,8 +61,8 @@ protected:
 	CarCdrConstIterator t_args_beg() const;
 	CarCdrConstIterator t_args_end() const;
 private:
-	virtual bool t_eval_args() override;
-	virtual void t_internal_execute() override;
+	virtual bool t_eval_args() final;
+	virtual void t_internal_execute() final;
 private:
 	std::optional<CoreData::HolderPtr> t_args_eval_func;
 	std::variant<Cell, std::pair<CarCdrIterator, CarCdrIterator>, std::monostate> t_args = std::monostate{};
@@ -72,8 +80,8 @@ protected:
 	CarCdrConstIterator t_args_beg() const;
 	CarCdrConstIterator t_args_end() const;
 private:
-	virtual bool t_eval_args() override;
-	virtual void t_internal_execute() override;
+	virtual bool t_eval_args() final;
+	virtual void t_internal_execute() final;
 private:
 	std::pair<CarCdrIterator, CarCdrIterator> t_args;
 };

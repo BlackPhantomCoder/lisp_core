@@ -1,5 +1,5 @@
 #pragma once
-#include "Func.h"
+#include "FuncInt.h"
 #include "Cell.h"
 #include "CellEnvironment.h"
 #include "CoreData.h"

@@ -31,7 +31,7 @@ bool is_special_symbol(bool read_upcase, unsigned char token) {
 
 Cell bool_cast(bool val, SExprsFarm& farm)
 {
-    return (val) ? farm.T : farm.nil;
+    return (val) ? farm.T() : farm.nil();
 }
 
 bool is_null(const Cell& c)
@@ -57,12 +57,12 @@ bool is_null_symbol(const Cell& c)
 
 bool is_lambda_symbol(const Symbol& arg, SExprsFarm& farm)
 {
-    return arg == to_symbol(farm.lambda_symbol);
+    return arg == to_symbol(farm.lambda_symbol());
 }
 
 bool is_nlambda_symbol(const Symbol& arg, SExprsFarm& farm)
 {
-    return arg == to_symbol(farm.nlambda_symbol);
+    return arg == to_symbol(farm.nlambda_symbol());
 }
 
 bool is_alambda_symbol(const Symbol& arg, SExprsFarm& farm)
@@ -170,7 +170,7 @@ Cell tree_copy(const Cell& rh, SExprsFarm& farm)
     for (;;) {
         auto& frame = stack.top();
         if (frame.it == frame.end_it) {
-            if (!frame.last)frame.result.push_back(farm.nil);
+            if (!frame.last) frame.result.push_back(farm.nil());
             if (stack.size() == 1) {
                 return cons_range(begin(frame.result), end(frame.result), farm);
             }
@@ -209,4 +209,19 @@ Cell tree_copy(const Cell& rh, SExprsFarm& farm)
             }
         }
     }
+}
+
+std::optional<std::reference_wrapper<const macro>> is_macro_call(const Cell& m, CoreEnvironment& e)
+{
+    if (!(!is_list(m) || is_null_list(to_list(m)))) {
+        auto& c = car(m);
+        if (is_symbol(c)) {
+            if (auto f_opt = e.t_funcs.find(to_symbol(c))) {
+                if (auto l = get_if<macro>(&f_opt->get())) {
+                    return { *l };
+                }
+            }
+        }
+    }
+    return nullopt;
 }

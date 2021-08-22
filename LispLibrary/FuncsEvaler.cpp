@@ -1,7 +1,7 @@
 #include "FuncsEvaler.h"
 #include "Funcs.h"
 #include "CoreEnv.h"
-#include "BiFuncs.h"
+#include "SupportFuncs.h"
 using namespace std;
 
 FuncsEvaler::FuncsEvaler(CoreEnvironment* env):

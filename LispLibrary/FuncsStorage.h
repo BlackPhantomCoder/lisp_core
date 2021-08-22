@@ -1,5 +1,6 @@
 #pragma once
 #include "LambdaCell.h"
+#include "MacroCell.h"
 #include "CoreData.h"
 
 #include <variant>
@@ -17,7 +18,8 @@ public:
 		CoreData::bifunc ptr = nullptr;
 	};
 
-	using data = std::variant<lambda, FuncsStorage::bifunc, FuncsStorage::nbifunc, CoreData::special_bifunc_make, CoreData::special_nbifunc_make>;
+	using data 
+		= std::variant<lambda, macro, FuncsStorage::bifunc, FuncsStorage::nbifunc, CoreData::special_bifunc_make, CoreData::special_nbifunc_make>;
 
 	using mp = std::unordered_map <
 		Symbol,
@@ -26,8 +28,11 @@ public:
 public:
 	FuncsStorage(SExprsFarm& farm);
 
-	void add_lambda(const Symbol& symbol, const lambda& cell);
-	void add_lambda(const Symbol & symbol, lambda && cell);
+	void set_func(const Symbol& symbol, const lambda& cell);
+	void set_func(const Symbol& symbol, const macro& cell);
+
+	void set_func(const Symbol& symbol, lambda&& cell);
+	void set_func(const Symbol& symbol, macro&& cell);
 
 	std::optional<std::reference_wrapper<const FuncsStorage::data>> find(const Symbol & symbol);
 private:

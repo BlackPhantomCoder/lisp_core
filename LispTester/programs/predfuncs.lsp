@@ -32,11 +32,8 @@
 (defun CDAADR (lst) (cdr (car (cadr lst))))
 (defun CDDADR (lst) (cdr (cdr (cadr lst))))
 
-(defun IF 
-    (nlambda (predicate then else)
-        ((eval predicate) (eval then))
-        (eval else)
-    )
+(DEFMACRO IF (C E1 E2)
+    (LIST 'COND (LIST C E1) (LIST T E2))
 )
 
 (DEFUN FUNCALL X
@@ -44,7 +41,7 @@
 )
 
 (defun NOT (X)
-    (if X nil T)
+     (if X nil T)
 )
 
 (defun AND (nlambda lsta 
@@ -124,4 +121,41 @@
     ((< (- X L) L) (- X L))
     (setq x (- x l))
 )
+)
+
+(DEFMACRO PUSH (OBJ SYM)
+    (LIST 'SETQ SYM
+        (LIST 'CONS OBJ SYM))
+)
+
+(DEFMACRO POP (SYM)
+      (LIST 'PROG1
+            (LIST 'CAR SYM)
+            (LIST 'SETQ SYM (LIST 'CDR SYM)))
+)
+
+; (DEFUN MAPCAR (FUNC LST1 LST2)
+;     ( (OR (NULL LST1) (NULL LST2)) NIL )
+;     (CONS (FUNCALL FUNC (CAR LST1) (CAR LST2))
+;     (MAPCAR FUNC (CDR LST1) (CDR LST2)))
+; )
+
+(DEFUN MAPLIST (FUNC LST1 LST2)
+    ( (OR (NULL LST1) (NULL LST2)) NIL )
+    (CONS (FUNCALL FUNC LST1 LST2)
+        (MAPLIST FUNC (CDR LST1) (CDR LST2)))
+)
+
+(DEFUN MAPC (FUNC LST1 LST2)
+    ( (OR (NULL LST1) (NULL LST2)) LST1 )
+    ( FUNCALL FUNC (CAR LST1) (CAR LST2) )
+    ( MAPC FUNC (CDR LST1) (CDR LST2) )
+    LST1
+)
+
+(DEFUN MAPL (FUNC LST1 LST2)
+    ( (OR (NULL LST1) (NULL LST2)) LST1 )
+    ( FUNCALL FUNC LST1 LST2 )
+    ( MAPL FUNC (CDR LST1) (CDR LST2) )
+    LST1
 )

@@ -47,14 +47,14 @@ std::pair < read_reason, char> Syntaxer::read_char(CoreInputStreamInt& stream)
 std::pair<read_reason, Cell>  Syntaxer::read_sexpr(CoreInputStreamInt& stream)
 {
     if (!stream.ready()) {
-        return { read_reason::empty_input,  t_farm.get().nil };
+        return { read_reason::empty_input,  t_farm.get().nil() };
     }
     try {
         auto s = TokenStream(t_skip_comments, stream);
         return gen_cell(s);
     }
     catch (const throw_token_stream_empty&) {
-        return { read_reason::empty_input,  t_farm.get().nil };
+        return { read_reason::empty_input,  t_farm.get().nil() };
     }
 }
 
@@ -190,7 +190,7 @@ std::pair<read_reason, Cell> Syntaxer::gen_cell(tokens token, std::string&& val,
             auto [next_token, next_val] = tokens.read();
             if (next_token == tokens::CloseBracket) break;
             if (next_token == tokens::Dot) {
-                if(lst.empty()) return { read_reason::wrong_input, t_farm.get().nil };
+                if(lst.empty()) return { read_reason::wrong_input, t_farm.get().nil() };
                 auto [s_pair_token, s_pair_val] = tokens.read();
                 auto  s_pair = gen_cell(s_pair_token, move(s_pair_val), tokens);
                 if (s_pair.first != read_reason::success) return s_pair;
@@ -198,7 +198,7 @@ std::pair<read_reason, Cell> Syntaxer::gen_cell(tokens token, std::string&& val,
                 Cell a = cons_range(begin(lst), end(lst), t_farm.get());
 
                 auto [close_token, close_val] = tokens.read();
-                if (close_token != tokens::CloseBracket) return { read_reason::wrong_input, t_farm.get().nil };
+                if (close_token != tokens::CloseBracket) return { read_reason::wrong_input, t_farm.get().nil() };
                 else return { read_reason::success, move(a) };
             }
             auto  result_pair = gen_cell(next_token, move(next_val), tokens);
@@ -235,12 +235,12 @@ std::pair<read_reason, Cell> Syntaxer::gen_cell(tokens token, std::string&& val,
             return { read_reason::success,t_farm.get().make_number_cell(BigInt(move(val))) };
         }
         if (val.empty() || (isdig(val[0]))) {
-            return { read_reason::wrong_input, t_farm.get().nil };
+            return { read_reason::wrong_input, t_farm.get().nil() };
         }
         process_symbol(val);
-        if (empty(val)) return { read_reason::wrong_input, t_farm.get().nil };
+        if (empty(val)) return { read_reason::wrong_input, t_farm.get().nil() };
 
-        if (val == CoreData::nil_str) return { read_reason::success , t_farm.get().nil };
+        if (val == CoreData::nil_str) return { read_reason::success , t_farm.get().nil() };
         return   { read_reason::success , t_farm.get().make_symbol_cell(move(val)) };
     }
     else {
@@ -568,7 +568,7 @@ std::pair<read_reason, Cell> SExprStream::read()
         return t_owner.gen_cell(t_base);
     }
     catch (const throw_token_stream_empty&) {
-        return { read_reason::empty_input,  t_owner.t_farm.get().nil };
+        return { read_reason::empty_input,  t_owner.t_farm.get().nil() };
     }
 }
 

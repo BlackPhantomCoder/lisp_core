@@ -10,15 +10,16 @@
 using namespace std;
 using namespace CoreData;
 
-SExprsFarm::SExprsFarm(CoreEnvironment* env):
+SExprsFarm::SExprsFarm(CoreEnvironment& env):
 	t_env(env),
 	symbols(std::make_unique<SymbolsFarm>())
 {
-	read_up_case_symbol = make_symbol_cell(read_up_case_str);
-	lambda_symbol = make_symbol_cell(lambda_str);
-	nlambda_symbol = make_symbol_cell(nlambda_str);
-	nil = make_symbol_cell(nil_str);
-	T =make_symbol_cell(T_str);
+	t_nil = make_symbol_cell(nil_str);
+	t_T = make_symbol_cell(T_str);
+	t_lambda_symbol = make_symbol_cell(lambda_str);
+	t_nlambda_symbol = make_symbol_cell(nlambda_str);
+	t_macro_symbol = make_symbol_cell(macro_str);
+	t_read_up_case_symbol = make_symbol_cell(read_up_case_str);
 }
 
 Symbol SExprsFarm::make_symbol(const std::string& data)
@@ -110,7 +111,7 @@ Cell SExprsFarm::make_empty_list_cell()
 
 Cell SExprsFarm::make_list_cell(const Cell& f)
 {
-	return make_list_cell(f, nil);
+	return make_list_cell(f, t_nil);
 }
 
 Cell SExprsFarm::make_list_cell(const Cell& f, const Cell& s)
@@ -123,6 +124,36 @@ Cell SExprsFarm::make_list_cell(const Cell& f, const Cell& s)
 Cell SExprsFarm::make_list_cell(std::initializer_list<Cell> l)
 {
 	return make_list_cell(begin(l), end(l));
+}
+
+Cell SExprsFarm::read_up_case_symbol()
+{
+	return t_read_up_case_symbol;
+}
+
+Cell SExprsFarm::lambda_symbol()
+{
+	return t_lambda_symbol;
+}
+
+Cell SExprsFarm::nlambda_symbol()
+{
+	return t_nlambda_symbol;
+}
+
+Cell SExprsFarm::macro_symbol()
+{
+	return t_macro_symbol;
+}
+
+Cell SExprsFarm::nil()
+{
+	return t_nil;
+}
+
+Cell SExprsFarm::T()
+{
+	return t_T;
 }
 
 void SExprsFarm::t_init_list(DotPair& p, const Cell& f, const Cell& s)

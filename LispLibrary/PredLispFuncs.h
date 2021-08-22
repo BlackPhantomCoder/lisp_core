@@ -1,7 +1,8 @@
 #pragma once
 #include "Core.h"
-#include <vector>
 #include "CoreData.h"
+
+#include <vector>
 
 const static auto predfuncs_filename = "programs/predfuncs.lsp";
 

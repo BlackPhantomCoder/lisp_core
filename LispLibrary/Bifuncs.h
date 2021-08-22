@@ -1,36 +1,10 @@
 #pragma once
-#include "BiFunc.h"
+#include "AFuncs.h"
 #include "LambdaCell.h"
-
-#include <optional>
+#include "MacroCell.h"
 #include "CoreData.h"
 
-class EvalQuote : public Func {
-public:
-	EvalQuote(CoreEnvironment& env, Cell& c);
-private:
-	virtual bool t_eval_args() override;
-	virtual void t_internal_execute() override;
-private:
-	void t_eval_func(Cell& fnc, CarCdrIterator args_beg_it, CarCdrIterator args_end_it);
-private:
-	Cell t_arg;
-};
-
-class EvalQuoteRange : public RangeNBiFunc
-{
-public:
-	EvalQuoteRange(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it);
-	virtual void t_init_after_args()  override;
-	virtual void t_execute_func()  override;
-private:
-	void t_to_next();
-	void t_eval_fnc(Cell lst);
-private:
-	std::vector<Cell, CoreData::allocator<Cell>> t_result_v;
-	CarCdrIterator t_it;
-	bool t_last = false;
-};
+#include <optional>
 
 class Prog1 : public RangeNBiFunc
 {
@@ -43,7 +17,6 @@ private:
 	bool t_ev = false;
 	Cell t_result_buf;
 };
-
 
 class ProgN : public RangeNBiFunc
 {
@@ -58,21 +31,6 @@ private:
 	bool t_imp = false;
 	Cell t_args_buf;
 	CarCdrIterator t_it;
-};
-
-class ImplicitCond : public Func {
-public:
-	ImplicitCond(CoreEnvironment& env, Cell& atom);
-
-private:
-	virtual void t_init_after_args() override;
-	virtual bool t_eval_args() override;
-	virtual void t_internal_execute() override;
-private:
-	Cell t_atom;
-	Cell t_predicate_val_buf;
-	Cell t_result;
-	bool t_next_res = false;
 };
 
 class Eval : public RangeBiFunc
@@ -93,22 +51,8 @@ private:
 
 	CarCdrIterator t_it;
 	bool t_imp = false;
-};
-
-
-class EvalFunc : public Func
-{
-public:
-	EvalFunc(CoreEnvironment& env, Cell& fnc, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval_func = false);
-private:
-	virtual bool t_eval_args() override;
-	virtual void t_internal_execute() override;
-private:
-	Cell t_fnc;
-	CarCdrIterator t_args_beg;
-	CarCdrIterator t_args_end;
-	CoreData::bifunc t_bifunc = nullptr;
-	bool t_forse_noeval_func;
+	bool t_ev = false;
+	Cell t_buf;
 };
 
 class Append : public RangeBiFunc
@@ -150,5 +94,40 @@ public:
 	virtual void t_execute_func()  override;
 private:
 	CarCdrIterator t_it;
+	bool t_ev = false;
+};
+
+class MacroExpand1 : public RangeBiFunc
+{
+public:
+	MacroExpand1(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval);
+	virtual void t_init_after_args() override;
+	virtual void t_execute_func()  override;
+private:
+	bool t_forse_noeval;
+};
+
+class MacroExpand : public RangeBiFunc
+{
+public:
+	MacroExpand(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval);
+	virtual void t_init_after_args() override;
+	virtual void t_execute_func()  override;
+private:
+	bool t_forse_noeval;
+};
+
+class MapCar : public RangeBiFunc
+{
+public:
+	MapCar(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval);
+	virtual void t_init_after_args() override;
+	virtual void t_execute_func()  override;
+private:
+	std::vector<Cell> t_result;
+	Cell t_func;
+	std::vector<Cell> t_lists;
+	Cell t_buf;
+	bool t_finish = false;
 	bool t_ev = false;
 };

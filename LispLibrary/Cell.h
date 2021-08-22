@@ -1,6 +1,5 @@
 #pragma once
 #include "SExpr.h"
-#include "CarCdrIterator.h"
 
 class Cell {
     friend class SExprsFarm;
@@ -32,13 +31,6 @@ public:
 
     Cell& operator=(Cell&& rh) noexcept = default;
     Cell& operator=(const Cell& rh) = default;
-
-
-    CarCdrIterator begin();
-    CarCdrIterator end();
-
-    CarCdrConstIterator begin()const;
-    CarCdrConstIterator end()const;
 
     bool empty() const;
     void clear();

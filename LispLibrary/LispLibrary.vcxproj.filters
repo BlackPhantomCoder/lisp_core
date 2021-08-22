@@ -28,9 +28,6 @@
     <Filter Include="Файлы заголовков\Tools">
       <UniqueIdentifier>{36421d7f-557e-4880-bcb9-8c7066a0bcf9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Файлы заголовков\Core\lambda">
-      <UniqueIdentifier>{e041e89c-f961-4db6-9585-3c3886cc91ee}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Файлы заголовков\Core\Cell">
       <UniqueIdentifier>{e8114819-2388-457c-a236-5b07d5fcce1a}</UniqueIdentifier>
     </Filter>
@@ -39,6 +36,9 @@
     </Filter>
     <Filter Include="Файлы заголовков\Core\SpecialFuncs">
       <UniqueIdentifier>{3acff48e-539b-49c7-9c8c-094183ebd43a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Файлы заголовков\Core\FuncCells">
+      <UniqueIdentifier>{e041e89c-f961-4db6-9585-3c3886cc91ee}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -52,7 +52,7 @@
       <Filter>Файлы заголовков\Core\Cell</Filter>
     </ClInclude>
     <ClInclude Include="LambdaCell.h">
-      <Filter>Файлы заголовков\Core\lambda</Filter>
+      <Filter>Файлы заголовков\Core\FuncCells</Filter>
     </ClInclude>
     <ClInclude Include="Core.h">
       <Filter>Файлы заголовков\Core</Filter>
@@ -105,16 +105,7 @@
     <ClInclude Include="PoolDeleter.h">
       <Filter>Файлы заголовков\Tools</Filter>
     </ClInclude>
-    <ClInclude Include="Func.h">
-      <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
-    </ClInclude>
     <ClInclude Include="FuncsEvaler.h">
-      <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
-    </ClInclude>
-    <ClInclude Include="LambdaFunc.h">
-      <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
-    </ClInclude>
-    <ClInclude Include="BiFunc.h">
       <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
     </ClInclude>
     <ClInclude Include="Bifuncs.h">
@@ -124,9 +115,6 @@
       <Filter>Файлы заголовков\Core\Support</Filter>
     </ClInclude>
     <ClInclude Include="SymbolsFarm.h">
-      <Filter>Файлы заголовков\Core\Support</Filter>
-    </ClInclude>
-    <ClInclude Include="SExprsFArm.h">
       <Filter>Файлы заголовков\Core\Support</Filter>
     </ClInclude>
     <ClInclude Include="CoreEnvStreamsProvider.h">
@@ -146,6 +134,24 @@
     </ClInclude>
     <ClInclude Include="SExpr.h">
       <Filter>Файлы заголовков\Core\Cell</Filter>
+    </ClInclude>
+    <ClInclude Include="MacroCell.h">
+      <Filter>Файлы заголовков\Core\FuncCells</Filter>
+    </ClInclude>
+    <ClInclude Include="SupportFuncs.h">
+      <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
+    </ClInclude>
+    <ClInclude Include="AFuncs.h">
+      <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
+    </ClInclude>
+    <ClInclude Include="FuncInt.h">
+      <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
+    </ClInclude>
+    <ClInclude Include="SExprsFarm.h">
+      <Filter>Файлы заголовков\Core\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="StdCoreInputArrayInput.h">
+      <Filter>Файлы заголовков\Platform</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -209,9 +215,6 @@
     <ClCompile Include="CarCdrIterator.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="SymbolsFerm.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
     <ClCompile Include="SExprsFarm.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
@@ -221,16 +224,7 @@
     <ClCompile Include="OutputController.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="Func.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
-    <ClCompile Include="BiFunc.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
     <ClCompile Include="FuncsEvaler.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
-    <ClCompile Include="LambdaFunc.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="Bifuncs.cpp">
@@ -240,6 +234,21 @@
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="SExpr.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="MacroCell.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="SupportFuncs.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="AFuncs.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="SymbolsFarm.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="StdCoreInputArrayInput.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>

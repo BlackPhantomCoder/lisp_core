@@ -1,6 +1,7 @@
-#include "BiFunc.h"
+#include "AFuncs.h"
 #include "CoreEnv.h"
 #include "Bifuncs.h"
+#include "SupportFuncs.h"
 
 using namespace std;
 
@@ -20,12 +21,7 @@ bool Func::execute()
     case stages::need_external:
         if (t_eval_next_flag) {
             t_eval_next_flag = false;
-            if (!t_eval_args_flag) {
-                t_stage = stages::not_args_evaled;
-            }
-            else {
-                t_stage = stages::intermediate;
-            }
+            t_stage = (!t_eval_args_flag) ? stages::not_args_evaled : stages::intermediate;
         }
         else {
             t_stage = stages::executed;
@@ -49,7 +45,7 @@ bool Func::execute()
                 [[fallthrough]];
             case stages::not_inited:
                 t_init_after_args();
-                if (t_stage == stages::not_inited)t_stage = stages::intermediate;
+                if (t_stage == stages::not_inited) t_stage = stages::intermediate;
                 else break;
                 [[fallthrough]];
             case stages::intermediate:
@@ -103,6 +99,36 @@ CoreEnvironment& Func::t_env()
 const CoreEnvironment& Func::t_env() const
 {
     return t_env_data;
+}
+
+SExprsFarm& Func::t_farm()
+{
+    return t_env_data.get().t_farm;
+}
+
+FuncsStorage& Func::t_funcs()
+{
+    return t_env_data.get().t_funcs;
+}
+
+CellEnvironment& Func::t_envs()
+{
+    return t_env_data.get().t_envs;
+}
+
+Syntaxer& Func::t_syntaxer()
+{
+    return t_env_data.get().t_syntaxer;
+}
+
+OutputController& Func::t_output_control()
+{
+    return t_env_data.get().t_output_control;
+}
+
+support_funcs& Func::t_sup_funcs()
+{
+    return t_env_data.get().t_support;
 }
 
 void Func::t_return(const Cell& result)

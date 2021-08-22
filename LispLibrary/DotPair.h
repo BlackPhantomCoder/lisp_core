@@ -34,9 +34,6 @@ public:
 
     virtual bool is_list() const override;
 
-    //virtual const DotPair& to_list() const override;
-    //virtual DotPair& to_list() override;
-
     virtual SExpr::del_func_ptr get_del_fnc() const override;
 private:
     DotPair(SExprsFarm& farm);

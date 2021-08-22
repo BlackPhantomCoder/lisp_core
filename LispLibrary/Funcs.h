@@ -6,7 +6,6 @@
 #include "Symbol.h"
 #include "CoreEnv.h"
 
-#include <list>
 #include <string>
 #include <iostream>
 #include <deque>
@@ -42,8 +41,7 @@ void rplacd(DotPair& rh, const Cell& exp);
 
 Cell tree_copy(const Cell& rh, SExprsFarm& farm);
 
-
-
+std::optional<std::reference_wrapper<const macro>> is_macro_call(const Cell& m, CoreEnvironment& e);
 
 
 
@@ -85,8 +83,8 @@ inline Cell SExprsFarm::make_list_cell(InputIt first, InputIt last)
 template<class InputIt>
 inline Cell cons_range(InputIt beg_it, InputIt end_it, SExprsFarm& farm)
 {
-    if (beg_it == end_it) return cons(farm.nil, farm.nil, farm);
-    if (std::next(beg_it) == end_it) return cons(*beg_it, farm.nil, farm);
+    if (beg_it == end_it) return cons(farm.nil(), farm.nil(), farm);
+    if (std::next(beg_it) == end_it) return cons(*beg_it, farm.nil(), farm);
     if constexpr (std::is_convertible<std::iterator_traits<InputIt>::iterator_category, std::bidirectional_iterator_tag >::value) {
         auto r_end = std::make_reverse_iterator(beg_it);
         auto r_beg = std::make_reverse_iterator(end_it);
@@ -98,7 +96,7 @@ inline Cell cons_range(InputIt beg_it, InputIt end_it, SExprsFarm& farm)
         return result;
     }
     else {
-        if (beg_it == end_it) return cons(farm.nil, farm.nil, farm);
+        if (beg_it == end_it) return cons(farm.nil(), farm.nil(), farm);
         std::vector<const Cell*, CoreData::allocator<const Cell*>> stack;
         while (beg_it != end_it) {
             stack.push_back(&*beg_it);

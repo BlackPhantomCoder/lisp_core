@@ -43,6 +43,7 @@ bifuncs_array CoreData::bifunc_setup()
         make_pair("SET", &CoreEnvironment::bifunc_set),
         make_pair("READ", &CoreEnvironment::bifunc_read),
         make_pair("PRINT", &CoreEnvironment::bifunc_print),
+        make_pair("PRIN1", &CoreEnvironment::bifunc_prin1),
         make_pair("EQUAL", &CoreEnvironment::bifunc_equal),
         make_pair("LAST", &CoreEnvironment::bifunc_last),
         make_pair("LENGTH", &CoreEnvironment::bifunc_length),
@@ -54,7 +55,7 @@ bifuncs_array CoreData::bifunc_setup()
         make_pair("OBLIST", &CoreEnvironment::bifunc_oblist),
         make_pair("RPLACA", &CoreEnvironment::bifunc_rplaca),
         make_pair("RPLACD", &CoreEnvironment::bifunc_rplacd),
-        make_pair("COPY-TREE", &CoreEnvironment::bifunc_copy_tree)
+        make_pair("COPY-TREE", &CoreEnvironment::bifunc_copy_tree),
     };
 }
 
@@ -63,6 +64,7 @@ nbifuncs_array CoreData::nbifunc_setup()
     return CoreData::nbifuncs_array{
         make_pair("DEFUN", &CoreEnvironment::nbifunc_defun),
         make_pair("QUOTE", &CoreEnvironment::nbifunc_quote),
+        make_pair("DEFMACRO", &CoreEnvironment::nbifunc_defmacro),
     };
 }
 
@@ -72,6 +74,9 @@ special_bifuncs_array CoreData::special_bifunc_setup()
         make_pair("EVAL", &make_special_bifunc<Eval>),
         make_pair("APPLY", &make_special_bifunc<Apply>),
         make_pair("APPEND", &make_special_bifunc<Append>),
+        make_pair("MACROEXPAND-1", &make_special_bifunc<MacroExpand1>),
+        make_pair("MACROEXPAND", &make_special_bifunc<MacroExpand>),
+        make_pair("MAPCAR", &make_special_bifunc<MapCar>),
     };
 }
 

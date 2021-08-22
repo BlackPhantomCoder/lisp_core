@@ -4,15 +4,17 @@
 #include "Cell.h"
 using namespace std;
 
+lambda make_lambda(lambda_types type, lambda_args_types arg_type, const Cell& params, Cell& body, SExprsFarm& farm)
+{
+    return { type, arg_type, tree_copy(params, farm), body };
+}
 
 Cell gen_cell(const lambda& fnc, SExprsFarm& farm)
 {
-    //if (is_macro(fnc)) {
-
-    //}
     std::vector<Cell> lst;
     lst.reserve(3);
-    lst.push_back((is_lambda(fnc)) ? farm.lambda_symbol : farm.nlambda_symbol);
+
+    lst.push_back((is_lambda(fnc)) ? farm.lambda_symbol() : farm.nlambda_symbol());
     lst.push_back((is_spread(fnc)) ? fnc.params : car(fnc.params));
 
     // tree copy or not?

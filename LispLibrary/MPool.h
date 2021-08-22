@@ -120,7 +120,7 @@ class FrameArray {
 public:
 
     void add() {
-        t_frames.push_back({});
+        t_frames.emplace_back();
     }
     T* const& at(size_t pos) const {
         return t_frames.at(pos / new_block_size)[pos % new_block_size];

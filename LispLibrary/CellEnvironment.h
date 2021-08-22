@@ -27,17 +27,16 @@ public:
 
 	const mp& get_globals() const;
 	void add_global_var(const Symbol& name, const Cell& val);
-	Cell* get_global_var(const Symbol& name);
-	const Cell* get_global_var(const Symbol& name) const;
+	Cell get_global_var(const Symbol& name);
 
-	Cell* get(const Symbol& name);
-	const Cell* get(const Symbol& name) const;
+	Cell get(const Symbol& name);
+	void set(const Symbol& name, const Cell& val);
 
 	void clear_subenvs();
 private:
 	SExprsFarm& t_farm;
 	mp t_glonal;
-	std::vector<frame> t_stack;
+	std::deque<std::pair<frame, std::vector<Cell>>> t_stack;
 	std::unordered_map<Symbol, std::vector<Cell*>> t_all_in_stack;
 };
 

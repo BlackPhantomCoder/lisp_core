@@ -13,13 +13,9 @@ class SExprsFarm
 {
 public:
 	std::unique_ptr<SymbolsFarm> symbols;
-	Cell read_up_case_symbol;
-	Cell lambda_symbol;
-	Cell nlambda_symbol;
-	Cell nil;
-	Cell T;
+	
 public:
-	SExprsFarm(CoreEnvironment* env);
+	SExprsFarm(CoreEnvironment& env);
 
 	Symbol make_symbol(const std::string& data);
 	Symbol make_symbol(std::string&& data);
@@ -55,10 +51,12 @@ public:
 	template< class InputIt >
 	Cell make_list_cell(InputIt first, InputIt last);
 
-	//template< class InputIt >
-	//Cell make_list_w_eval_cell(InputIt first, InputIt last);
-	//template<class Container>
-	//Cell make_list_w_eval_cell(Container c);
+	Cell read_up_case_symbol();
+	Cell lambda_symbol();
+	Cell nlambda_symbol();
+	Cell macro_symbol();
+	Cell nil();
+	Cell T();
 private:
 	void t_init_list(DotPair& p, const Cell& f, const Cell& s);
 	void t_init_empty_list(DotPair& d);
@@ -73,5 +71,11 @@ private:
 	Cell make_cell_symb_noinit();
 	Cell make_cell_numb_noinit();
 private:
-	CoreEnvironment* t_env;
+	CoreEnvironment& t_env;
+	Cell t_read_up_case_symbol;
+	Cell t_lambda_symbol;
+	Cell t_nlambda_symbol;
+	Cell t_macro_symbol;
+	Cell t_nil;
+	Cell t_T;
 };

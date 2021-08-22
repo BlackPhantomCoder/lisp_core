@@ -44,14 +44,24 @@ FuncsStorage::FuncsStorage(SExprsFarm& farm):
     make_special_nbifuncs(t_funcs, farm);
 }
 
-void FuncsStorage::add_lambda(const Symbol& symbol, const lambda& cell)
+void FuncsStorage::set_func(const Symbol& symbol, const lambda& cell)
 {
-    t_funcs.emplace(symbol, cell);
+    t_funcs[symbol] = cell;
 }
 
-void FuncsStorage::add_lambda(const Symbol& symbol, lambda&& cell)
+void FuncsStorage::set_func(const Symbol& symbol, const macro& cell)
 {
-    t_funcs.emplace(symbol, move(cell));
+    t_funcs[symbol] = cell;
+}
+
+void FuncsStorage::set_func(const Symbol& symbol, lambda&& cell)
+{
+    t_funcs[symbol] = move(cell);
+}
+
+void FuncsStorage::set_func(const Symbol& symbol, macro&& cell)
+{
+    t_funcs[symbol] = move(cell);
 }
 
 std::optional<std::reference_wrapper<const FuncsStorage::data>> FuncsStorage::find(const Symbol& symbol)

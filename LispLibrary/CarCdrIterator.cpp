@@ -28,9 +28,9 @@ CarCdrIterator::CarCdrIterator() :
 {
 }
 
-CarCdrIterator::CarCdrIterator(Cell* base) :
-    t_base(base),
-    t_nil((base) ? is_null(*base) : false)
+CarCdrIterator::CarCdrIterator(Cell& base) :
+    t_base(&base),
+    t_nil(is_null(base))
 {
 }
 
@@ -57,7 +57,7 @@ CarCdrIterator& CarCdrIterator::operator++()
     return *this;
 }
 
-Cell& CarCdrIterator::operator*()
+CarCdrIterator::reference CarCdrIterator::operator*()
 {
     if (!t_base) {
         throw "";
@@ -65,28 +65,12 @@ Cell& CarCdrIterator::operator*()
     return car(*t_base);
 }
 
-const Cell& CarCdrIterator::operator*() const
+CarCdrIterator::const_reference CarCdrIterator::operator*() const
 {
     if (!t_base) {
         throw "";
     }
     return car(*t_base);
-}
-
-Cell* CarCdrIterator::operator->()
-{
-    if (!t_base) {
-        throw "";
-    }
-    return &car(*t_base);
-}
-
-const Cell* CarCdrIterator::operator->() const
-{
-    if (!t_base) {
-        throw "";
-    }
-    return &car(*t_base);
 }
 
 bool CarCdrIterator::operator!=(const CarCdrIterator& rh) const
@@ -150,11 +134,10 @@ CarCdrConstIterator::CarCdrConstIterator():
 {
 }
 
-CarCdrConstIterator::CarCdrConstIterator(const Cell* base):
-    t_base(base),
-    t_nil((base) ? is_null(*base) : false)
+CarCdrConstIterator::CarCdrConstIterator(const Cell& base):
+    t_base(&base),
+    t_nil(is_null(base))
 {
-
 }
 
 CarCdrConstIterator CarCdrConstIterator::operator++(int)
@@ -180,20 +163,12 @@ CarCdrConstIterator& CarCdrConstIterator::operator++()
     return *this;
 }
 
-const Cell& CarCdrConstIterator::operator*() const
+CarCdrConstIterator::const_reference CarCdrConstIterator::operator*() const
 {
     if (!t_base) {
         throw "";
     }
     return car(*t_base);
-}
-
-const Cell* CarCdrConstIterator::operator->() const
-{
-    if (!t_base) {
-        throw "";
-    }
-    return &car(*t_base);
 }
 
 bool CarCdrConstIterator::operator!=(const CarCdrConstIterator& rh) const
@@ -206,10 +181,30 @@ bool CarCdrConstIterator::operator==(const CarCdrConstIterator& rh) const
     return (t_base && t_nil && !rh.t_base) || t_base == rh.t_base;
 }
 
-const Cell& CarCdrConstIterator::get_elem() const
+CarCdrConstIterator::const_reference CarCdrConstIterator::get_elem() const
 {
     if (!t_base) {
         throw "";
     }
     return *t_base;
+}
+
+CarCdrIterator begin(Cell& c)
+{
+    return CarCdrIterator(c);
+}
+
+CarCdrIterator end(Cell& c)
+{
+    return CarCdrIterator();
+}
+
+CarCdrConstIterator begin(const Cell& c)
+{
+    return CarCdrConstIterator(c);
+}
+
+CarCdrConstIterator end(const Cell& c)
+{
+    return CarCdrConstIterator();
 }

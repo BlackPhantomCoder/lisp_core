@@ -4,6 +4,7 @@
 #include "Cell.h"
 #include "CarCdrIterator.h"
 #include "PoolDeleter.h"
+
 #include <array>
 #include <exception>
 
@@ -43,17 +44,18 @@ namespace CoreData {
 
 	struct throw_stop_helper :std::exception {};
 	
-	const static char* nil_str = ("NIL");
-	const static char* T_str = ("T");
-	const static char* read_up_case_str = ("*READ-UPCASE*");
+	const static char* const nil_str = "NIL";
+	const static char* const T_str = "T";
+	const static char* const read_up_case_str = "*READ-UPCASE*";
 
-	const static char* lambda_str = ("LAMBDA");
-	const static char* nlambda_str = ("NLAMBDA");
+	const static char* const lambda_str = "LAMBDA";
+	const static char* const nlambda_str = "NLAMBDA";
+	const static char* const macro_str = "MACRO";
 
-	const static auto bifuncs_count = 33;
-	const static auto nbifuncs_count = 2;
+	const static auto bifuncs_count = 34;
+	const static auto nbifuncs_count = 3;
 
-	const static auto special_bifuncs_count = 3;
+	const static auto special_bifuncs_count = 6;
 	const static auto special_nbifuncs_count = 5;
 
 	typedef Cell(CoreEnvironment::* bifunc) (CarCdrIterator, CarCdrIterator);

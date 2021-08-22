@@ -2,6 +2,8 @@
 #include <iostream>
 #include "CoreStreamInt.h"
 
+
+
 class StdCoreInputStream : public CoreInputStreamInt {
 public:
 	StdCoreInputStream(const StdCoreInputStream&) = delete;
