@@ -10,7 +10,7 @@
 using namespace std;
 
 const unordered_set<char> read_updcase_special_tokens = {'\\', ';', '\"', ',', '\'', '`', '|' , ' ' };
-const unordered_set<char> noread_updcase_special_tokens = { '\\', '\"', '|', ' ' };
+const unordered_set<char> noread_updcase_special_tokens = { '\\', '\"', '|', ' ', ',' };
 
 bool is_special_symbol(bool read_upcase, unsigned char token) {
     if (read_upcase) {

@@ -726,11 +726,15 @@ Cell CoreEnvironment::bifunc_pack(iter b, iter e)
 
 Cell CoreEnvironment::bifunc_unpack(iter b, iter e)
 {
-    if (b == e || (is_list(arg1) && !is_null_list(to_list(arg1)))) return t_farm.nil();
-    string s = t_output_control.to_string_raw(arg1);
+    Cell s = t_farm.nil();
+    if (b != e) {
+        if((is_list(arg1)) && !is_null_symbol(arg1)) return t_farm.nil();
+        s = arg1;
+    }
+    string str = t_output_control.to_string_raw(s);
     vector<Cell> buf;
-    buf.reserve(s.size());
-    for (char c : s) {
+    buf.reserve(str.size());
+    for (char c : str) {
         buf.push_back(t_farm.make_symbol_cell(string() + c));
     }
     return t_farm.make_list_cell(begin(buf), end(buf));

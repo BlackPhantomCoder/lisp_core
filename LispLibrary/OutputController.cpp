@@ -78,6 +78,7 @@ std::string OutputController::t_to_string_list(const Cell& d)
 }
 
 const std::unordered_set<char> skip_symbols = { ' ', '\t' };
+const std::unordered_set<char> specital_single_symbols = { '.', ',', '|', '\\', '\"', '\'', '`' };
 
 std::string OutputController::t_to_string(const Symbol& s)
 {
@@ -85,13 +86,10 @@ std::string OutputController::t_to_string(const Symbol& s)
     if (str.empty()) return "||";
     if (str.size() == 1) {
         if (skip_symbols.find(str[0]) != end(skip_symbols)) return string("|") + str[0] + "|";
+        if(specital_single_symbols.find(str[0]) != end(specital_single_symbols) || isdigit((unsigned char)str[0])) return  string("\\") + str[0];
     }
     
     if (isdigit((unsigned char)str[0])) {
-        if (str.size() == 1) {
-            str.insert(begin(str), '\\');
-            return str;
-        }
         str.insert(begin(str), '|');
         str.push_back('|');
         return str;
@@ -104,8 +102,22 @@ std::string OutputController::t_to_string(const Symbol& s)
             return str;
         }
         else {
+
+            if (auto pos = str.find('\\'); pos != str.npos) {
+                while (pos != str.npos) {
+                    str.insert(pos, 1, '\\');
+                    pos = str.find('\\', pos + 2);
+                }
+            }
+            if (auto pos = str.find('|'); pos != str.npos) {
+                while (pos != str.npos) {
+                    str.insert(pos, 1, '\\');
+                    pos = str.find('|', pos + 2);
+                }
+            }
             str.insert(begin(str), '|');
             str.push_back('|');
+          
             return str;
         }
     }

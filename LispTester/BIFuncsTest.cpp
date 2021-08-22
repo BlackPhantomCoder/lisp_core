@@ -339,31 +339,37 @@ void calcfun() {
 
 //управление вычислениями
 void control_calc() {
-	simple_core_assert("(defun kek (x) (* x x))", "KEK");
-	simple_core_assert("(progn (defun kek (x) (* x x)) (kek 3))", "9");
-	simple_core_assert("(progn (defun kek (x a) (* x x) a) (kek 3))", nil_str);
-	simple_core_assert("(defun)", nil_str);
-	simple_core_assert("(defun kek)", nil_str);
-	simple_core_assert("(defun kek (x))", "KEK");
-	simple_core_assert("(progn)", nil_str);
-	simple_core_assert("(progn (+ 1 2) (+ 3 4))", "7");
-	simple_core_assert("(progn (setq a 2) (+ 2 a) )", "4");
-	simple_core_assert("(prog1)", nil_str);
-	simple_core_assert("(prog1 (+ 1 2) (+ 3 4))", "3");
-	simple_core_assert("(prog1 (setq a 2) (+ 2 a) (setq a 3))", "2");
-	simple_core_assert("(setq)", nil_str);
-	simple_core_assert("(setq a)", nil_str);
-	simple_core_assert("(setq a 2)", "2");
-	simple_core_assert("(eval (setq a 2))", "2");
-	simple_core_assert("(progn (setq a 2) a)", "2");
-	simple_core_assert("(set)", nil_str);
-	simple_core_assert("(set a)", nil_str);
+	simple_core_assert("(defun kek (x) (* x x))","KEK");
+	simple_core_assert("(progn (defun kek (x) (* x x)) (kek 3))","9");
+	simple_core_assert("(progn (defun kek (a 's d) d) (kek 1 2 3))", "3");
+	simple_core_assert("(progn (defun kek (a '(kok nekok) d) d) (kek 1 2 3))", "3");
+	simple_core_assert("(progn (defun kek (x a) (* x x) a) (kek 3))",nil_str);
+	simple_core_assert("(progn (defun kok () (setq x 1000) (loop ((< x 0) x) (setq x (- x 7)))) (kok))", "-1"); 
+	simple_core_assert("(defun)",nil_str);
+	simple_core_assert("(defun kek)",nil_str);
+	simple_core_assert("(defun kek (x))","KEK");
+	simple_core_assert("(progn)",nil_str);
+	simple_core_assert("(progn (+ 1 2) (+ 3 4))","7");
+	simple_core_assert("(progn (setq a 2) (+ 2 a) )","4");
+	simple_core_assert("(prog1)",nil_str);
+	simple_core_assert("(prog1 (+ 1 2) (+ 3 4))","3");
+	simple_core_assert("(prog1 (setq a 2) (+ 2 a) (setq a 3))","2");
+	simple_core_assert("(setq)",nil_str);
+	simple_core_assert("(setq a)",nil_str);
+	simple_core_assert("(setq a 2)","2");
+	simple_core_assert("(eval (setq a 2))","2");
+	simple_core_assert("(progn (setq a 2) a)","2");
+	simple_core_assert("(set)",nil_str);
+	simple_core_assert("(set a)",nil_str);
 	test_output("(progn (setq a 1 b 2) (print a) (print b))", "1\n2\n");
 
 	simple_core_assert("(progn (setq a 2) (setq b 'a) (set b 3) a)", "3");
 	simple_core_assert("(progn (setq L '(1 2 3 4)) (loop ((null L) 'da) (setq L (cdr L))))", "DA");
 	simple_core_assert("(progn (setq N 0) (setq L '(1 2 3 4)) (loop ((null L) N) (setq N (+ 1 N)) (setq L (cdr L))))", "4");
-	//simple_core_assert("(progn (setq L '(1 a 2 q kek)) (loop ((null(cdr L)) (car L)) (setq L(cdr L))))", "KEK");
+	simple_core_assert("(progn (setq L '(1 a 2 q kek)) (loop ((null(cdr L)) (car L)) (setq L(cdr L))))","KEK");
+	simple_core_assert(
+		"(progn (setq lst '(1 (2 3) (2 . 3) a nil 4 5)) (loop ((not (car lst)) (cdr lst)) (print lst) (setq lst (cdr lst))))",
+		"(4 5)");
 	simple_core_assert_several_last_val(
 		({
 			"(setq L '(1 a 2 q kek))",
@@ -378,15 +384,15 @@ void control_calc() {
 		}),
 		"(4 5)"
 	);
-	/*test_output(
+	test_output(
 		"(progn (setq lst '(1 (2 3) (2 . 3) a nil 4 5)) (loop ((not (car lst)) (cdr lst)) (print lst) (setq lst (cdr lst))))",
-		"(1 (2 3) (2 . 3) a nil 4 5))\n((2 3) (2 . 3) a nil 4 5))\n((2 . 3) a nil 4 5))\n(a nil 4 5))\n");*/
+		"(1 (2 3) (2 . 3) A NIL 4 5)\n((2 3) (2 . 3) A NIL 4 5)\n((2 . 3) A NIL 4 5)\n(A NIL 4 5)\n");
 }
 
 //ввод/вывод
 void io() {
-	simple_core_assert("(print)", nil_str);  //формат вывода под вопросом (каким?)
-	simple_core_assert("(print a)", "A");
+	simple_core_assert("(print)",nil_str);  
+	simple_core_assert("(print a)","A");
 	simple_core_assert("(print (+ 1 2 3))", "6");
 	test_output("(print 'а_вообще_хз_как_его_тестировать)", "а_вообще_хз_как_его_тестировать\n");
 	test_input("(setq a (read))", "A", "A");
@@ -415,19 +421,97 @@ void io() {
 	simple_core_assert("|AAC1|", "AAC1");
 	simple_core_assert("|1AAC1|", "|1AAC1|");
 	simple_core_assert("\\ \\ \\ ", "|   |");
-	simple_core_assert("\\(\\)\\ \\'\\\\\\;\\#", "|() '\\;#|");
-	simple_core_assert("A\\\\B.LSP", "|A\\B.LSP|");
+
+	//\(\)\ \'\\\;\#
+	simple_core_assert("\\(\\)\\ \\'\\\\\\;\\#", "|() '\\\\;#|");
+	simple_core_assert("A\\\\B.LSP", "|A\\\\B.LSP|");
 	simple_core_assert("\\++++", "++++");
+	
+}
 
-
+//идентификаторы
+void id_repr() {
 	simple_core_assert("\\ ", "| |");
 	simple_core_assert("\\1", "\\1");
 	simple_core_assert("\\1a", "|1A|");
+	//simple_core_assert_reason("\\\\", Core::result_type::success);
+	//simple_core_assert("\\\\", "\\\\");
+	simple_core_assert_reason("\\\\\\a", Core::result_type::success);
+	//simple_core_assert("\\\\\\\\", "|\\\\\\\\|");						//надо согласовать 
+	//simple_core_assert("\\a\\|", "|a\\||");							//с методичкой стр.44, последний абзац
+	simple_core_assert("(pack '(\\| \\|))", "|\\|\\||");				//
+	//simple_core_assert("(pack '(\\| \\\\ \\|))", "|\\|\\\\\\||");
+
+	//simple_core_assert(".", "\\.");
+	//simple_core_assert(".qwe", ".QWE");
+	//simple_core_assert(".12", ".12");
+	simple_core_assert_reason(",", Core::result_type::fail);    //возможно, стоит обратить внимание на причину фейла
+	simple_core_assert("\\,", "\\,");
+	//simple_core_assert_reason("!@#,!##", Core::result_type::fail);
+	simple_core_assert("!@#\\,!@#", "|!@#,!@#|");
+	simple_core_assert("q\\q1\\1`~!@#$%^&*-_=+/\\;\\'\\\".\\,:", "|Qq11`~!@#$%^&*-_=+/;'\".,:|");
+	simple_core_assert("q1~!@#$%^&*-_=+/:", "Q1~!@#$%^&*-_=+/:");
+	//simple_core_assert("a`", "A`");       //возможно, рофл из коммона (в 85 не загружен)
+	//simple_core_assert("q1`~!@#$%^&*-_=+/:", "Q1`~!@#$%^&*-_=+/:");
 
 	simple_core_assert("\\a", "\\a");
 	simple_core_assert("\\A", "A");
-	simple_core_assert(string("(progn (setq ") + read_up_case_str + " nil) \\a) ", "a");
-	simple_core_assert(string("(progn (setq ") + read_up_case_str + " nil) \\A) ", "A");
+	simple_core_assert("||", "||");
+	simple_core_assert("\"\"", "||");
+	simple_core_assert("\\\"\\\"", "|\"\"|");
+	simple_core_assert("\"|\"", "\\|");
+	simple_core_assert(std::string("(progn (setq ") + read_up_case_str + " nil) \\a) ", "a");
+	simple_core_assert(std::string("(progn (setq ") + read_up_case_str + " nil) \\A) ", "A");
+
+}
+
+//функции над идентификаторами
+void id_func() {
+	simple_core_assert("(numberp 345)", T_str);
+	simple_core_assert("(numberp \\345)", nil_str);
+	simple_core_assert("(numberp '\\345)", nil_str);
+	simple_core_assert("(symbolp '\\345)", T_str);
+	simple_core_assert("(atom '\\345)", T_str);
+	simple_core_assert("(listp '\\345)", nil_str);
+	simple_core_assert("(eq \\345 \\3\\4\\5)", T_str);
+	simple_core_assert("(equal \\345 \\3\\4\\5)", T_str);
+	simple_core_assert("(eq \\aa aa)", nil_str);
+	simple_core_assert("(equal \\aa aa)", nil_str);
+	simple_core_assert("(equal |AAC1| aac1)", T_str);
+	simple_core_assert("(equal q1 q\\1)", T_str);
+	simple_core_assert("(equal A \\A)", T_str);
+	simple_core_assert("(equal \\a \\a)", T_str);
+	simple_core_assert("(equal \\a\\a |aa|)", T_str);
+	simple_core_assert("(equal || \"\")", T_str);
+	simple_core_assert("(eq \"a12\" \"a12\")", T_str);     //методичка утверждает обратное (но там коммон)
+	simple_core_assert("(equal \"a12\" \"a12\")", T_str);
+	simple_core_assert("(progn (setq \\345 1) \\345)", "1");
+	simple_core_assert("(progn (setq |kok| 2) \\k\\o\\k)", "2");
+
+	simple_core_assert("(unpack kok)", "(K O K)");
+	simple_core_assert("(unpack |kok|)", "(\\k \\o \\k)");
+	simple_core_assert("(unpack q\\q1\\1)", "(Q \\q \\1 \\1)");
+	simple_core_assert("(unpack)", "(N I L)");
+	simple_core_assert("(unpack '(1 2 3))", nil_str);
+	simple_core_assert("(unpack 1)", "(\\1)");
+	simple_core_assert("(unpack 1.2)", "(\\1 \\. \\2)");
+	simple_core_assert("(unpack \"kok11\")", "(\\k \\o \\k \\1 \\1)");
+	simple_core_assert("(equal (unpack \\345) (unpack \\3\\4\\5))", T_str);
+	simple_core_assert("(numberp (cadr (unpack a1a)))", nil_str);
+	simple_core_assert("(pack)", "||");
+	simple_core_assert("(pack '(1 2 3))", "|123|");
+	simple_core_assert("(pack '(\\1 \\2 \\3))", "|123|");
+	simple_core_assert("(equal (pack '(1 2 3)) (pack '(\\1 \\2 \\3)))", T_str);
+	simple_core_assert("(pack '(kok nekok))", "KOKNEKOK");
+	simple_core_assert("(pack '(kok |kekw| nekok))", "|KOKkekwNEKOK|");
+	simple_core_assert("(pack '(kok \"kekw\" nekok))", "|KOKkekwNEKOK|");
+	simple_core_assert("(pack '((1 2) (3 4) 5))", "\\5");
+	simple_core_assert("(equal (pack '(1 2 3)) (pack '(123)))", T_str);
+
+	simple_core_assert("(cadr (unpack (pack '(a 2 a))))", "\\2");
+	simple_core_assert("(pack (unpack \\345))", "|345|");
+	simple_core_assert("(pack '(| |))", "| |");
+	simple_core_assert("(unpack |\\|\\||)", "(\\| \\|)");
 }
 
 //точечные пары
@@ -493,10 +577,9 @@ void dotpairs() {
 		"(progn (setq x (list 'a 'b)) (setq z2 (cons (list 'a 'b) (list 'a 'b))) (defun stk (x) (rplaca (car x) 'kok) x) (stk z2))",
 		"((KOK B) A B)"
 	);
-	/*test_output(
-		"(progn (setq a '(1 . chel) b '(2 . chel) c '(3 . chel)) (nconc a b c) (print a) (print b) (print c))",
-		"(1 2 3 . chel)\n(2 3 . chel)\n(3 . chel)\n"
-	);*/
+	test_output(
+		"(progn (setq lst '(1 (2 3) (2 . 3) a nil 4 5)) (loop ((not (car lst)) (cdr lst)) (print lst) (setq lst (cdr lst))))",
+		"(1 (2 3) (2 . 3) A NIL 4 5)\n((2 3) (2 . 3) A NIL 4 5)\n((2 . 3) A NIL 4 5)\n(A NIL 4 5)\n");
 }
 
 //макросы
@@ -505,6 +588,7 @@ void macros() {
 	simple_core_assert("(defmacro kek)", nil_str);
 	simple_core_assert("(defmacro kek (x))", "KEK");
 	simple_core_assert("(defmacro setqq (x y) (list 'setq x (list 'quote y)))", "SETQQ");
+	simple_core_assert("(progn (defmacro kek (a 's d) d) (kek 1 2 3))", "3");
 	simple_core_assert("(progn (setq nekok chel) (defmacro setqq (x y) (list 'setq x (list 'quote y))) (setqq kok nekok) kok)", "NEKOK");
 	simple_core_assert(
 		"(progn (defmacro macrocdr (X N) (cond ((eq N 0) (print x) a) (T (append (list 'macrocdr) (list (cdr X)) (list (- N 1)))))) (macrocdr (q w e r) 2))",
@@ -626,6 +710,8 @@ void test_bifuncs() {
 	RUN(tester, calcfun);
 	RUN(tester, control_calc);
 	RUN(tester, io);
+	RUN(tester, id_repr);
+	RUN(tester, id_func);
 	RUN(tester, dotpairs);
 	RUN(tester, macros);
 	RUN(tester, xz_chto_za_categoria);

@@ -36,7 +36,7 @@ public:
 private:
 	SExprsFarm& t_farm;
 	mp t_glonal;
-	std::deque<std::pair<frame, std::vector<Cell>>> t_stack;
+	std::deque<std::pair<frame, std::deque<Cell>>> t_stack;
 	std::unordered_map<Symbol, std::vector<Cell*>> t_all_in_stack;
 };
 

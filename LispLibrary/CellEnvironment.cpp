@@ -33,7 +33,7 @@ void CellEnvironment::push(frame&& rh)
 
 void CellEnvironment::push(const frame& rh)
 {
-	t_stack.push_back({ move(rh), {} });
+	t_stack.push_back({ rh, {} });
 	auto& [s, c] = t_stack.back().first;
 	auto [it_s, end_s] = s;
 	auto [it_c, end_c] = c;
