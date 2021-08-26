@@ -52,7 +52,7 @@ namespace CoreData {
 	const static char* const nlambda_str = "NLAMBDA";
 	const static char* const macro_str = "MACRO";
 
-	const static auto bifuncs_count = 34;
+	const static auto bifuncs_count = 41;
 	const static auto nbifuncs_count = 3;
 
 	const static auto special_bifuncs_count = 6;

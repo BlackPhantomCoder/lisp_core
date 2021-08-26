@@ -75,9 +75,6 @@
     <ClInclude Include="CellEnvironment.h">
       <Filter>Файлы заголовков\Core\Env</Filter>
     </ClInclude>
-    <ClInclude Include="PublicCoreEnvironmentProvider.h">
-      <Filter>Файлы заголовков\Core\Env</Filter>
-    </ClInclude>
     <ClInclude Include="CoreEnv.h">
       <Filter>Файлы заголовков\Core\Env</Filter>
     </ClInclude>
@@ -177,9 +174,6 @@
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="CoreEnvStreamsProvider.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
-    <ClCompile Include="PublicCoreEnvironmentProvider.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="PredLispFuncs.cpp">

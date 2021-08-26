@@ -5,6 +5,7 @@
 #include <functional>
 
 #include "test_runner.h"
+#include "profile.h"
 
 namespace NATests {
     //Тест функции
@@ -41,6 +42,7 @@ namespace NATests {
             test_result result = { test_name };
             if (cath_exceptions) {
                 try {
+                    //LogDuration d;
                     func();
                     result.fail = false;
                 }
@@ -55,6 +57,7 @@ namespace NATests {
             }
             else {
                 try {
+                    //LogDuration d;
                     func();
                     result.fail = false;
                 }

@@ -39,5 +39,4 @@ void FuncsEvaler::clear()
 		t_frames.pop_back();
 	}
     t_frames.shrink_to_fit();
-    //CoreData::funcs_pools_clear();
 }

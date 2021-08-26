@@ -6,20 +6,22 @@ class CoreInputStreamInt
 {
 public:
 	virtual ~CoreInputStreamInt() = default;
-	virtual bool alive() const = 0;
-	virtual bool ready() const = 0;
+	bool alive() const;
 
-	std::string get_line();
+	
+	//std::string get_line();
 	virtual CoreData::stream_read_mode get_mode() const = 0;
 
-	void unread_last_line();
-	void erase_atlast(size_t val);
-	const std::string& last_line();
+	char peek_char();
+	char get_char();
+	void unread_last();
+	bool is_unreaded() const;
 protected:
-	virtual std::string t_read_line() = 0;
-	void t_clear_last();
+	virtual char t_read_char() = 0;
+	virtual char t_peek_char() = 0;
+	virtual bool t_alive() const = 0;
 private:
-	std::string t_last;
+	char t_last;
 	bool t_unreaded;
 };
 

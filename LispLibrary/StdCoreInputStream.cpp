@@ -5,26 +5,35 @@ StdCoreInputStream::StdCoreInputStream(std::istream& input, CoreData::stream_rea
     t_stream(input),
     t_mode(mode)
 {
-}
-
-bool StdCoreInputStream::alive() const
-{
-    return bool(t_stream.get());
-}
-
-bool StdCoreInputStream::ready() const
-{
-    return bool(t_stream.get());
-}
-
-std::string StdCoreInputStream::t_read_line()
-{
-    std::string buf;
-    getline(t_stream.get(), buf);
-    return buf;
+    //t_buf = input.get();
 }
 
 CoreData::stream_read_mode StdCoreInputStream::get_mode() const
 {
     return t_mode;
+}
+
+char StdCoreInputStream::t_read_char()
+{
+    if (!alive()) throw "empty stream";
+    /*auto buf = t_buf;
+    t_buf = t_stream.get().get();
+    return buf;*/
+    auto buf = t_stream.get().get();
+    if (!alive()) buf = ' ';
+    return buf;
+}
+
+char StdCoreInputStream::t_peek_char()
+{
+    if (!alive()) throw "empty stream";
+    auto buf = t_stream.get().get();
+    if (!alive()) buf = ' ';
+    t_stream.get().unget();
+    return buf;
+}
+
+bool StdCoreInputStream::t_alive() const
+{
+    return bool(t_stream.get());
 }

@@ -19,28 +19,22 @@ using namespace CoreData;
 
 void cin_execute_kostil_repl(CoreInputStreamInt& is) {
     cin.get();
-    auto core = make_core_w_predfuncs(cin, stream_read_mode::new_string, cout);
-    if (is.ready()) 
+    auto core = make_core_w_predfuncs();
     {
-        core.execute_all(is);
-    }
-
-    //auto [result_reason2, result2] = core.execute("(loop (print (eval (progn (print '>) (read)))))");
-    StdCoreInputStream s(cin, stream_read_mode::new_string);
-    while (cin)
-    {
-        cout << "> ";
-        Core::result_type result_reason = Core::result_type::success;
-        string result;
+        auto os = ostringstream();
+        auto out = StdCoreOutputStream(os);
+        auto streams = RefCESP(is, out);
+        if (is.alive())
         {
-            string str;
-            getline(cin, str);
-            LogDuration a;
-            auto [result_reason2, result2] = core.execute_one(str);
-            result = move(result2);
-            result_reason = result_reason2;
+            core.execute_all(streams);
         }
-        cout << result_reason << ", " << result << endl;
+    }
+    //auto is = istringstream("(loop (print (eval (progn (print '>) (read)))))");
+    {
+        auto s = StdCoreInputStream(cin, stream_read_mode::new_string);
+        auto out = StdCoreOutputStream(cout);
+        auto streams = RefCESP(s, out);
+        auto b = core.execute_driver(streams);
     }
 }
 

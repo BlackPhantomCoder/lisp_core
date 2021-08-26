@@ -1,6 +1,7 @@
 #include "CoreEnv.h"
 #include "Funcs.h"
 #include "ArgsCounter.h"
+#include "profile.h"
 
 #include <iostream>
 #include <algorithm>
@@ -115,7 +116,7 @@ Cell CoreEnvironment::numbers_compare(iter b, iter e, numbers_compare_type type)
 void CoreEnvironment::t_clear()
 {
     t_envs.clear_subenvs();
-    t_funcs_evaler.clear();
+    //t_funcs_evaler.clear();
 
     t_clear_mem();
 }
@@ -134,7 +135,6 @@ void support_funcs::set_value(const Cell& name, const Cell& val)
         //special vars
         if (symb == to_symbol(env->t_farm.read_up_case_symbol())) {
             bool val_b = !is_null(val);
-            env->t_syntaxer.set_upcase_mode(val_b);
             env->t_output_control.set_read_upcase(val_b);
         }
     }
@@ -162,46 +162,70 @@ CoreEnvironment::CoreEnvironment():
     t_farm(*this),
     t_funcs(t_farm),
     t_streams(nullopt),
-    t_syntaxer(t_farm),
+    t_syntaxer(*this),
     t_output_control(t_farm),
-    t_funcs_evaler(this),
+    //t_funcs_evaler(this),
     t_envs(t_farm),
     t_support{ this }
 {
 }
 
-CoreEnvironment::CoreEnvironment(CoreEnvStreamsProvider& streams) :
+CoreEnvironment::CoreEnvironment(CoreEnvStreamsProviderInt& streams) :
     CoreEnvironment()
 {
     t_streams = streams;
 }
 
-std::vector<std::string> CoreEnvironment::execute_all(CoreInputStreamInt& stream, const IMutexed<bool>& stop_flag)
+void CoreEnvironment::execute_all(CoreEnvStreamsProviderInt& streams, const IMutexed<bool>& stop_flag)
 {
-    t_stop_flag = { stop_flag };
+    t_prepare(streams, stop_flag);
     std::vector<std::string> result;
-    auto s = t_syntaxer.read_sexprs_stream(stream);
-    while (s.ready())
-    {
-        auto [reason, c] = s.read();
-        if (reason == read_reason::empty_input) {
-            break;
-        }
-        if (reason != read_reason::success) {
-            throw "input error";
-        }
-        result.emplace_back(t_output_control.to_string(t_execute(c)));
+    while (streams.t_input_stream().alive()) {
+        t_execute();
     }
-    return result;
 }
 
-std::string CoreEnvironment::execute_one(CoreInputStreamInt& stream, const IMutexed<bool>& stop_flag)
+void CoreEnvironment::execute_one(CoreEnvStreamsProviderInt& streams, const IMutexed<bool>& stop_flag)
 {
-    t_stop_flag = { stop_flag };
-    auto [read_reason, c] = t_syntaxer.read_sexpr(stream);
-    if (read_reason != read_reason::success) throw "input error";
+    t_prepare(streams, stop_flag);
+    t_execute();
+}
 
-    return t_output_control.to_string(t_execute(c));
+void CoreEnvironment::execute_driver(CoreEnvStreamsProviderInt& streams, const IMutexed<bool>& stop_flag)
+{
+    t_prepare(streams, stop_flag);
+    while(t_cis->get().alive())
+    {
+        try
+        {
+            t_cos->get().out_without_new_line("> ");
+            auto c = t_syntaxer.read_sexpr();
+            auto a = DurationFunc([this](std::chrono::milliseconds time) {
+                t_cos->get().out_new_line(": " + to_string(time.count()) + " ms");
+            });
+            if (!(!t_cis->get().alive() && is_symbol(c) && t_output_control.to_string_raw(c) == "")) {
+                t_cos->get().out_new_line(t_output_control.to_string(t_execute(c)));
+            }
+        }
+        catch (const char* str)
+        {
+            streams.t_output_stream().out_new_line("error: "s + str);
+            t_clear();
+        }
+        catch (const std::string& str)
+        {
+            streams.t_output_stream().out_new_line("error: "s + str);
+            t_clear();
+        }
+        catch (...)
+        {
+            t_clear();
+
+            throw;
+        }
+
+    }
+    
 }
 
 const CellEnvironment::mp& CoreEnvironment::vars() const
@@ -209,13 +233,31 @@ const CellEnvironment::mp& CoreEnvironment::vars() const
     return t_envs.get_globals();
 }
 
-void CoreEnvironment::set_streams(CoreEnvStreamsProvider& streams)
+void CoreEnvironment::set_streams(CoreEnvStreamsProviderInt& streams)
 {
     t_streams = streams;
 }
 
+void CoreEnvironment::t_prepare(CoreEnvStreamsProviderInt& streams, const IMutexed<bool>& stop_flag)
+{
+    t_streams = streams;
+    t_stop_flag = { stop_flag };
+    t_cis = t_streams->get().t_input_stream();
+    t_cos = t_streams->get().t_output_stream();
+}
+
+void CoreEnvironment::t_execute()
+{
+    auto c = t_syntaxer.read_sexpr();
+    if (!(!t_cis->get().alive() && is_symbol(c) && t_output_control.to_string_raw(c) == "")) {
+        t_cos->get().out_new_line(t_output_control.to_string(t_execute(c)));
+    }
+    
+}
+
 Cell CoreEnvironment::t_execute(Cell& arg)
 {
+    auto t_funcs_evaler = FuncsEvaler(this);
     #ifdef EX_CATCH
     try
     {
@@ -224,6 +266,10 @@ Cell CoreEnvironment::t_execute(Cell& arg)
     catch (std::bad_alloc&) {
         t_clear();
         throw "stack overflow";
+    }
+    catch (break_helper& e) {
+        t_clear();
+        throw "break: " + e.s;
     }
     catch (...)
     {
@@ -490,9 +536,12 @@ Cell CoreEnvironment::bifunc_getd(iter b, iter e)
 Cell CoreEnvironment::bifunc_read(iter b, iter e) {
     if (t_streams) {
         // stop input?
-        auto [reason, cell] = t_syntaxer.read_sexpr((*t_streams).get().t_input_stream());
-        if (reason == read_reason::success) { return cell; }
-        else return t_farm.nil();
+        t_cis = t_streams->get().t_input_stream();
+        auto c = t_syntaxer.read_sexpr();
+        //auto [reason, cell] = t_syntaxer.read_sexpr((*t_streams).get().t_input_stream());
+        //if (reason == read_reason::success) { return cell; }
+        //else return t_farm.nil();
+        return c;
     }
     return t_farm.nil();
     //if (t_stop_flag && (*t_stop_flag).get(iter b, iter e).get(iter b, iter e)) throw throw_stop_helper{};
@@ -682,11 +731,17 @@ Cell CoreEnvironment::bifunc_rplaca(iter b, iter e)
     Cell s1 = (ArgsCounter{b, e} >= 1) ? arg1 : t_farm.nil();
     Cell s2 = (ArgsCounter{b, e} >= 2) ? arg2 : t_farm.nil();
 
-    if (!is_symbol(s1) && !is_null_list(to_list(s1))) {
+    if (is_null(s1) || is_number(s1)) {
+        return t_farm.nil();
+    }
+    else if (is_symbol(s1)) {
+        t_support.set_value(s1, s2);
+        return s1;
+    }
+    else {
         rplaca(to_list(s1), s2);
         return s1;
     }
-    return t_farm.nil();
 }
 
 Cell CoreEnvironment::bifunc_rplacd(iter b, iter e)
@@ -699,6 +754,17 @@ Cell CoreEnvironment::bifunc_rplacd(iter b, iter e)
         return s1;
     }
     return t_farm.nil();
+
+    if (is_null(s1) || is_number(s1)) {
+        return t_farm.nil();
+    }
+    else if (is_symbol(s1)) {
+        throw "rplacd: property list not available";
+    }
+    else {
+        rplacd(to_list(s1), s2);
+        return s1;
+    }
 }
 
 Cell CoreEnvironment::bifunc_copy_tree(iter b, iter e)
@@ -738,4 +804,65 @@ Cell CoreEnvironment::bifunc_unpack(iter b, iter e)
         buf.push_back(t_farm.make_symbol_cell(string() + c));
     }
     return t_farm.make_list_cell(begin(buf), end(buf));
+}
+
+Cell CoreEnvironment::bifunc_read_char(iter b, iter e)
+{
+    return t_syntaxer.read_char((ArgsCounter{ b, e } >= 1) ? arg1 : t_farm.nil());
+}
+
+Cell CoreEnvironment::bifunc_unread_char(iter b, iter e)
+{
+    t_syntaxer.unread_char();
+    return t_farm.nil();
+}
+
+Cell CoreEnvironment::bifunc_peek_char(iter b, iter e)
+{
+    return t_syntaxer.peek_char((ArgsCounter{ b, e } >= 1) ? arg1 : t_farm.nil());
+}
+
+Cell CoreEnvironment::bifunc_listen(iter b, iter e)
+{
+    return bool_cast(t_cis->get().alive(), t_farm);
+}
+
+Cell CoreEnvironment::bifunc_break(iter b, iter e)
+{
+    throw break_helper{ t_output_control.to_string((ArgsCounter{ b, e } >= 1) ? arg1 : t_farm.nil()) };
+}
+
+Cell CoreEnvironment::bifunc_get_macro_char(iter b, iter e)
+{
+    if (b == e || !is_symbol(arg1)) return t_farm.nil();
+    auto flag = (ArgsCounter{ b, e } >= 2) ? arg2 : t_farm.nil();
+    auto raw = t_output_control.to_string_raw(arg1);
+    if(raw.size() > 1) return t_farm.nil();
+    if(!t_syntaxer.get_macrochars().is_macro_char(raw[0])) return t_farm.nil();
+    if (auto var = t_syntaxer.get_macrochars().get_macro_char(raw[0]); holds_alternative<Cell>(var)) {
+        if (!is_null(flag)) return t_farm.make_symbol_cell("LAMBDA");
+        return get<Cell>(var);
+    }
+    return t_farm.nil();
+    
+}
+
+Cell CoreEnvironment::bifunc_set_macro_char(iter b, iter e)
+{
+    if (b == e || !is_symbol(arg1)) return t_farm.nil();
+    auto defenition = (ArgsCounter{ b, e } >= 2) ? arg2 : t_farm.nil();
+    auto flag = (ArgsCounter{ b, e } >= 3) ? arg3 : t_farm.nil();
+    if (!is_list(defenition) || is_null(defenition)) return t_farm.nil();
+    auto raw = t_output_control.to_string_raw(arg1);
+    if (raw.size() > 1) return t_farm.nil();
+
+
+    if (is_symbol(flag) && to_symbol(flag) == t_farm.make_symbol("COMMENT")) {
+        throw "";
+    }
+    else {
+        t_syntaxer.get_macrochars().set_macro_char(raw[0], defenition);
+    }
+    
+    return t_farm.make_symbol_cell(T_str);
 }

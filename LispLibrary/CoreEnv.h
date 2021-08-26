@@ -20,6 +20,10 @@
 #include <optional>
 #include <functional>
 
+struct break_helper {
+	std::string s;
+};
+
 struct support_funcs {
 
 	lambda make_spread_lambda_form(
@@ -65,6 +69,8 @@ class  CoreEnvironment {
 	friend class SExprsFarm;
 	friend class LambdaEvaler;
 	friend class BifuncEvaler;
+	friend class Syntaxer;
+	friend class read_helper;
 
 	friend class FuncsEvaler;
 
@@ -79,17 +85,20 @@ class  CoreEnvironment {
 	friend class Func;
 public:
 	CoreEnvironment();
-	CoreEnvironment(CoreEnvStreamsProvider& streams);
+	CoreEnvironment(CoreEnvStreamsProviderInt& streams);
 	~CoreEnvironment() = default;
 
-	std::vector<std::string> execute_all(CoreInputStreamInt& stream, const IMutexed<bool>& stop_flag);
-	std::string execute_one(CoreInputStreamInt& stream, const IMutexed<bool>& stop_flag);
+	void execute_all(CoreEnvStreamsProviderInt& streams, const IMutexed<bool>& stop_flag);
+	void execute_one(CoreEnvStreamsProviderInt& streams, const IMutexed<bool>& stop_flag);
+	void execute_driver(CoreEnvStreamsProviderInt& streams, const IMutexed<bool>& stop_flag);
 	const CellEnvironment::mp& vars() const;
 
-	void set_streams(CoreEnvStreamsProvider& streams);
+	void set_streams(CoreEnvStreamsProviderInt& streams);
 private:
 	using iter = CarCdrIterator;
 private:
+	void t_prepare(CoreEnvStreamsProviderInt& streams, const IMutexed<bool>& stop_flag);
+	void t_execute();
 	Cell t_execute(Cell& arg);
 	void t_clear_mem();
 
@@ -128,6 +137,15 @@ private:
 	Cell bifunc_pack(iter b, iter e);
 	Cell bifunc_unpack(iter b, iter e);
 
+	Cell bifunc_read_char(iter b, iter e);
+	Cell bifunc_unread_char(iter b, iter e);
+	Cell bifunc_peek_char(iter b, iter e);
+	Cell bifunc_listen(iter b, iter e);
+	Cell bifunc_break(iter b, iter e);
+
+	Cell bifunc_get_macro_char(iter b, iter e);
+	Cell bifunc_set_macro_char(iter b, iter e);
+
 	Cell nbifunc_quote(iter b, iter e);
 	Cell nbifunc_defun(iter b, iter e);
 	Cell nbifunc_defmacro(iter b, iter e);
@@ -138,7 +156,7 @@ private:
 	void t_clear();
 private:
 	SExprsFarm t_farm;
-	std::optional<std::reference_wrapper<CoreEnvStreamsProvider>> t_streams;
+	std::optional<std::reference_wrapper<CoreEnvStreamsProviderInt>> t_streams;
 	FuncsStorage t_funcs;
 
 	CellEnvironment t_envs;
@@ -147,6 +165,9 @@ private:
 	Syntaxer t_syntaxer;
 	OutputController t_output_control;
 
-	FuncsEvaler t_funcs_evaler;
+	//FuncsEvaler t_funcs_evaler;
 	support_funcs t_support;
+
+	std::optional<std::reference_wrapper<CoreInputStreamInt>> t_cis;
+	std::optional<std::reference_wrapper<CoreOutputStreamInt>> t_cos;
 };

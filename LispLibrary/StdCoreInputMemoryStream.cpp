@@ -7,6 +7,7 @@ vector<string> make_lines(std::istream& input) {
     vector<string> result;
     std::string s;
     while (getline(input, s)) {
+        //s += '\n';
         result.push_back(move(s));
     }
     return result;

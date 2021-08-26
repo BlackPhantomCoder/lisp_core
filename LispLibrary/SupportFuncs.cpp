@@ -97,10 +97,10 @@ CellEnvironment::frame EvalLambda::t_create_frame()
             buf.second = { begin(t_temp), end(t_temp) };
         }
         else {
-            t_temp = t_farm().make_list_cell(
+            t_temp = t_farm().make_list_cell(t_farm().make_list_cell(
                 get<pair<CarCdrIterator, CarCdrIterator>>(t_args).first,
                 get<pair<CarCdrIterator, CarCdrIterator>>(t_args).second
-            );
+            ));
             buf.first = { begin(t_costil_param), end(t_costil_param) };
             buf.second = { begin(t_temp), end(t_temp) };
         }

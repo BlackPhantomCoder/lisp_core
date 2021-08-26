@@ -56,6 +56,13 @@ bifuncs_array CoreData::bifunc_setup()
         make_pair("RPLACA", &CoreEnvironment::bifunc_rplaca),
         make_pair("RPLACD", &CoreEnvironment::bifunc_rplacd),
         make_pair("COPY-TREE", &CoreEnvironment::bifunc_copy_tree),
+        make_pair("READ-CHAR", &CoreEnvironment::bifunc_read_char),
+        make_pair("UNREAD-CHAR", &CoreEnvironment::bifunc_unread_char),
+        make_pair("PEEK-CHAR", &CoreEnvironment::bifunc_peek_char),
+        make_pair("LISTEN", &CoreEnvironment::bifunc_listen),
+        make_pair("BREAK", &CoreEnvironment::bifunc_break),
+        make_pair("GET-MACRO-CHAR", &CoreEnvironment::bifunc_get_macro_char),
+        make_pair("SET-MACRO-CHAR", &CoreEnvironment::bifunc_set_macro_char)
     };
 }
 

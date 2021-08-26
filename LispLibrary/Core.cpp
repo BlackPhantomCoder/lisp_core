@@ -13,40 +13,31 @@ using namespace CoreData;
 
 Core::Core(Core&& rh) noexcept:
     t_env(move(rh.t_env)),
-    t_stop(move(rh.t_stop)),
-    t_streams(move(rh.t_streams))
+    t_stop(move(rh.t_stop))
 {
 
 }
 
 Core::Core(
-    CoreInputStreamInt& predfuncs,
-    std::unique_ptr<CoreEnvStreamsProvider>&& streams,
+    CoreEnvStreamsProviderInt& predfuncs,
     std::unique_ptr<IMutexed<bool>>&& custom_mutex
 ):
-    Core(move(streams), move(custom_mutex))
+    Core(move(custom_mutex))
 {
     this->execute_all(predfuncs);
 }
 
-Core::Core(std::unique_ptr<CoreEnvStreamsProvider>&& streams, std::unique_ptr<IMutexed<bool>>&& custom_mutex):
-    Core(move(streams))
+Core::Core(std::unique_ptr<IMutexed<bool>>&& custom_mutex) :
+    Core()
 {
     t_stop = move(custom_mutex);
     t_stop->set(false);
 }
 
-Core::Core(CoreInputStreamInt& predfuncs, std::unique_ptr<CoreEnvStreamsProvider>&& streams) :
-    Core(move(streams))
-{
-    this->execute_all(predfuncs);
-}
-
-Core::Core(std::unique_ptr<CoreEnvStreamsProvider>&& streams) :
+Core::Core(CoreEnvStreamsProviderInt& predfuncs):
     Core()
 {
-    t_streams = move(streams);
-    t_env->set_streams(*t_streams);
+    this->execute_all(predfuncs);
 }
 
 Core::Core() :
@@ -62,111 +53,124 @@ Core::~Core()
     }
 }
 
-CoreEnvStreamsProvider& Core::streams()
-{
-    return *t_streams.get();
-}
-
-std::pair<Core::result_type, std::vector<std::string>> Core::execute_all(CoreInputStreamInt& input_s)
+Core::result_type Core::execute_all(CoreEnvStreamsProviderInt& streams)
 {
     if (t_stop->get()) {
         t_stop->set(false);
     }
     bool success = true;
-    std::vector<std::string> result;
 
     #ifndef EX_CATCH
-        result = t_env->execute_all(input_s, *t_stop);;
+    t_env->execute_all(streams, *t_stop);;
     #endif
 
     #ifdef EX_CATCH
         try
         {
-            result = t_env->execute_all(input_s, *t_stop);
+           t_env->execute_all(streams, *t_stop);
         }
         catch (const char* str)
         {
             success = false;
-            result = { str };
+            streams.t_output_stream().out_new_line("error: "s + str);
         }
         catch (const std::string& str)
         {
             success = false;
-            result = { str };
+            streams.t_output_stream().out_new_line("error: "s + str);
         }
         catch (const throw_stop_helper&)
         {
-            return { Core::result_type::stopped, {""} };
+            return Core::result_type::stopped;
         }
         catch (...)
         {
             success = false;
-            result = { "unknown error (wrong catch)" };
+            streams.t_output_stream().out_new_line("error: "s + "unknown");
         }
     #endif
-    if (!success) return { Core::result_type::fail, std::move(result) };
-    return{ Core::result_type::success, std::move(result) };
+    if (!success) return Core::result_type::fail;
+    return Core::result_type::success;
 }
 
-std::pair<Core::result_type, std::vector<std::string>> Core::execute_all(const std::string& input)
-{
-    stringstream s(input);
-    StdCoreInputStream sc(s, stream_read_mode::new_string);
-    return execute_all(sc);
-}
-
-std::pair<Core::result_type, std::string> Core::execute_one(CoreInputStreamInt& input_s)
+Core::result_type Core::execute_one(CoreEnvStreamsProviderInt& streams)
 {
     if (t_stop->get()) {
         t_stop->set(false);
     }
     bool success = true;
-    std::string result;
-
 
     #ifndef EX_CATCH
-        result = t_env->execute_one(input_s, *t_stop);
+        t_env->execute_one(streams, *t_stop);
     #endif
 
     #ifdef EX_CATCH
         try
         {
-            result = t_env->execute_one(input_s, *t_stop);
+            t_env->execute_one(streams, *t_stop);
         }
         catch (const char* str)
         {
             success = false;
-            result = str;
+            streams.t_output_stream().out_new_line("error: "s + str);
         }
         catch (const std::string& str)
         {
             success = false;
-            result = { str };
+            streams.t_output_stream().out_new_line("error: "s + str);
         }
         catch (const throw_stop_helper&)
         {
-            return { Core::result_type::stopped, "" };
+            return Core::result_type::stopped;
         }
         catch (...)
         {
             success = false;
-            result = "unknown error (wrong catch)";
+            streams.t_output_stream().out_new_line("error: "s + "unknown");
         }
     #endif
-    if (!success) return { Core::result_type::fail, std::move(result) };
-    return{ Core::result_type::success, std::move(result) };
+        if (!success) return Core::result_type::fail;
+        return Core::result_type::success;
 }
 
-std::pair<Core::result_type, std::string> Core::execute_one(const std::string& input)
+Core::result_type Core::execute_driver(CoreEnvStreamsProviderInt& streams)
 {
-    stringstream s(input);
-    StdCoreInputStream sc(s, stream_read_mode::new_string);
-    return execute_one(sc);
-}
+    if (t_stop->get()) {
+        t_stop->set(false);
+    }
+    bool success = true;
 
-const CoreEnvironment& Core::get() const
-{
-    return *t_env;
+    #ifndef EX_CATCH
+        t_env->execute_driver(streams, *t_stop);
+    #endif
+        
+    #ifdef EX_CATCH
+        try
+        {
+            t_env->execute_driver(streams, *t_stop);
+        }
+        catch (const char* str)
+        {
+            success = false;
+            streams.t_output_stream().out_new_line("error: "s + str);
+        }
+        catch (const std::string& str)
+        {
+            success = false;
+            streams.t_output_stream().out_new_line("error: "s + str);
+        }
+        catch (const throw_stop_helper&)
+        {
+            return Core::result_type::stopped;
+        }
+        catch (...)
+        {
+            success = false;
+            streams.t_output_stream().out_new_line("error: "s + "unknown");
+        }
+    #endif
+    if (!success) return Core::result_type::fail;
+    return Core::result_type::success;
 }
 
 void Core::stop()
@@ -193,33 +197,4 @@ std::string to_string(Core::result_type rt) {
 std::ostream& operator<<(std::ostream& s, Core::result_type rt) {
     s << to_string(rt);
     return s;
-}
-
-std::pair<Core, std::unique_ptr<empty_streams>> make_core_w_empty_streams()
-{
-    auto s = std::make_unique<empty_streams>();
-    return std::pair<Core, std::unique_ptr<empty_streams>>{
-        std::piecewise_construct_t(),
-        std::forward_as_tuple(
-            make_unique<CoreEnvStreamsProvider>(
-                make_unique<StdCoreInputStream>(s->in, stream_read_mode::new_string), make_unique<StdCoreOutputStream>(s->out)
-            )
-        ),
-        std::forward_as_tuple(move(s)) 
-    };
-}
-
-std::pair<Core, std::unique_ptr<empty_streams>> make_core_w_empty_streams(std::unique_ptr<IMutexed<bool>>&& custom_mutex)
-{
-    auto s = std::make_unique<empty_streams>();
-    return std::pair<Core, std::unique_ptr<empty_streams>>{
-        std::piecewise_construct_t(),
-        std::forward_as_tuple(
-            make_unique<CoreEnvStreamsProvider>(
-                make_unique<StdCoreInputStream>(s->in, stream_read_mode::new_string), make_unique<StdCoreOutputStream>(s->out)
-            ),
-            move(custom_mutex)
-        ),
-        std::forward_as_tuple(move(s)) 
-    };
 }

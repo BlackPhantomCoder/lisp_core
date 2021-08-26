@@ -78,7 +78,7 @@ std::string OutputController::t_to_string_list(const Cell& d)
 }
 
 const std::unordered_set<char> skip_symbols = { ' ', '\t' };
-const std::unordered_set<char> specital_single_symbols = { '.', ',', '|', '\\', '\"', '\'', '`' };
+const std::unordered_set<char> specital_single_symbols = { '.', ',', '|', '\\', '\"', '\'', '`', '(', ')' };
 
 std::string OutputController::t_to_string(const Symbol& s)
 {

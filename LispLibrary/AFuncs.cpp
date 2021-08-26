@@ -67,7 +67,7 @@ bool Func::execute()
 
 void Func::push_next(Cell&& result)
 {
-    if (t_stage != stages::need_external) throw "";
+    if (t_stage != stages::need_external) throw "Func::push_next: wrong stage";
     t_buf = move(result);
 }
 

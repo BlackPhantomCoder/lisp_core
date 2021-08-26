@@ -166,7 +166,6 @@
     <ClInclude Include="OutputController.h" />
     <ClInclude Include="PoolDeleter.h" />
     <ClInclude Include="PredLispFuncs.h" />
-    <ClInclude Include="PublicCoreEnvironmentProvider.h" />
     <ClInclude Include="SExpr.h" />
     <ClInclude Include="SExprsFarm.h" />
     <ClInclude Include="StdCoreInputMemoryStream.h" />
@@ -201,7 +200,6 @@
     <ClCompile Include="Number.cpp" />
     <ClCompile Include="OutputController.cpp" />
     <ClCompile Include="PredLispFuncs.cpp" />
-    <ClCompile Include="PublicCoreEnvironmentProvider.cpp" />
     <ClCompile Include="SExpr.cpp" />
     <ClCompile Include="SExprsFarm.cpp" />
     <ClCompile Include="StdCoreInputMemoryStream.cpp" />

@@ -1,6 +1,34 @@
 #include "CoreEnvStreamsProvider.h"
 
-CoreEnvStreamsProvider::CoreEnvStreamsProvider(
+RefCESP::RefCESP(
+    CoreInputStreamInt& input, CoreOutputStreamInt& output
+):
+    t_input(input),
+    t_output(output)
+{
+}
+
+CoreInputStreamInt& RefCESP::t_input_stream()
+{
+    return t_input;
+}
+
+CoreOutputStreamInt& RefCESP::t_output_stream()
+{
+    return t_output;
+}
+
+const CoreInputStreamInt& RefCESP::t_input_stream() const
+{
+    return t_input;
+}
+
+const CoreOutputStreamInt& RefCESP::t_output_stream() const
+{
+    return t_output;
+}
+
+ValCESP::ValCESP(
     std::unique_ptr<CoreInputStreamInt>&& input, std::unique_ptr<CoreOutputStreamInt>&& output
 ):
     t_input(move(input)),
@@ -8,22 +36,22 @@ CoreEnvStreamsProvider::CoreEnvStreamsProvider(
 {
 }
 
-CoreInputStreamInt& CoreEnvStreamsProvider::t_input_stream()
+CoreInputStreamInt& ValCESP::t_input_stream()
 {
-    return *t_input.get();
+    return *t_input;
 }
 
-CoreOutputStreamInt& CoreEnvStreamsProvider::t_output_stream()
+CoreOutputStreamInt& ValCESP::t_output_stream()
 {
-    return *t_output.get();
+    return *t_output;
 }
 
-const CoreInputStreamInt& CoreEnvStreamsProvider::t_input_stream() const
+const CoreInputStreamInt& ValCESP::t_input_stream() const
 {
-    return *t_input.get();
+    return *t_input;
 }
 
-const CoreOutputStreamInt& CoreEnvStreamsProvider::t_output_stream() const
+const CoreOutputStreamInt& ValCESP::t_output_stream() const
 {
-    return *t_output.get();
+    return *t_output;
 }
