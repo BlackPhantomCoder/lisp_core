@@ -62,7 +62,6 @@ private:
 };
 
 
-#include <iostream>
 template<class T>
 void del_TFuncHolder(FuncHolder* ptr) {
 	auto* p = (TFuncHolder<T>*)(ptr);

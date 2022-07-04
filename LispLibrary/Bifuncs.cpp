@@ -32,7 +32,7 @@ void ProgN::t_init_after_args()
 
 void ProgN::t_execute_func()
 {
-    if (t_it == t_args_end()) return t_return(t_farm().nil());
+    if (t_it == t_args_end()) return t_return(t_env().farm().nil());
     //cout << "progn " << t_env.t_output_control.to_string(t_env.t_farm.make_list_cell(t_args_beg_it, t_args_end_it)) << endl;
     if(t_to_last) return t_to_last_f();
 
@@ -45,7 +45,7 @@ void ProgN::t_execute_func()
             return t_return(car(t_last_eval_val()));
         }
     }
-    if (is_implicit_cond(last, t_farm())) {
+    if (is_implicit_cond(last, t_env().farm())) {
         t_imp = true;
         return  t_eval_next(make_fnc<ImplicitCond>(t_env(), last));
     }
@@ -67,7 +67,7 @@ void ProgN::t_to_last_f()
         }
     }
     if (next(t_it) != t_args_end()) {
-        if (is_implicit_cond(*t_it, t_farm())) {
+        if (is_implicit_cond(*t_it, t_env().farm())) {
             t_imp = true;
             return  t_eval_next(make_fnc<ImplicitCond>(t_env(), *t_it));
         }
@@ -95,7 +95,7 @@ Eval::Eval(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args
 
 void Eval::t_execute_func()
 {
-    if (t_args_beg() == t_args_end()) return t_return(t_farm().nil());
+    if (t_args_beg() == t_args_end()) return t_return(t_env().farm().nil());
     return t_return_next(
         make_fnc<EvalQuote>(
             t_env(),
@@ -117,7 +117,7 @@ void Cond::t_init_after_args()
 
 void Cond::t_execute_func()
 {
-    if (t_it == t_args_end()) return t_return(t_farm().nil());
+    if (t_it == t_args_end()) return t_return(t_env().farm().nil());
     if (t_imp) {
         if (is_null(t_last_eval_val())) {
             t_imp = false;
@@ -153,7 +153,7 @@ void Cond::t_execute_func()
     }
 
     auto& elem = *t_it;
-    if (!is_implicit_cond(elem, t_farm())) {
+    if (!is_implicit_cond(elem, t_env().farm())) {
         if (!is_list(elem) || is_null_list(to_list(elem))) {
             ++t_it;
             return t_cycle();
@@ -172,7 +172,7 @@ Prog1::Prog1(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator ar
 
 void Prog1::t_execute_func()
 {
-    if (t_args_beg() == t_args_end()) return t_return(t_farm().nil());
+    if (t_args_beg() == t_args_end()) return t_return(t_env().farm().nil());
     //cout << "prog1 " << t_env.t_output_control.to_string(t_env.t_farm.make_list_cell(t_args_beg_it, t_args_end_it)) << endl;
     if (t_progn) {
         return t_return(t_result_buf);
@@ -197,7 +197,7 @@ void Prog1::t_execute_func()
         return t_eval_next(make_fnc<ProgN>(t_env(), next(t_args_beg()), t_args_end()));
     }
 
-    if (is_implicit_cond(*t_args_beg(), t_farm())) {
+    if (is_implicit_cond(*t_args_beg(), t_env().farm())) {
         t_imp = true;
         return t_eval_next(make_fnc<ImplicitCond>(t_env(), *t_args_beg()));
     }
@@ -214,7 +214,7 @@ Append::Append(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator 
 
 void Append::t_init_after_args()
 {
-    if (t_args_beg() == t_args_end()) t_return(t_farm().nil());
+    if (t_args_beg() == t_args_end()) t_return(t_env().farm().nil());
     t_it = t_args_beg();
     return t_cycle();
 }
@@ -224,12 +224,12 @@ void Append::t_execute_func()
     while (t_it != t_args_end() && (is_atom(*t_it) || is_null_list(to_list(*t_it)))) {
         ++t_it;
     }
-    if(t_it == t_args_end()) return t_return(t_farm().nil());
+    if(t_it == t_args_end()) return t_return(t_env().farm().nil());
     if(next(t_it) == t_args_end()) return t_return(*t_it);
     Cell s = *t_it;
     ++t_it;
     for(; t_it != t_args_end(); ++t_it){
-        s = append(s, *t_it, t_farm());
+        s = append(s, *t_it, t_env().farm());
     }
     return t_return(s);
 
@@ -257,7 +257,7 @@ void Loop::t_execute_func()
     }
 
     if(t_it == t_args_end()) t_it = t_args_beg();
-    if (is_implicit_cond(*t_it, t_farm())) {
+    if (is_implicit_cond(*t_it, t_env().farm())) {
         t_imp = true;
         return t_eval_next(make_fnc<ImplicitCond>(t_env(), *t_it++));
     }
@@ -284,11 +284,11 @@ void Apply::t_execute_func()
             auto& buf = arg2;
             return t_return_next(make_fnc<EvalFunc>(t_env(), arg1, begin(buf), end(buf), true));
         }
-        t_eval_buf = t_farm().make_list_cell({ arg1 });
+        t_eval_buf = t_env().farm().make_list_cell({ arg1 });
         return t_return_next(make_fnc<EvalQuote>(t_env(), t_eval_buf));
     }
     else {
-        t_eval_buf = t_farm().make_list_cell({ arg1 });
+        t_eval_buf = t_env().farm().make_list_cell({ arg1 });
         return t_return_next(make_fnc<EvalQuote>(t_env(), t_eval_buf));
     }
 }
@@ -300,10 +300,10 @@ SetQ::SetQ(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args
 
 void SetQ::t_init_after_args()
 {
-    if (t_args_beg() == t_args_end()) return t_return(t_farm().nil());
+    if (t_args_beg() == t_args_end()) return t_return(t_env().farm().nil());
     if (next(t_args_beg()) == t_args_end()) {
-        t_sup_funcs().set_value(*t_args_beg(), t_farm().nil());
-        return t_return(t_farm().nil());
+        t_env().support_funcs().set_value(*t_args_beg(), t_env().farm().nil());
+        return t_return(t_env().farm().nil());
     }
     t_it = next(t_args_beg());
     return t_cycle();
@@ -318,7 +318,7 @@ void SetQ::t_execute_func()
 
     auto t_val = t_last_eval_val();
 
-    t_sup_funcs().set_value(*t_args_beg(), t_val);
+    t_env().support_funcs().set_value(*t_args_beg(), t_val);
     if (t_it != t_args_end() && next(t_it, 1) != t_args_end()) {
         return t_return_next(make_fnc<SetQ>(t_env(), next(t_it, 1), t_args_end()));
     }
@@ -336,7 +336,7 @@ MacroExpand1::MacroExpand1(CoreEnvironment& env, CarCdrIterator args_beg_it, Car
 
 void MacroExpand1::t_init_after_args()
 {
-    if (t_args_beg() == t_args_end()) t_return(t_farm().nil());
+    if (t_args_beg() == t_args_end()) t_return(t_env().farm().nil());
 }
 
 void MacroExpand1::t_execute_func()
@@ -365,7 +365,7 @@ MacroExpand::MacroExpand(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCd
 
 void MacroExpand::t_init_after_args()
 {
-    if (t_args_beg() == t_args_end()) t_return(t_farm().nil());
+    if (t_args_beg() == t_args_end()) t_return(t_env().farm().nil());
 }
 
 void MacroExpand::t_execute_func()
@@ -393,8 +393,8 @@ MapCar::MapCar(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator 
 
 void MapCar::t_init_after_args()
 {
-    if (t_args_beg() == t_args_end()) return  t_return(t_farm().nil());
-    if (next(t_args_beg()) == t_args_end())return  t_return(t_farm().nil());
+    if (t_args_beg() == t_args_end()) return  t_return(t_env().farm().nil());
+    if (next(t_args_beg()) == t_args_end())return  t_return(t_env().farm().nil());
     t_func = *t_args_beg();
 
     bool nil = false;
@@ -407,7 +407,7 @@ void MapCar::t_init_after_args()
             t_lists.push_back(*it);
         }
     }
-    if(nil) return t_return(t_farm().nil());
+    if(nil) return t_return(t_env().farm().nil());
 }
 
 void MapCar::t_execute_func()
@@ -418,7 +418,7 @@ void MapCar::t_execute_func()
     }
 
     if (t_finish) {
-        return t_return(t_farm().make_list_cell(begin(t_result), end(t_result)));
+        return t_return(t_env().farm().make_list_cell(begin(t_result), end(t_result)));
     }
 
     std::vector<Cell> buf;
@@ -432,7 +432,161 @@ void MapCar::t_execute_func()
             *it = cd;
         }
     }
-    t_buf = t_farm().make_list_cell(begin(buf), end(buf));
+    t_buf = t_env().farm().make_list_cell(begin(buf), end(buf));
     t_ev = true;
     return t_eval_next(make_fnc<EvalFunc>(t_env(), t_func, begin(t_buf), end(t_buf)));
+}
+
+Read::Read(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval_func):
+    RangeBiFunc(env, args_beg_it, args_end_it, forse_noeval_func),
+    t_hp(env)
+{
+    t_parser = yypstate_new();
+}
+
+void Read::t_execute_func()
+{
+    try
+    {
+        unsigned long parse_val;
+        bool macro_final = false;
+        auto code = 0;
+        auto val = optional<Cell>();
+
+        //если запрошен макрос
+        if (t_macro) {
+            t_macro = false;
+            val = t_last_eval_val();
+            //cout << t_env().output_control().to_string(*val) << endl;
+            
+           /*if (t_env().read_supp().read_final_supp.size() != t_last_finals_count) {
+                macro_final = true;
+                code = tokens::FinalMacro;
+            }
+            else {
+                code = tokens::Macro;
+            }*/
+            code = tokens::Macro;
+        }
+        else {
+
+            // получаем токен
+            tie(code, val) = t_env().scanner().lex();
+            // запрашиваем макрос
+            if (code == tokens::Macro) {
+                t_macro = true;
+                t_buf = *val;
+                //cout << t_env().output_control().to_string(*val) << endl;
+                return this->t_eval_next(make_fnc<EvalQuote>(t_env(), t_buf));
+            }
+        }
+        // сохран€ем Cell 
+        if (val) {
+            parse_val = t_hp.push_cell(*val);
+        }
+        // пушим
+        auto status = yypush_parse(t_parser, code, &parse_val, &t_hp);
+        // продолжаем пушить
+        if (status == tokens::YYPUSH_MORE) return t_cycle();
+        // если конец файла
+        if (code == 0 && status != 0) {
+            throw errors::eos{};
+        }
+        // синтаксическа€ ошибка
+        if(status != 0)  
+            throw errors::syntax_error{};
+        yypstate_delete(t_parser);
+        t_parser = nullptr;
+        // доп проверка на специальные макрочары
+        if (t_hp.is_saved_macro()) {
+            return t_return_next(make_fnc<EvalQuote>(t_env(), t_hp.get_saved()));
+        }
+        // возвращаем
+        return t_return(t_hp.get_saved());
+    }
+    catch (...) {
+        if (t_parser) {
+            yypstate_delete(t_parser);
+            t_parser = nullptr;
+        }
+        throw;
+    }
+}
+
+PeekChar::PeekChar(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval_func):
+    RangeBiFunc(env, args_beg_it, args_end_it, forse_noeval_func)
+{
+}
+
+void PeekChar::t_init_after_args()
+{
+    if (!t_env().input().alive()) throw "peek_char: empty stream";
+    if (is_symbol(arg1) && !is_null(arg1)) {
+        t_skip_comments = to_symbol(arg1) == CoreData::T_str;
+        if (!t_skip_comments) {
+            t_until = true;
+            auto raw = t_env().output_control().to_string_raw(arg1);
+            if (empty(raw)) throw "empty symbol";
+            t_until_char = raw[0];
+        }
+    }
+}
+
+
+//!!!!!
+//ƒл€ удобства программировани€ символ, выдаваемый PEEK-CHAR, кроме того, присваиваетс€ переменной RATOM
+void PeekChar::t_execute_func()
+{
+    //until_char
+    if (t_until_char) {
+        if (t_until_char_cycle) {
+            if (t_i == -1) {
+                //stream set eos
+                t_env().input().read_char();
+                throw errors::eos{};
+            }
+            auto ch = char(t_i);
+            while (ch != t_until_char) {
+                t_i = t_env().input().read_char();
+            }
+            t_env().input().unread_char();
+            return t_return(t_env().farm().make_symbol_cell(string() + t_until_char));
+        }
+        t_until_char_cycle = true;
+        t_i = t_env().input().read_char();
+        return t_cycle();
+    }
+    else {
+        //skip_comments | peek
+
+        if (t_skip_comments_cycle) {
+            if (t_i == -1) {
+                //stream set eos
+                t_env().input().read_char();
+                throw errors::eos{};
+            }
+            auto ch = char(t_i);
+            if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') {
+                t_env().input().read_char();
+                t_i = t_env().input().peek_char();
+                return t_cycle();
+            }
+            return t_return(t_env().farm().make_symbol_cell(string() + ch));
+        }
+
+        if (t_skip_comments) {
+            t_skip_comments_cycle = true;
+            t_i = t_env().input().peek_char();
+            return t_cycle();
+        }
+
+        auto i = t_env().input().peek_char();
+        if (i == -1) {
+            //stream set eos
+            t_env().input().read_char();
+            throw errors::eos{};
+        }
+
+        return t_return(t_env().farm().make_symbol_cell(string() + char(i)));
+    }
 }

@@ -1,10 +1,18 @@
 #include "CellEnvironment.h"
 #include "Funcs.h"
+#include "CoreEnv.h"
 using namespace std;
 
-CellEnvironment::CellEnvironment(SExprsFarm& farm):
-	t_farm(farm)
+CellEnvironment::CellEnvironment(CoreEnvironment& env) :
+	t_env(env)
 {
+}
+
+void CellEnvironment::init(std::optional<std::reference_wrapper<nlohmann::json>> state)
+{
+	if (state) {
+		load_state(*state);
+	}
 }
 
 void CellEnvironment::push(const frame& rh)
@@ -27,7 +35,7 @@ void CellEnvironment::push(const frame& rh)
 			++it_s;
 			continue;
 		}
-		t_stack.back().push_back({ to_symbol(*it_s++), t_farm.nil() });
+		t_stack.back().push_back({ to_symbol(*it_s++), t_env.farm().nil() });
 		t_all_in_stack[t_stack.back().back().first].push_back({ t_stack.size() - 1, t_stack.back().size() - 1});
 	}
 }
@@ -101,4 +109,25 @@ void CellEnvironment::clear_subenvs()
 		t_stack.pop_back();
 	}
 	t_stack.shrink_to_fit();
+}
+
+void CellEnvironment::save_state(nlohmann::json& j)
+{
+	auto& jglobals = j.emplace_back();
+
+	for (const auto& [symbol, val] : t_glonal) {
+		jglobals.emplace_back(symbol.to_string());
+		jglobals.emplace_back(val);
+	}
+
+}
+
+void CellEnvironment::load_state(const nlohmann::json& j)
+{
+	t_glonal.clear();
+	const auto& jglobals = j.at(0);
+
+	for (auto it = begin(jglobals); it != end(jglobals); it += 2) {
+		t_glonal[t_env.farm().make_symbol((*it).get<string>())] = t_env.cserial().in(*next(it));
+	}
 }

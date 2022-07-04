@@ -1,0 +1,41 @@
+digraph INITIAL {
+		rankdir=LR;
+		concentrate=true;
+		node [fontname="ArialNarrow"];
+		edge [fontname="Courier"];
+
+		init [root=true,peripheries=0,label="INITIAL",fontname="Courier"];
+		init ->s0;
+s0 [label=""]
+s0 -> s4 [label="[0, 8]"]
+s0 -> s6 [label="[9, 10]"]
+s0 -> s4 [label="[11, 12]"]
+s0 -> s6 [label="[13]"]
+s0 -> s4 [label="[14, 31]"]
+s0 -> s6 [label="[32]"]
+s0 -> s4 [label="[33]"]
+s0 -> s1 [label="[34]"]
+s0 -> s4 [label="[35, 38]"]
+s0 -> s4 [label="[42, 44]"]
+s0 -> s2 [label="[45]"]
+s0 -> s4 [label="[46, 47]"]
+s0 -> s3 [label="[48, 57]"]
+s0 -> s4 [label="[58]"]
+s0 -> s1 [label="[59]"]
+s0 -> s4 [label="[60, 91]"]
+s0 -> s5 [label="[92]"]
+s0 -> s4 [label="[94, 123]"]
+s0 -> s1 [label="[124]"]
+s0 -> s4 [label="[125, 255]"]
+s1 [label="non_macros",peripheries=2]
+s2 [label="numb_or_symbol",peripheries=2]
+s2 -> s3 [label="[48, 57]"]
+s3 [label="numb",peripheries=2]
+s4 [label="symbol",peripheries=2]
+s5 [label=""]
+s5 -> s4 [label="[0, 255]"]
+s6 [label="witespace",peripheries=2]
+s6 -> s6 [label="[9, 10]"]
+s6 -> s6 [label="[13]"]
+s6 -> s6 [label="[32]"]
+}

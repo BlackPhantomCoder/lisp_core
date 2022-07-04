@@ -4,7 +4,9 @@
 #include "CoreEnvStreamsProvider.h"
 #include "CellEnvironment.h"
 #include "CoreData.h"
-#include "Lexer.h"
+#include "Input.h"
+#include "Input/MacroTable.h"
+#include "Input/Scanner.h"
 #include "SExprsFarm.h"
 
 #include "FuncsStorage.h"
@@ -15,6 +17,8 @@
 #include "Symbol.h"
 #include "DotPair.h"
 #include "OutputController.h"
+#include "CellSerializer.h"
+#include "json/include/json.hpp"
 
 #include <unordered_map>
 #include <optional>
@@ -23,6 +27,8 @@
 struct break_helper {
 	std::string s;
 };
+
+class CoreEnvironment;
 
 struct support_funcs {
 
@@ -58,49 +64,26 @@ struct support_funcs {
 };
 
 class  CoreEnvironment {
-	friend struct support_funcs;
-
-	friend CoreData::special_bifuncs_array CoreData::special_bifunc_setup();
-	friend CoreData::special_nbifuncs_array CoreData::special_nbifunc_setup();
-	friend CoreData::bifuncs_array CoreData::bifunc_setup();
-	friend CoreData::nbifuncs_array CoreData::nbifunc_setup();
-	friend std::optional<std::reference_wrapper<const macro>> is_macro_call(const Cell& m, CoreEnvironment& e);
-
-	friend class SExprsFarm;
-	friend class LambdaEvaler;
-	friend class BifuncEvaler;
-	friend class Syntaxer;
-	friend class read_helper;
-
-	friend class FuncsEvaler;
-
-	friend class PtrRangeBiFunc;
-	friend class PtrRangeNBiFunc;
-
-	friend class EvalLambda;
-
-	friend class RangeBiFunc;
-	friend class RangeNBiFunc;
-
-	friend class Func;
+	friend class Core;
+	using iter = CarCdrIterator;
 public:
-	CoreEnvironment();
-	CoreEnvironment(CoreEnvStreamsProviderInt& streams);
+	CoreEnvironment(std::optional<std::reference_wrapper<std::istream>> state);
+	CoreEnvironment(CoreEnvStreamsProviderInt& streams, std::optional<std::reference_wrapper<std::istream>> state);
 	~CoreEnvironment() = default;
+
+	// сохрание состояния в поток
+	// (не полного)
+	void save_state(std::ostream& os);
+	// загрузка из состояния
+	// (очищает текущее)
+	bool load_state(std::istream& is);
 
 	void execute_all(CoreEnvStreamsProviderInt& streams, const IMutexed<bool>& stop_flag);
 	void execute_one(CoreEnvStreamsProviderInt& streams, const IMutexed<bool>& stop_flag);
 	void execute_driver(CoreEnvStreamsProviderInt& streams, const IMutexed<bool>& stop_flag);
-	const CellEnvironment::mp& vars() const;
 
 	void set_streams(CoreEnvStreamsProviderInt& streams);
-private:
-	using iter = CarCdrIterator;
-private:
-	void t_prepare(CoreEnvStreamsProviderInt& streams, const IMutexed<bool>& stop_flag);
-	void t_execute();
-	Cell t_execute(Cell& arg);
-	void t_clear_mem();
+
 
 	Cell bifunc_atomp(iter b, iter e);
 	Cell bifunc_symbolp(iter b, iter e);
@@ -122,7 +105,6 @@ private:
 	Cell bifunc_cons(iter b, iter e);
 	Cell bifunc_list(iter b, iter e);
 	Cell bifunc_getd(iter b, iter e);
-	Cell bifunc_read(iter b, iter e);
 	Cell bifunc_print(iter b, iter e);
 	Cell bifunc_prin1(iter b, iter e);
 	Cell bifunc_set(iter b, iter e);
@@ -139,7 +121,6 @@ private:
 
 	Cell bifunc_read_char(iter b, iter e);
 	Cell bifunc_unread_char(iter b, iter e);
-	Cell bifunc_peek_char(iter b, iter e);
 	Cell bifunc_listen(iter b, iter e);
 	Cell bifunc_break(iter b, iter e);
 
@@ -150,24 +131,73 @@ private:
 	Cell nbifunc_defun(iter b, iter e);
 	Cell nbifunc_defmacro(iter b, iter e);
 
-	enum class numbers_compare_type {greater, greater_eq, less, less_eq, eq};
-	Cell numbers_compare(iter b, iter e, numbers_compare_type type);
 
+
+	SExprsFarm& farm();
+	std::optional<std::reference_wrapper<const IMutexed<bool>>>& stop_flag();
+	std::optional<std::reference_wrapper<CoreOutputStreamInt>>& cos();
+	support_funcs& support_funcs();
+	OutputController& output_control();
+	CellEnvironment& envs();
+	MacroTable& macrotable();
+	Input& input();
+	Scanner& scanner();
+	FuncsStorage& funcs();
+	CellSerializer& cserial();
+private:
+
+	enum class numbers_compare_type { greater, greater_eq, less, less_eq, eq };
+	Cell t_numbers_compare(iter b, iter e, numbers_compare_type type);
+
+	template <class Fnc>
+	void t_core_env_under_catch(Fnc fnc);
 	void t_clear();
+	void t_prepare(CoreEnvStreamsProviderInt& streams, const IMutexed<bool>& stop_flag);
+	void t_execute();
+	Cell t_execute(Cell& arg);
+	Cell t_execute(CoreData::HolderPtr&& func);
+	void t_clear_mem();
 private:
 	SExprsFarm t_farm;
-	std::optional<std::reference_wrapper<CoreEnvStreamsProviderInt>> t_streams;
 	FuncsStorage t_funcs;
-
 	CellEnvironment t_envs;
-	std::optional<std::reference_wrapper<const IMutexed<bool>>> t_stop_flag;
+	MacroTable t_macrotable;
 
-	Syntaxer t_syntaxer;
+	Input t_input;
+	Scanner t_scanner;
 	OutputController t_output_control;
-
+	::support_funcs t_support;
+	CellSerializer t_cserial;
 	//FuncsEvaler t_funcs_evaler;
-	support_funcs t_support;
 
-	std::optional<std::reference_wrapper<CoreInputStreamInt>> t_cis;
+	std::optional<std::reference_wrapper<const IMutexed<bool>>> t_stop_flag;
+	std::optional<std::reference_wrapper<CoreEnvStreamsProviderInt>> t_streams;
 	std::optional<std::reference_wrapper<CoreOutputStreamInt>> t_cos;
 };
+
+template<class Fnc>
+inline void CoreEnvironment::t_core_env_under_catch(Fnc fnc) {
+#ifndef EX_CATCH
+	fnc();
+#endif
+
+#ifdef EX_CATCH
+	try
+	{
+		fnc();
+	}
+	catch (std::bad_alloc&) {
+		this->t_clear();
+		throw "stack overflow";
+	}
+	catch (break_helper& e) {
+		this->t_clear();
+		throw "break: " + e.s;
+	}
+	catch (...)
+	{
+		this->t_clear();
+		throw;
+	}
+#endif
+}

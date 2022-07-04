@@ -1,14 +1,16 @@
 #pragma once
 #include "Cell.h"
 #include "Symbol.h"
-
+#include "json/include/json.hpp"
 #include "CoreData.h"
+
 #include <string>
 #include <unordered_map>
 #include <vector>
 #include <map>
 
-class SExprsFarm;
+
+class CoreEnvironment;
 
 class CellEnvironment
 {
@@ -16,7 +18,9 @@ public:
 	using mp = std::unordered_map<Symbol, Cell>;
 	using frame = std::pair<std::pair<CarCdrIterator, CarCdrIterator>, std::pair<CarCdrIterator, CarCdrIterator>>;
 public:
-	CellEnvironment(SExprsFarm& farm);
+	CellEnvironment(CoreEnvironment& env);
+
+	void init(std::optional<std::reference_wrapper<nlohmann::json>> state);
 
 	void push(const frame& rh);
 
@@ -32,8 +36,14 @@ public:
 	void set(const Symbol& name, const Cell& val);
 
 	void clear_subenvs();
+
+
+	// сохрание состояния
+	void save_state(nlohmann::json& j);
+	// загрузка состояния 
+	void load_state(const nlohmann::json& j);
 private:
-	SExprsFarm& t_farm;
+	CoreEnvironment& t_env;
 	mp t_glonal;
 	std::vector< std::vector<std::pair<Symbol, Cell>>> t_stack;
 	std::unordered_map<Symbol, std::vector<std::pair<size_t, size_t>>> t_all_in_stack;

@@ -3,13 +3,59 @@
 #include "Core.h"
 #include "PredLispFuncs.h"
 #include "StdCoreInputMemoryStream.h"
+#include "StdCoreInputStream.h"
 #include "Tester.h"
 
+
+#include <vector>
 #include <sstream>
 #include <fstream>
 
 using namespace CoreData;
 using namespace std;
+
+
+//количество потоков для асинхронных тестов (оптимально - по половине ядер)
+constexpr auto treads_count = 6;
+
+//Дебаг
+#ifdef _DEBUG
+	// true - асинхронно, false - последовательно
+using tester_type = NATests::Tester<true>;
+#endif
+
+//релиз (в нём лучше без асинхронных)
+#ifdef NDEBUG
+	// true - асинхронно, false - последовательно
+	// Асинхронные тесты на релизе не поддерживаются (только если задефайнить TREAT_SAFE_MEMORY_CONTROL в LispLibrary)
+using tester_type = NATests::Tester<false>;
+#endif
+
+
+//ExceptionCaught -- если задефайнено -- ловятся все исключения, выполняются тесты с проверкой на succses/fail
+		//(дефайнить в настройках проекта (2х))
+#ifdef EX_CATCH
+constexpr auto exceptions = false;
+#endif
+
+#ifndef EX_CATCH
+constexpr auto exceptions = true;
+#endif
+
+
+
+// тестер
+auto tester = tester_type();
+// хранит текущий добавляемый тест
+auto tests_name = ""s;
+
+
+// добавляет тест в тестер
+#define ADD_TEST(test) {\
+	tests_name = #test;\
+	test();\
+}
+
 
 vector<string> split_by_lines(string_view str) {
 	vector<string> result;
@@ -26,117 +72,171 @@ vector<string> split_by_lines(string_view str) {
 	return result;
 }
 
-//Р·Р°РіСЂСѓР·РєР° С„Р°Р№Р»Р° СЃ РїРµСЂРґС„Р°РЅРєР°РјРё РІ РѕРїРµСЂР°С‚РёРІСѓ
-static const StdCoreInputMemoryStream predfuncs_mem_stream_global = []() {
-	ifstream f(predfuncs_filename);
-	return StdCoreInputMemoryStream(f, stream_read_mode::s_expression);
-}();
+// сохранение состояния с предфанками в переменной
+auto default_state = ""s;
+
+// функция для сохранения состояния с предфанками в переменной
+auto default_state_func = []() {
+	auto core = make_core_w_predfuncs();
+	auto saved_state = ostringstream();
+	core.save_state(saved_state);
+
+	return saved_state.str();
+};
+
+
+
+
+
+// загрузка ядра из default_state
+Core load_default_core() {
+
+	////загрузка файла с пердфанками в оперативу
+	//static const auto predfuncs_mem_stream_global = []() {
+	//	ifstream f(predfuncs_filename);
+	//	return StdCoreInputMemoryStream(f, stream_read_mode::s_expression);
+	//}();
+
+	//auto predfuncs_mem_stream = StdCoreInputMemoryStream(predfuncs_mem_stream_global);
+	//return make_core_w_custom_predfuncs(predfuncs_mem_stream);
+	auto saved_state = istringstream(default_state);
+	return make_core_from_state(saved_state);
+};
+
+
+
+
 
 tuple<Core::result_type, string> assert_core_one(const string& input) {
-	auto predfuncs_mem_stream = StdCoreInputMemoryStream(predfuncs_mem_stream_global);
 	auto streams = ValStreamCESP(make_unique<istringstream>(input), stream_read_mode::new_string, make_unique<ostringstream>());
-	auto core = make_core_w_custom_predfuncs(predfuncs_mem_stream);
+	auto core = load_default_core();
+	
 	auto reason = core.execute_one(streams);
 	return { reason,  (reason == Core::result_type::success) ? split_by_lines(streams.os().str()).back() : "" };
 }
 
 tuple<Core::result_type, vector<string>> assert_core_all(vector<string>&& input) {
-	auto predfuncs_mem_stream = StdCoreInputMemoryStream(predfuncs_mem_stream_global);
 	auto is = StdCoreInputValArrayInput(move(input), stream_read_mode::new_string);
 	auto os = ostringstream();
 	auto output = StdCoreOutputStream(os);
 	auto streams = RefCESP(is, output);
 
-	auto core = make_core_w_custom_predfuncs(predfuncs_mem_stream);
+	auto core = load_default_core();
 	auto reason = core.execute_all(streams);
 	return { reason, (reason == Core::result_type::success) ? split_by_lines(os.str()) : vector<string>{} };
 }
 
 tuple<Core::result_type, string> assert_core_raw(const std::string& input) {
-	auto predfuncs_mem_stream = StdCoreInputMemoryStream(predfuncs_mem_stream_global);
 	auto streams = ValStreamCESP(make_unique<istringstream>(input), stream_read_mode::new_string, make_unique<ostringstream>());
 
-	auto core = make_core_w_custom_predfuncs(predfuncs_mem_stream);
+	auto core = load_default_core();
 	auto reason = core.execute_all(streams);
 	return { reason,  streams.os().str() };
 }
 
-//РўРµСЃС‚ СЃРѕ СЃСЂР°РІРЅРµРЅРёРµРј СЂРµР·СѓР»СЊС‚Р°С‚Р°
+
+
+
+
+//Тест со сравнением результата
 #define one_assert(input, output)\
 {\
-	auto [result_reason, result] = assert_core_one(input);\
-	ASSERT_EQUAL(result_reason, Core::result_type::success);\
-	ASSERT_EQUAL(result, output);\
+	auto fnc = []() -> void {\
+		auto [result_reason, result] = assert_core_one(input);\
+		ASSERT_EQUAL(result_reason, Core::result_type::success);\
+		ASSERT_EQUAL(result, output);\
+	};\
+	tester.add_test<false>(fnc, tests_name);\
 }
 
-//РўРµСЃС‚ РЅРµСЃРєРѕР»СЊРєРёС… РєРѕРјР°РЅРґ СЃРѕ СЃСЂР°РІРЅРµРЅРёРµРј СЂРµР·СѓР»СЊС‚Р°С‚Р° (РјР°СЃСЃРёРІ)
+//Тест нескольких команд со сравнением результата (массив)
 #define several_assert(input, output)\
 {\
-	auto [result_reason, result] = assert_core_all(vector<string> input);\
-	ASSERT_EQUAL(result_reason, Core::result_type::success);\
-	ASSERT_EQUAL(result, vector<string>output);\
+	auto fnc = []() -> void {\
+		auto [result_reason, result] = assert_core_all(vector<string> input);\
+		ASSERT_EQUAL(result_reason, Core::result_type::success);\
+		ASSERT_EQUAL(result, vector<string>output);\
+	};\
+	tester.add_test<false>(fnc, tests_name);\
 }
 
-//РўРµСЃС‚ РїРѕС‚РѕРєР° РІРІРѕРґР° (РїРѕР»РЅРѕСЃС‚СЊСЋ) СЃРѕ СЃСЂР°РІРЅРµРЅРёРµРј СЂРµР·СѓР»СЊС‚Р°С‚Р° (РїРѕР»РЅР°СЏ СЃС‚СЂРѕРєР° РІС‹РІРѕРґР°)
+//Тест потока ввода (полностью) со сравнением результата (полная строка вывода)
 #define raw_assert(input, output)\
 {\
-	auto [result_reason, result] = assert_core_raw(input);\
-	ASSERT_EQUAL(result_reason, Core::result_type::success);\
-	ASSERT_EQUAL(result, output);\
-}
-
-//РўРµСЃС‚ СЃРѕ СЃСЂР°РІРЅРµРЅРёРµРј СЂРµР·СѓР»СЊС‚Р°С‚Р° С‚РѕР»СЊРєРѕ РїРѕСЃР»РµРґРЅРµР№ РєРѕРјР°РЅРґС‹
-#define several_assert_last_val(input, output)\
-{\
-	auto [result_reason, result] = assert_core_all(vector<string> input);\
-	ASSERT_EQUAL(result_reason, Core::result_type::success);\
-	ASSERT_EQUAL(result.back(), output);\
-}
-
-//РўРµСЃС‚ РїРѕС‚РѕРєР° РІРІРѕРґР° (РїРѕР»РЅРѕСЃС‚СЊСЋ) Р±РµР· СЃСЂР°РІРЅРµРЅРёСЏ СЂРµР·СѓР»СЊС‚Р°С‚Р° (РїСЂРѕРІРµСЂРєР° РЅР° success/fail) (РµСЃР»Рё ExceptionCaught РЅРµ Р·Р°РґРµС„Р°Р№РЅРµРЅРѕ - РЅРµ РІС‹РїРѕР»РЅСЏСЋС‚СЃСЏ)
-#ifdef EX_CATCH
-	#define raw_assert_reason(input, output)\
-	{\
+	auto fnc = []() -> void {\
 		auto [result_reason, result] = assert_core_raw(input);\
 		ASSERT_EQUAL(result_reason, Core::result_type::success);\
-	}
+		ASSERT_EQUAL(result, output);\
+	};\
+	tester.add_test<false>(fnc, tests_name);\
+}
+
+//Тест со сравнением результата только последней команды
+#define several_assert_last_val(input, output)\
+{\
+	auto fnc = []() -> void {\
+		auto [result_reason, result] = assert_core_all(vector<string> input);\
+		ASSERT_EQUAL(result_reason, Core::result_type::success);\
+		ASSERT_EQUAL(result.back(), output);\
+	};\
+	tester.add_test<false>(fnc, tests_name);\
+}
+
+
+//Тест потока ввода (полностью) без сравнения результата (проверка на success/fail) (если ExceptionCaught не задефайнено - не выполняются)
+#ifdef EX_CATCH
+#define raw_assert_reason(input, output)\
+{\
+	auto fnc = []() -> void {\
+			auto [result_reason, result] = assert_core_raw(input);\
+			ASSERT_EQUAL(result_reason, Core::result_type::success);\
+	};\
+	tester.add_test<false>(fnc, tests_name);\
+}
 #endif
 #ifndef EX_CATCH
 	#define raw_assert_reason(input, reason)
 #endif
 
 
-//РўРµСЃС‚ Р±РµР· СЃСЂР°РІРЅРµРЅРёСЏ СЂРµР·СѓР»СЊС‚Р°С‚Р° (РїСЂРѕРІРµСЂРєР° РЅР° success/fail) (РµСЃР»Рё ExceptionCaught РЅРµ Р·Р°РґРµС„Р°Р№РЅРµРЅРѕ - РЅРµ РІС‹РїРѕР»РЅСЏСЋС‚СЃСЏ)
+//Тест без сравнения результата (проверка на success/fail) (если ExceptionCaught не задефайнено - не выполняются)
 #ifdef EX_CATCH
 #define one_assert_reason(input, reason)\
-	{\
+{\
+	auto fnc = []() -> void {\
 		auto [result_reason, result] = assert_core_one(input);\
 		ASSERT_EQUAL(result_reason,reason);\
-	}
+	};\
+	tester.add_test<false>(fnc, tests_name);\
+}
 #endif
 #ifndef EX_CATCH
 	#define one_assert_reason(input, reason)
 #endif
 
-//РўРµСЃС‚ Р±РµР· СЃСЂР°РІРЅРµРЅРёСЏ СЂРµР·СѓР»СЊС‚Р°С‚Р° (РїСЂРѕРІРµСЂРєР° РЅР° success/fail) (РµСЃР»Рё ExceptionCaught РЅРµ Р·Р°РґРµС„Р°Р№РЅРµРЅРѕ - РЅРµ РІС‹РїРѕР»РЅСЏСЋС‚СЃСЏ)
+//Тест без сравнения результата (проверка на success/fail) (если ExceptionCaught не задефайнено - не выполняются)
 #ifdef EX_CATCH
 #define several_assert_reason(input, reason)\
-	{\
+{\
+	auto fnc = []() -> void {\
 		auto [result_reason, result] = assert_core_all(vector<string> input);\
 		ASSERT_EQUAL(result_reason,reason);\
-	}
+	};\
+	tester.add_test<false>(fnc, tests_name);\
+}
 #endif
 #ifndef EX_CATCH
 	#define several_assert_reason(input, reason)
 #endif
 
 
-//РїСЂРёРјРµСЂ С‚РµСЃС‚Р°
+//пример теста
 void test_eval_base() {
 	one_assert("A", "A");
 	one_assert("1", "1");
 	one_assert("-1", "-1");
-	one_assert("+1", "1");
+	one_assert("+1", "+1");
+	//one_assert("(symbolp +1)", "T");
 	one_assert("long_text_With_some_shit1234567890", "LONG_TEXT_WITH_SOME_SHIT1234567890");
 	one_assert("((lambda (x) x) 1)", "1");
 	several_assert_last_val(({ "(setq a b)", "(setq b 1)", "((lambda (x) x) a)" }), "B");
@@ -157,7 +257,7 @@ void test_eval_base() {
 	one_assert("((lambda (x '(n) y) (list x n y)) 1 2 3)", "(1 N 3)");
 }
 
-//Р°СЂРёС„РјРµС‚РёС‡РµСЃРєРёРµ С„СѓРЅРєС†РёРё
+//арифметические функции
 void arifm() {
 	one_assert("(- 3)", "-3");
 	one_assert("(- 10.5 3)", "7.5");
@@ -175,7 +275,7 @@ void arifm() {
 	one_assert("(*)", "1");
 }
 
-//Р»РѕРіРёС‡РµСЃРєРёРµ С„СѓРЅРєС†РёРё
+//логические функции
 void logic() {
 	one_assert("(< 2 3)", T_str);
 	one_assert("(> 2 3)", nil_str);
@@ -229,7 +329,7 @@ void logic() {
 	one_assert("(equal nil nil)", T_str);
 }
 
-//СЃРїРёСЃРєРѕРІС‹Рµ С„СѓРЅРєС†РёРё
+//списковые функции
 void lists() {
 	one_assert("(car (quote (1 2 3)))", "1");
 	one_assert("(car (quote ((1 1) 2 3)))", "(1 1)");
@@ -260,15 +360,15 @@ void lists() {
 	one_assert("(length '(1 2 3))", "3");
 	one_assert("(length (append '(1 2 3) '(1 2 3)))", "6");
 	//one_assert("(length ace)","3");
-	//one_assert("(length (fib2 100))","5");    //С‚Р°Рє-С‚Рѕ С…Р·
+	//one_assert("(length (fib2 100))","5");    //так-то хз
 }
 
-//РїСЂРµРґРёРєР°С‚С‹
+//предикаты
 void pred() {
 	one_assert("(null (list))", T_str);
 	one_assert("(null '())", T_str);
 	one_assert("(null nil)", T_str);
-	one_assert("(null `())",T_str); //РєРѕСЃРѕР№ Р°РїРѕСЃС‚СЂРѕС„,
+	one_assert("(null `())",T_str); //косой апостроф,
 	one_assert("(null '(0))", nil_str);
 	one_assert("(numberp 26)", T_str);
 	one_assert("(numberp 26.5)", T_str);
@@ -295,7 +395,7 @@ void pred() {
 	one_assert("(symbolp)", T_str);
 }
 
-//СѓСЃР»РѕРІРЅС‹Рµ С„СѓРЅРєС†РёРё
+//условные функции
 void usl() {
 	one_assert("(cond ((null '()) 'a) ((numberp 26) 'b) ((listp '(2)) 'c))", "A");
 	one_assert("(cond ((null '(1)) 'a) ((numberp 26) 'b) ((listp '(2)) 'c))", "B");
@@ -304,7 +404,7 @@ void usl() {
 	one_assert("(cond ((null '(2)) 'a) ((numberp r) 'b) ((listp '2) 'c) (T 'da))", "DA");
 	one_assert("(cond)", nil_str);
 	one_assert("(cond ((null '(2)) 'a) ((numberp r) 'b) ((listp '2) 'c) (a 'da))", "DA");
-	one_assert("(cond ((null '(2)) 'a) ((numberp r) 'b) ((listp '2) 'c) (1 'da))", "DA");   //РІРѕР·РјРѕР¶РЅРѕ, С„РѕСЂРёСЃ РґРµР»Р°РµС‚ \1
+	one_assert("(cond ((null '(2)) 'a) ((numberp r) 'b) ((listp '2) 'c) (1 'da))", "DA");   //возможно, форис делает \1
 	one_assert("(cond ((null '(2)) 'a) ((numberp r) 'b) ((listp '2) 'c) (nil 'da))", nil_str);
 	one_assert("(cond ((null '(2)) 'a) ((numberp r) 'b) ((listp '2) 'c) ('(1 2) 'da))", "DA");
 	one_assert("(cond ((null '(2)) 'a) ((numberp r) 'b) ((listp '2) 'c) ((cons a b) 'da))", "DA");
@@ -324,7 +424,7 @@ void usl() {
 	one_assert("(if 1 'a 'b)", "A");
 }
 
-//С„СѓРЅРєС†РёРё РІС‹С‡РёСЃР»РµРЅРёР№
+//функции вычислений
 void calcfun() {
 	one_assert("(eval)", nil_str);
 	one_assert("(eval a)", "A");
@@ -351,7 +451,7 @@ void calcfun() {
 	one_assert("(apply '(lambda (X L) (* X (car L))) '(3 (4 5 6)))", "12");
 }
 
-//СѓРїСЂР°РІР»РµРЅРёРµ РІС‹С‡РёСЃР»РµРЅРёСЏРјРё
+//управление вычислениями
 void control_calc() {
 	one_assert("(defun kek (x) (* x x))","KEK");
 	one_assert("(progn (defun kek (x) (* x x)) (kek 3))","9");
@@ -404,27 +504,32 @@ void control_calc() {
 	);
 }
 
-//РІРІРѕРґ/РІС‹РІРѕРґ
+//ввод/вывод
 void io() {
+	one_assert("(QUOTE ( 1 a b]", "(1 A B)");
+	one_assert("'( 1 a b]", "(1 A B)");
+	one_assert("'( (1 (a (b]", "((1 (A (B))))");
+	one_assert_reason("]", Core::result_type::fail);
+
 	one_assert("(print)",nil_str);  
 	one_assert("(print a)","A");
 	one_assert("(print (+ 1 2 3))", "6");
 
-	raw_assert("(print 'Р°_РІРѕРѕР±С‰Рµ_С…Р·_РєР°Рє_РµРіРѕ_С‚РµСЃС‚РёСЂРѕРІР°С‚СЊ)", "Р°_РІРѕРѕР±С‰Рµ_С…Р·_РєР°Рє_РµРіРѕ_С‚РµСЃС‚РёСЂРѕРІР°С‚СЊ\nР°_РІРѕРѕР±С‰Рµ_С…Р·_РєР°Рє_РµРіРѕ_С‚РµСЃС‚РёСЂРѕРІР°С‚СЊ\n");
+	raw_assert("(print 'А_ВООБЩЕ_хз_как_его_тестировать)", "А_ВООБЩЕ_ХЗ_КАК_ЕГО_ТЕСТИРОВАТЬ\nА_ВООБЩЕ_ХЗ_КАК_ЕГО_ТЕСТИРОВАТЬ\n");
 	raw_assert("(setq a (read)) A", "A\n");
 	raw_assert("(print (read)) A", "A\nA\n");
 
 
-	//С‚РµСЃС‚ РІРІРѕРґР°-РІС‹РІРѕРґР° Р±РµР· РїРµСЂРµРІРѕРґР° РІ РєР°РїСЃ
+	//тест ввода-вывода без перевода в капс
 	raw_assert(string("(progn (setq ") + read_up_case_str + " nil) (print (read))) aBc1", "aBc1\naBc1\n");
 
-	//С‚РµСЃС‚ | Рё "
+	//тест | и "
 	one_assert("|AbC1|", "|AbC1|");
 	one_assert("\"AbC1\"", "|AbC1|");
 
-	//С‚РµСЃС‚ РЅР° Р°РЅР°Р»РёР· РІРІРѕРґР° С‡РµСЂРµР· read
+	//тест на анализ ввода через read
 	raw_assert("(eval '((lambda x (print (read))) nil)) 1b", "1\n1\nB\n");
-	//С‚РµСЃС‚ РЅР° Р°РЅР°Р»РёР· РІРІРѕРґР°
+	//тест на анализ ввода
 	one_assert("1c2", "1");
 
 	one_assert("a\\a12", "|Aa12|");
@@ -439,7 +544,7 @@ void io() {
 	
 }
 
-//РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂС‹
+//идентификаторы
 void id_repr() {
 	one_assert("\\ ", "| |");
 	one_assert("\\1", "\\1");
@@ -447,30 +552,30 @@ void id_repr() {
 	one_assert_reason("\\\\", Core::result_type::success);
 	one_assert("\\\\", "\\\\");
 	one_assert_reason("\\\\\\a", Core::result_type::success);
-	one_assert("\\\\\\\\", "|\\\\\\\\|");						//РЅР°РґРѕ СЃРѕРіР»Р°СЃРѕРІР°С‚СЊ 
-	one_assert("\\a\\|", "|a\\||");							//СЃ РјРµС‚РѕРґРёС‡РєРѕР№ СЃС‚СЂ.44, РїРѕСЃР»РµРґРЅРёР№ Р°Р±Р·Р°С†
+	one_assert("\\\\\\\\", "|\\\\\\\\|");						//надо согласовать 
+	one_assert("\\a\\|", "|a\\||");							//с методичкой стр.44, последний абзац
 	one_assert("(pack '(\\| \\|))", "|\\|\\||");				//
 	one_assert("(pack '(\\| \\\\ \\|))", "|\\|\\\\\\||");
 
 	one_assert(".", "\\.");
 	one_assert(".qwe", ".QWE");
 	one_assert(".12", ".12");
-	one_assert_reason(",", Core::result_type::fail);    //РІРѕР·РјРѕР¶РЅРѕ, СЃС‚РѕРёС‚ РѕР±СЂР°С‚РёС‚СЊ РІРЅРёРјР°РЅРёРµ РЅР° РїСЂРёС‡РёРЅСѓ С„РµР№Р»Р°
+	one_assert_reason(",", Core::result_type::fail);    //возможно, стоит обратить внимание на причину фейла
 	one_assert("\\,", "\\,");
 
-	//Р·РґРµСЃСЊ break (Сѓ ,) - РЅРµ fail
+	//здесь break (у ,) - не fail
 	//raw_assert_reason("!@#,!##", Core::result_type::fail);
 
 	one_assert("!@#\\,!@#", "|!@#,!@#|");
 
-	//Р·РґРµСЃСЊ ` Р¶Рµ
+	//здесь ` же
 	//one_assert("q\\q1\\1`~!@#$%^&*-_=+/\\;\\'\\\".\\,:", "|Qq11`~!@#$%^&*-_=+/;'\".,:|");
 
 	one_assert("q1~!@#$%^&*-_=+/:", "Q1~!@#$%^&*-_=+/:");
 
-	//Р·РґРµСЃСЊ ` Р¶Рµ
-	//one_assert("a`", "A`");       //РІРѕР·РјРѕР¶РЅРѕ, СЂРѕС„Р» РёР· РєРѕРјРјРѕРЅР° (РІ 85 РЅРµ Р·Р°РіСЂСѓР¶РµРЅ)
-	//Р·РґРµСЃСЊ ` Р¶Рµ
+	//здесь ` же
+	//one_assert("a`", "A`");       //возможно, рофл из коммона (в 85 не загружен)
+	//здесь ` же
 	//one_assert("q1`~!@#$%^&*-_=+/:", "Q1`~!@#$%^&*-_=+/:");
 
 	one_assert("\\a", "\\a");
@@ -484,7 +589,7 @@ void id_repr() {
 
 }
 
-//С„СѓРЅРєС†РёРё РЅР°Рґ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂР°РјРё
+//функции над идентификаторами
 void id_func() {
 	one_assert("(numberp 345)", T_str);
 	one_assert("(numberp \\345)", nil_str);
@@ -502,7 +607,7 @@ void id_func() {
 	one_assert("(equal \\a \\a)", T_str);
 	one_assert("(equal \\a\\a |aa|)", T_str);
 	one_assert("(equal || \"\")", T_str);
-	one_assert("(eq \"a12\" \"a12\")", T_str);     //РјРµС‚РѕРґРёС‡РєР° СѓС‚РІРµСЂР¶РґР°РµС‚ РѕР±СЂР°С‚РЅРѕРµ (РЅРѕ С‚Р°Рј РєРѕРјРјРѕРЅ)
+	one_assert("(eq \"a12\" \"a12\")", T_str);     //методичка утверждает обратное (но там коммон)
 	one_assert("(equal \"a12\" \"a12\")", T_str);
 	one_assert("(progn (setq \\345 1) \\345)", "1");
 	one_assert("(progn (setq |kok| 2) \\k\\o\\k)", "2");
@@ -533,7 +638,7 @@ void id_func() {
 	one_assert("(unpack |\\|\\||)", "(\\| \\|)");
 }
 
-//С‚РѕС‡РµС‡РЅС‹Рµ РїР°СЂС‹
+//точечные пары
 void dotpairs() {
 	one_assert("'(a . b)", "(A . B)");
 	one_assert("'(a.b)", "(A.B)");
@@ -602,7 +707,7 @@ void dotpairs() {
 	);
 }
 
-//РјР°РєСЂРѕСЃС‹
+//макросы
 void macros() {
 	one_assert("(defmacro)", nil_str);
 	one_assert("(defmacro kek)", nil_str);
@@ -612,7 +717,7 @@ void macros() {
 	one_assert("(progn (setq nekok chel) (defmacro setqq (x y) (list 'setq x (list 'quote y))) (setqq kok nekok) kok)", "NEKOK");
 	one_assert(
 		"(progn (defmacro macrocdr (X N) (cond ((eq N 0) (print x) a) (T (append (list 'macrocdr) (list (cdr X)) (list (- N 1)))))) (macrocdr (q w e r) 2))",
-		"A");       //СЃС‚РѕРёС‚ РїРѕРґСѓРјР°С‚СЊ РЅР°Рґ РїСЂРёРјРµСЂРѕРј
+		"A");       //стоит подумать над примером
 	raw_assert(
 		"(progn (defmacro macrocdr (X N) (cond ((eq N 0) (print x) a) (T (append (list 'macrocdr) (list (cdr X)) (list (- N 1)))))) (macrocdr (q w e r t) 3))",
 		"(R T)\nA\n"
@@ -649,7 +754,7 @@ void macros() {
 	one_assert(
 		"(progn (defmacro macrocdr (X N) (cond ((eq N 0) (print x) a) (T (append (list 'macrocdr) (list (cdr X)) (list (- N 1)))))) (macroexpand-1 (macroexpand-1 '(macrocdr (q w e r) 2))))",
 		"(MACROCDR (E R) 0)"
-	);  //РІСЂРѕРґРµ СЃРєРѕР±РєРё РЅР° РјРµСЃС‚Рµ
+	);  //вроде скобки на месте
 
 	one_assert("(macroexpand)", nil_str);
 	one_assert("(macroexpand '(q w e))", "(Q W E)");
@@ -657,6 +762,37 @@ void macros() {
 	one_assert("(macroexpand-1)", nil_str);
 	one_assert("(macroexpand-1 '(q w e))", "(Q W E)");
 	one_assert("(macroexpand-1 1)", "1");
+}
+
+//макрочары
+void macrochars() {
+	several_assert( ({"(set-macro-char \\. '(lambda () (print KEKW)))", "'(1 . 2)", "." }), ({ T_str, "(1 . 2)", "KEKW", "KEKW" }));
+	several_assert(({ "(set-macro-char \\] '(lambda () KEKW))", "'( 1 ]", "]" }), ({ T_str, "(1)", "KEKW" }));
+	several_assert(({ "(set-macro-char \\, '(lambda () KEKW))", ",",}), ({ T_str, "KEKW" }));
+	several_assert(({
+		"(and "
+			"(progn (setq *READ-UPCASE* nil) T)"
+			"(set-macro-char \\   '(lambda () KEKW) T)"
+			"(set-macro-char \\\t '(lambda () KEKW) T)"
+			"(set-macro-char \\\n '(lambda () KEKW) T)"
+			"(set-macro-char \\\r '(lambda () KEKW) T)"
+			"(set-macro-char \\;  '(lambda () KEKW) T)"
+			"(set-macro-char \\\" '(lambda () KEKW) T)"
+			"(set-macro-char \\|  '(lambda () KEKW) T)"
+			"(set-macro-char \\(  '(lambda () KEKW) T)"
+			"(set-macro-char \\)  '(lambda () KEKW) T)"
+			"(set-macro-char \\\' '(lambda () KEKW) T)"
+			"(set-macro-char \\]  '(lambda () KEKW) T)"
+			"(set-macro-char \\`  '(lambda () KEKW) T)"
+		" )"
+		"- \t\n\r;\"|()\']AZazАЯая.#`", 
+	}), ({
+		T_str,
+		//макрос сплитит построчно, поэтому \n бьём на 2
+		"|- \t",
+		"\r;\"\\|()\']AZazАЯая.#`|",
+	}));
+	
 }
 
 void xz_chto_za_categoria() {
@@ -694,54 +830,71 @@ void xz_chto_za_categoria() {
 	);
 }
 
-void test_outs(NATests::Tester& tester){
+void test_outs_group(tester_type& tester) {
+	cout << "tests added: " << tester.count() << endl;
+
+	auto m = vector<pair<string, std::vector<std::string>>>();
 	bool fail = false;
-	for (const auto& result : tester.execute()) {
-		cout << result << endl;
+	for (const auto& result : tester.execute<treads_count>()) {
+		auto it = find_if(begin(m), end(m), [&result](const auto& p) {return result.name == p.first; });
+		if (it == end(m) ) {
+			m.push_back(pair{ result.name, std::vector<std::string>{} });
+			it = prev(end(m));
+		}
+
+		if (result.fail)
+			it->second.push_back(result.output);
 		if (result.fail) fail = true;
 	}
+	for (const auto& result : m) {
+		if (!empty(result.second)) {
+			cout << result.first << " failed" << "\n";
+			for (const auto& out : result.second) {
+				cout << out << "\n";
+			}
+		}
+		else {
+			cout << result.first << " OK" << "\n";
+		}
+	}
+	cout.flush();
 	if (fail) exit(1);
 }
 
+
+
+
+
+
+//нужны тесты
+
+//* listen
+//* read_char
+//* peek_char
+//* unread_char
+
 void test_bifuncs() {
-	//Р”РµР±Р°Рі
-	#ifdef _DEBUG
-		// true - Р°СЃРёРЅС…СЂРѕРЅРЅРѕ, false - РїРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕ
-		NATests::Tester tester(true);
-	#endif
 
-	//СЂРµР»РёР· (РІ РЅС‘Рј Р»СѓС‡С€Рµ Р±РµР· Р°СЃРёРЅС…СЂРѕРЅРЅС‹С…)
-	#ifdef NDEBUG
-		// true - Р°СЃРёРЅС…СЂРѕРЅРЅРѕ, false - РїРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕ
-		// РђСЃРёРЅС…СЂРѕРЅРЅС‹Рµ С‚РµСЃС‚С‹ РЅР° СЂРµР»РёР·Рµ РЅРµ РїРѕРґРґРµСЂР¶РёРІР°СЋС‚СЃСЏ (С‚РѕР»СЊРєРѕ РµСЃР»Рё Р·Р°РґРµС„Р°Р№РЅРёС‚СЊ TREAT_SAFE_MEMORY_CONTROL РІ LispLibrary)
-			NATests::Tester tester(false);
-	#endif
+	default_state = default_state_func();
 
-	//ExceptionCaught -- РµСЃР»Рё Р·Р°РґРµС„Р°Р№РЅРµРЅРѕ -- Р»РѕРІСЏС‚СЃСЏ РІСЃРµ РёСЃРєР»СЋС‡РµРЅРёСЏ, РІС‹РїРѕР»РЅСЏСЋС‚СЃСЏ С‚РµСЃС‚С‹ СЃ РїСЂРѕРІРµСЂРєРѕР№ РЅР° succses/fail
-			//(РґРµС„Р°Р№РЅРёС‚СЊ РІ РЅР°СЃС‚СЂРѕР№РєР°С… РїСЂРѕРµРєС‚Р° (2С…))
+	LogDuration ld{};
 
-	#ifdef EX_CATCH
-		#define RUN(t, f) NATests_RUN_TEST_catch_ex(t,f)
-	#endif
+	ADD_TEST(test_eval_base);
+	ADD_TEST(arifm);
+	ADD_TEST(logic);
+	ADD_TEST(lists);
+	ADD_TEST(pred);
+	ADD_TEST(usl);
+	ADD_TEST(calcfun);
+	ADD_TEST(control_calc);
+	ADD_TEST(io);
+	ADD_TEST(id_repr);
+	ADD_TEST(id_func);
+	ADD_TEST(dotpairs);
+	ADD_TEST(macros);
+	ADD_TEST(xz_chto_za_categoria);
 
-	#ifndef EX_CATCH
-		#define RUN(t, f) NATests_RUN_TEST_nocatch_ex(t,f)
-	#endif
+	ADD_TEST(macrochars);
 
-	RUN(tester, test_eval_base);
-	RUN(tester, arifm);
-	RUN(tester, logic);
-	RUN(tester, lists);
-	RUN(tester, pred);
-	RUN(tester, usl);
-	RUN(tester, calcfun);
-	RUN(tester, control_calc);
-	RUN(tester, io);
-	RUN(tester, id_repr);
-	RUN(tester, id_func);
-	RUN(tester, dotpairs);
-	RUN(tester, macros);
-	RUN(tester, xz_chto_za_categoria);
-
-	test_outs(tester);
+	test_outs_group(tester);
 }

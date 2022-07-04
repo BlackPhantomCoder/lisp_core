@@ -12,16 +12,20 @@ public:
 	//std::string get_line();
 	virtual CoreData::stream_read_mode get_mode() const = 0;
 
-	char peek_char();
-	char get_char();
+	// -1 == eos
+	int peek_char();
+	// -1 == eos
+	int get_char();
 	void unread_last();
 	bool is_unreaded() const;
 protected:
-	virtual char t_read_char() = 0;
-	virtual char t_peek_char() = 0;
+	// -1 == eos
+	virtual int t_read_char() = 0;
+	// -1 == eos
+	virtual int t_peek_char() = 0;
 	virtual bool t_alive() const = 0;
 private:
-	char t_last;
+	int t_last;
 	bool t_unreaded;
 };
 

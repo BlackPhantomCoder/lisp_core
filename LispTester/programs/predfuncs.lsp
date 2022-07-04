@@ -1,8 +1,8 @@
-(SET-MACRO-CHAR (QUOTE \') 
-  (QUOTE (LAMBDA ()
-    (LIST (QUOTE QUOTE) (READ)))
-  )
-)
+; (SET-MACRO-CHAR (QUOTE \') 
+;   (QUOTE (LAMBDA ()
+;     (LIST (QUOTE QUOTE) (READ)))
+;   )
+; )
 
 ; (SET-MACRO-CHAR '\"
 ;                    '(LAMBDA (CHAR LST)
@@ -18,8 +18,8 @@
 ; )
 
 (SET-MACRO-CHAR '\) '(LAMBDA () (BREAK '\) "Syntax Error") ))
-(SET-MACRO-CHAR '\] '(LAMBDA () (BREAK '\] "Syntax Error") ))
-(SET-MACRO-CHAR '\, '(LAMBDA () (BREAK '\, "Syntax Error") ))
+;(SET-MACRO-CHAR '\] '(LAMBDA () (BREAK '\] "Syntax Error") ))
+;(SET-MACRO-CHAR '\, '(LAMBDA () (BREAK '\, "Syntax Error") ))
 
 
 (defun CAAR (lst) (car (car lst)))

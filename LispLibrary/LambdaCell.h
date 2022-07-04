@@ -3,7 +3,7 @@
 #include "Symbol.h"
 #include "DotPair.h"
 #include "Number.h"
-
+#include "json/include/json.hpp"
 #include <vector>
 
 enum class lambda_types : bool { lambda, nlambda };
@@ -24,7 +24,6 @@ inline bool is_nospread(const lambda& l);
 
 lambda make_lambda(lambda_types type, lambda_args_types arg_type, const Cell& params, Cell& body, SExprsFarm& farm);
 Cell gen_cell(const lambda& l, SExprsFarm& farm);
-
 
 
 

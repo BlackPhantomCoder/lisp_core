@@ -1,11 +1,8 @@
 #pragma once
 #include "SExpr.h"
 #include "SymbolsFarm.h"
-#include "SExprsFarm.h"
-
 
 class Symbol : public SExpr {
-    friend class SExprsFarm;
     friend class SymbolsFarm;
     friend bool is_null_symbol(const Symbol& c);
 public:

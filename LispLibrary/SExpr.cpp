@@ -18,26 +18,9 @@ void intrusive_ptr_release(SExpr* p)
     }
 }
 
-CoreData::ObjPoll< DotPair> dp_pool = []() {
-    CoreData::clear_pool_funcs().push_back([]() { 
-        dp_pool.clear_free(); 
-        });
-    return CoreData::ObjPoll<DotPair>();
-}();
-
-CoreData::ObjPoll< Number> n_pool = []() {
-    CoreData::clear_pool_funcs().push_back([]() { 
-        n_pool.clear_free(); 
-        });
-    return CoreData::ObjPoll<Number>();
-}();
-
-CoreData::ObjPoll< Symbol> s_pool = []() {
-    CoreData::clear_pool_funcs().push_back([]() { 
-        s_pool.clear_free(); 
-        });
-    return CoreData::ObjPoll<Symbol>();
-}();
+auto& dp_pool = CoreData::get_pool<DotPair>();
+auto& n_pool = CoreData::get_pool<Number>();
+auto& s_pool = CoreData::get_pool<Symbol>();
 
 SExprShare make_SExprShare_list_noinit()
 {
@@ -130,4 +113,34 @@ Symbol& SExpr::to_symbol()
 DotPair& SExpr::to_list()
 {
     return *((DotPair*)this);
+}
+
+SExpr::SExpr(SExpr&& rh) noexcept:
+    t_count(0)
+{
+}
+
+SExpr::SExpr(const SExpr& rh) :
+    t_count(0)
+{
+}
+
+SExpr& SExpr::operator=(SExpr&& rh) noexcept
+{
+    if (this != &rh) {
+        if (t_count != 0) {
+            t_count = rh.t_count;
+        }
+    }
+    return *this;
+}
+
+SExpr& SExpr::operator=(const SExpr& rh)
+{
+    if (this != &rh) {
+        if (t_count == 0) {
+            t_count = rh.t_count;
+        }
+    }
+    return *this;
 }

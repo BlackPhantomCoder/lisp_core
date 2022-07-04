@@ -2,22 +2,9 @@
 #include "Funcs.h"
 
 using namespace std;
-
-DotPair::DotPair(SExprsFarm& farm):
-	t_farm(&farm)
-{
-}
-
-DotPair::DotPair(const Cell& f, const Cell& s, SExprsFarm& farm) :
+DotPair::DotPair(const Cell& f, const Cell& s):
 	t_first(f),
-	t_second(s),
-	t_farm(&farm)
-{
-
-}
-
-DotPair::DotPair():
-	t_farm(nullptr)
+	t_second(s)
 {
 
 }
@@ -27,12 +14,19 @@ DotPair::~DotPair()
 	clear();
 }
 
+
+DotPair::DotPair(const DotPair& rh):
+	t_first((rh.t_first)),
+	t_second((rh.t_second))
+{
+
+}
+
 DotPair::DotPair(DotPair&& rh)noexcept :
 	t_first(move(rh.t_first)),
-	t_second(move(rh.t_second)),
-	t_farm(rh.t_farm)
+	t_second(move(rh.t_second))
 {
-	rh.t_farm = nullptr;
+
 }
 
 bool DotPair::empty() const{
@@ -43,7 +37,6 @@ void DotPair::clear() {
 	if (!empty()) {
 		t_first.clear();
 		t_second.clear();
-		t_farm = nullptr;
 	}
 }
 
@@ -56,15 +49,22 @@ DotPair& DotPair::operator=(DotPair&& rh)noexcept {
 	if (this != &rh) {
 		t_first = move(rh.t_first);
 		t_second = move(rh.t_second);
-		t_farm = rh.t_farm;
-		rh.t_farm = nullptr;
+	}
+	return *this;
+}
+
+DotPair& DotPair::operator=(const DotPair& rh) noexcept
+{
+	if (this != &rh) {
+		t_first = (rh.t_first);
+		t_second = (rh.t_second);
 	}
 	return *this;
 }
 
 bool is_null_list(const DotPair& lst)
 {
-	return lst.t_farm && lst.t_first.empty();
+	return lst.t_first.empty();
 }
 
 

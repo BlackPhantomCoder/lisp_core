@@ -3,8 +3,11 @@
 #include <iostream>
 #include <unordered_map>
 #include <list>
+#include <optional>
+#include "json/include/json.hpp"
 
 class Cell;
+class Symbol;
 class SymbolsFarm {
 public:
     using oblist = std::list<std::string_view>;
@@ -35,12 +38,20 @@ public:
     };
 public:
     SymbolsFarm();
+    ~SymbolsFarm();
 
-    SymbolsFarm::symbol_core make_or_copy(std::string&& str);
-    SymbolsFarm::symbol_core make_or_copy(const std::string& str);
+    void make_or_copy(Symbol& s, std::string&& str);
+    void make_or_copy(Symbol& s, const std::string& str);
     void del_symbol(symb_mp::iterator);
 
     const oblist& get_lst() const;
+
+
+    void init(std::optional<std::reference_wrapper<nlohmann::json>> state);
+    // сохрание состояния
+    void save_state(nlohmann::json& j);
+    // загрузка состояния 
+    void load_state(const nlohmann::json& j);
 private:
     symb_mp t_symbol_to_it_and_count;
     oblist t_oblist;

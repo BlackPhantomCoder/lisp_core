@@ -1,6 +1,5 @@
 #pragma once
 #include "SExpr.h"
-#include "SExprsFarm.h"
 #include "CoreData.h"
 
 class DotPair : public SExpr
@@ -19,14 +18,14 @@ class DotPair : public SExpr
 
     friend bool is_null_list(const DotPair& lst);
 public:
-    DotPair();
+    DotPair() = default;
     ~DotPair();
 
-    DotPair(const DotPair& rh) = default;
+    DotPair(const DotPair& rh);
     DotPair(DotPair&& rh)noexcept;
 
     DotPair& operator=(DotPair&& rh)noexcept;
-    DotPair& operator=(const DotPair& rh)noexcept = default;
+    DotPair& operator=(const DotPair& rh)noexcept;
 
     bool empty() const;
     void clear();
@@ -36,13 +35,10 @@ public:
 
     virtual SExpr::del_func_ptr get_del_fnc() const override;
 private:
-    DotPair(SExprsFarm& farm);
-    DotPair(const Cell& f, const Cell& s, SExprsFarm& farm);
+    DotPair(const Cell& f, const Cell& s);
 private:
     Cell t_first;
     Cell t_second;
-
-    SExprsFarm* t_farm;
 };
 
 bool is_null_list(const DotPair& lst);

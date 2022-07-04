@@ -6,11 +6,15 @@
 #include <memory>
 #include <algorithm>
 #include <iostream>
+#include <deque>
+#include <typeinfo>
 #include "boost/pool/pool_alloc.hpp"
 
+//
 template <class T, size_t new_block_size>
 class FrameArray;
 
+//Итератор для FrameArray
 template <class T, size_t new_block_size>
 class FrameArrayIterator {
     friend class FrameArray<T, new_block_size>;
@@ -113,6 +117,8 @@ private:
     size_t t_offset;
 };
 
+
+// Массив, хранящий указатели и помогающий удалять выделенные блоки
 template <class T, size_t new_block_size>
 class FrameArray {
     using frame = std::array<T*, new_block_size>;
@@ -135,27 +141,12 @@ public:
             t_frames.erase(std::begin(t_frames) + block);
         }
         else {
-            while (block >= 1) {
-                swap_ranges(
-                    std::begin(t_frames.at(block - 1)) + pos,
-                    std::end(t_frames.at(block - 1)),
-                    std::begin(t_frames.at(block))
-                );
-                swap_ranges(
-                    std::begin(t_frames.at(block)),
-                    std::begin(t_frames.at(block)) + pos,
-                    std::end(t_frames.at(block + 1)) - pos
-                );
-                --block;
-            }
-
             copy(
-                std::begin(t_frames.at(0)),
-                std::begin(t_frames.at(0)) + pos,
-                std::begin(t_frames.at(1))
+                std::begin(t_frames.at(block+1)) + pos,
+                std::end(t_frames.at(block+1)),
+                std::begin(t_frames.at(block))+pos
             );
-
-            t_frames.erase(std::begin(t_frames));
+            t_frames.erase(std::begin(t_frames) + block+1);
         }
     }
 
@@ -181,7 +172,7 @@ private:
 };
 
 
-
+//Пул
 template <class T, size_t new_block_size = 16384>
 class MPool {
 public:
@@ -220,35 +211,40 @@ public:
             return;
         }
 
-        auto* buf_ptr = (t_buffer) ? t_blocks.back().get() : nullptr;
+        auto* start_of_buffer_block = (t_buffer) ? t_blocks.back().get() : nullptr;
 
         auto mem_end = begin(t_mem) + t_mem_last_i;
         sort(begin(t_mem), mem_end);
-        sort(begin(t_blocks), end(t_blocks), [](const unique_ptr<T[]>& lh, const unique_ptr<T[]>& rh) { return lh.get() < rh.get(); });
+        sort(
+            begin(t_blocks),
+            end(t_blocks),
+            [](const unique_ptr<T[]>& lh, const unique_ptr<T[]>& rh) { return lh.get() < rh.get(); }
+        );
 
         auto block_it = begin(t_blocks);
-        auto it = begin(t_mem);
-        auto find_func = [this, &block_it, &it, &mem_end]() mutable {
+        auto mem_it = begin(t_mem);
+        auto find_func = [this, &block_it, &mem_it, &mem_end]() mutable {
             if (block_it == end(t_blocks)) return;
-            it = find(begin(t_mem), mem_end, block_it->get());
+            mem_it = find(begin(t_mem), mem_end, block_it->get());
             while (
-                it == mem_end
+                mem_it == mem_end
                 ||
-                (distance(it, mem_end) < new_block_size)
+                (distance(mem_it, mem_end) < new_block_size)
                 ||
-                (*(it + (new_block_size - 1)) != *it + (new_block_size - 1))
-                ) {
+                (*(mem_it + (new_block_size - 1)) != block_it->get() + (new_block_size - 1))
+            ) {
                 ++block_it;
                 if (block_it == end(t_blocks)) return;
-                it = find(begin(t_mem), mem_end, block_it->get());
+                mem_it = find(begin(t_mem), mem_end, block_it->get());
             }
         };
         find_func();
-        while (block_it != end(t_blocks) && it != mem_end) {
-            t_mem.delete_block(it);
+        while (block_it != end(t_blocks) && mem_it != mem_end) {
+
+            t_mem.delete_block(mem_it);
             t_mem_last_i -= new_block_size;
             mem_end = begin(t_mem) + t_mem_last_i;
-            it = begin(t_mem);
+            mem_it = begin(t_mem);
 
             block_it = t_blocks.erase(block_it);
 
@@ -256,29 +252,43 @@ public:
         }
         t_blocks.shrink_to_fit();
         t_mem.shrink_to_fit();
-
-        if (buf_ptr && t_blocks.back().get() != buf_ptr) {
-            if (t_blocks.size() > 1) {
+        if (t_blocks.size() > 1) {
+            if (start_of_buffer_block && t_blocks.back().get() != start_of_buffer_block) {
                 find_if(
                     begin(t_blocks),
                     end(t_blocks),
-                    [buf_ptr](const std::unique_ptr<T[]>& rh) {return rh.get() == buf_ptr; }
+                    [start_of_buffer_block](const std::unique_ptr<T[]>& rh) {return rh.get() == start_of_buffer_block; }
                 )->swap(*prev(end(t_blocks)));
             }
         }
+        else {
+            if (!std::empty(t_blocks)) {
+                if ((new_block_size-1) - (t_buffer - t_blocks.back().get()) == t_mem_last_i) {
+                    t_buffer = nullptr;
+                    t_blocks.clear();
+                    t_blocks.shrink_to_fit();
+                    t_mem.clear();
+                    t_mem.shrink_to_fit();
+                    t_mem_last_i = 0;
+                    return;
+                }
+            }
+        }
+
     }
 
     ~MPool() {
-
+        clear_free();
+        //std::cout << typeid(T).name() << sizeof(T) << std::endl;
     }
 private:
     T* t_get() {
         if (t_buffer) {
-            auto temp = t_buffer--;
-            if (temp == t_blocks.back().get()) {
+            if (t_buffer == t_blocks.back().get()) {
                 t_buffer = nullptr;
+                return t_blocks.back().get();
             }
-            return temp;
+            return t_buffer--;
         }
         else if (t_mem_last_i != 0) {
             auto temp = t_mem.at(t_mem_last_i - 1);
@@ -287,15 +297,25 @@ private:
         }
         else {
             t_blocks.push_back(std::make_unique<T[]>(new_block_size));
+
             t_mem.add();
-            t_buffer = t_blocks.back().get() + (new_block_size - 1);
-            return t_buffer--;
+            if constexpr (new_block_size == 1) {
+                return t_blocks.back().get();
+            }
+            else {
+                t_buffer = t_blocks.back().get() + (new_block_size - 1);
+                return t_buffer--;
+            }
         }
     }
 private:
+    // блоки
     std::vector<std::unique_ptr<T[]>> t_blocks;
+    // освобождённая память
     FrameArray<T, new_block_size> t_mem;
+    // следующий номер в mem
     size_t t_mem_last_i;
+    // текущий элемент последнего выделенного буфера
     T* t_buffer;
 };
 
@@ -314,13 +334,14 @@ typename const FrameArrayIterator<T, new_block_size>::reference  FrameArrayItera
 
 
 
+// Пул с мьютексом 
 //16384
 template<class T, size_t new_block_size = 16384>
 class MPoolWMutex : private MPool <T, new_block_size>{
 public:
     MPoolWMutex()
     {
-
+        
     }
     template<class... Args>
     T* construct(Args&&... args) {
@@ -341,5 +362,62 @@ public:
         MPool<T, new_block_size>::clear_free();
     }
 private:
+    std::mutex t_m;
+};
+
+
+
+
+#include <iostream>
+// простой пул, помогающий в отладке
+//16384
+template<class T>
+class DebugPoolWMutex {
+public:
+    DebugPoolWMutex() = default;
+
+    ~DebugPoolWMutex()
+    {
+        clear_free();
+        //std::cout << typeid(*this).name() << " delete count: " << t_count << std::endl;
+    }
+
+    template<class... Args>
+    T* construct(Args&&... args) {
+        std::lock_guard g(t_m);
+        T* result = t_get();
+        *result = T(std::forward<Args&&>(args)...);
+        return result;
+    }
+
+    T* get_default() {
+        std::lock_guard g(t_m);
+        return  t_get();
+    }
+    void free(T* val) {
+        std::lock_guard g(t_m);
+        t_mem.push_back(val);
+    }
+    void clear_free() {
+        std::lock_guard g(t_m);
+        for (auto* val : t_mem) {
+            delete val;
+        }
+        t_count -= t_mem.size();
+        t_mem.clear();
+    }
+private:
+    T* t_get() {
+        if (!std::empty(t_mem)) {
+            auto* temp = t_mem.back();
+            t_mem.pop_back();
+            return temp;
+        }
+        ++t_count;
+        return new T();
+    }
+private:
+    size_t t_count = 0;
+    std::deque<T*> t_mem;
     std::mutex t_m;
 };

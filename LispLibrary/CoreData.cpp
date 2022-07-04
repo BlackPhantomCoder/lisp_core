@@ -41,7 +41,6 @@ bifuncs_array CoreData::bifunc_setup()
         make_pair("=", &CoreEnvironment::bifunc_num_eq),
         make_pair("GETD", &CoreEnvironment::bifunc_getd),
         make_pair("SET", &CoreEnvironment::bifunc_set),
-        make_pair("READ", &CoreEnvironment::bifunc_read),
         make_pair("PRINT", &CoreEnvironment::bifunc_print),
         make_pair("PRIN1", &CoreEnvironment::bifunc_prin1),
         make_pair("EQUAL", &CoreEnvironment::bifunc_equal),
@@ -58,7 +57,7 @@ bifuncs_array CoreData::bifunc_setup()
         make_pair("COPY-TREE", &CoreEnvironment::bifunc_copy_tree),
         make_pair("READ-CHAR", &CoreEnvironment::bifunc_read_char),
         make_pair("UNREAD-CHAR", &CoreEnvironment::bifunc_unread_char),
-        make_pair("PEEK-CHAR", &CoreEnvironment::bifunc_peek_char),
+        //make_pair("PEEK-CHAR", &CoreEnvironment::bifunc_peek_char),
         make_pair("LISTEN", &CoreEnvironment::bifunc_listen),
         make_pair("BREAK", &CoreEnvironment::bifunc_break),
         make_pair("GET-MACRO-CHAR", &CoreEnvironment::bifunc_get_macro_char),
@@ -79,11 +78,13 @@ special_bifuncs_array CoreData::special_bifunc_setup()
 {
     return CoreData::special_bifuncs_array{
         make_pair("EVAL", &make_special_bifunc<Eval>),
+        make_pair("READ", &make_special_bifunc<Read>),
         make_pair("APPLY", &make_special_bifunc<Apply>),
         make_pair("APPEND", &make_special_bifunc<Append>),
         make_pair("MACROEXPAND-1", &make_special_bifunc<MacroExpand1>),
         make_pair("MACROEXPAND", &make_special_bifunc<MacroExpand>),
         make_pair("MAPCAR", &make_special_bifunc<MapCar>),
+        make_pair("PEEK-CHAR", &make_special_bifunc<PeekChar>),
     };
 }
 
@@ -98,15 +99,20 @@ special_nbifuncs_array CoreData::special_nbifunc_setup()
     };
 }
 
-std::vector<std::function<void(void)>>& CoreData::clear_pool_funcs()
+namespace CoreData{
+    const bifuncs_array bifuncs_arr = bifunc_setup();
+    const nbifuncs_array nbifuncs_arr = nbifunc_setup();
+    const special_bifuncs_array special_bifuncs_arr = special_bifunc_setup();
+    const special_nbifuncs_array special_nbifuncs_arr = special_nbifunc_setup();
+}
+
+funcs_pool& CoreData::clear_pool_funcs()
 {
-    static std::vector<std::function<void(void)>> p;
+    static funcs_pool p;
     return p;
 }
 
 void CoreData::funcs_pools_clear()
 {
-    for (auto& fnc : CoreData::clear_pool_funcs()) {
-        fnc();
-    }
+    clear_pool_funcs().clear();
 }

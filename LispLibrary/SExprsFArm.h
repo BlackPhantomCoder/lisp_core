@@ -1,19 +1,16 @@
 #pragma once
-//#include "SymbolsFerm.h"
-//#include "SymbolsProvider.h"
 #include <memory>
 #include <string>
+#include "json/include/json.hpp"
+
 #include "Cell.h"
+#include "SymbolsFarm.h"
 
 class CoreEnvironment;
 class BigInt;
-class SymbolsFarm;
 
 class SExprsFarm
-{
-public:
-	std::unique_ptr<SymbolsFarm> symbols;
-	
+{	
 public:
 	SExprsFarm(CoreEnvironment& env);
 
@@ -42,6 +39,9 @@ public:
 	//DotPair
 	Cell make_empty_list_cell();
 
+	// to cell
+	Cell make_list_cell(const DotPair& dp);
+
 	//list with 1 element
 	Cell make_list_cell(const Cell& f);
 	Cell make_list_cell(const Cell& f, const Cell& s);
@@ -57,9 +57,17 @@ public:
 	Cell macro_symbol();
 	Cell nil();
 	Cell T();
+
+	const SymbolsFarm::oblist& get_lst() const;
+
+
+	void init(std::optional<std::reference_wrapper<nlohmann::json>> state);
+	// сохрание состояния
+	void save_state(nlohmann::json& j);
+	// загрузка состояния 
+	void load_state(const nlohmann::json& j);
 private:
 	void t_init_list(DotPair& p, const Cell& f, const Cell& s);
-	void t_init_empty_list(DotPair& d);
 
 	void t_init_symb(Symbol& s, const std::string& data);
 	void t_init_symb(Symbol& s, std::string&& data);
@@ -72,6 +80,8 @@ private:
 	Cell make_cell_numb_noinit();
 private:
 	CoreEnvironment& t_env;
+	SymbolsFarm t_symbols;
+
 	Cell t_read_up_case_symbol;
 	Cell t_lambda_symbol;
 	Cell t_nlambda_symbol;

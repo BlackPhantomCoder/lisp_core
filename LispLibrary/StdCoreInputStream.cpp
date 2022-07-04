@@ -13,27 +13,34 @@ CoreData::stream_read_mode StdCoreInputStream::get_mode() const
     return t_mode;
 }
 
-char StdCoreInputStream::t_read_char()
+int StdCoreInputStream::t_read_char()
 {
-    if (!alive()) throw "empty stream";
-    /*auto buf = t_buf;
-    t_buf = t_stream.get().get();
-    return buf;*/
-    auto buf = t_stream.get().get();
-    if (!alive()) buf = ' ';
-    return buf;
+    if (!t_stream.get()) {
+        if (!t_eos) {
+            t_eos = true;
+            return -1;
+        }
+        throw "StdCoreInputStream: empty stream";
+    }
+    
+    return t_stream.get().get();
 }
 
-char StdCoreInputStream::t_peek_char()
+int StdCoreInputStream::t_peek_char()
 {
-    if (!alive()) throw "empty stream";
-    auto buf = t_stream.get().get();
-    if (!alive()) buf = ' ';
-    t_stream.get().unget();
-    return buf;
+    if (!t_stream.get()) {
+        if (!t_eos) {
+            return -1;
+        }
+        throw "StdCoreInputStream: empty stream";
+    }
+    return t_stream.get().peek();
 }
 
 bool StdCoreInputStream::t_alive() const
 {
-    return bool(t_stream.get());
+    if (!t_stream.get() && t_eos) {
+        return false;
+    }
+    return true;
 }

@@ -10,9 +10,9 @@
 #include <iostream>
 #include <deque>
 
-bool is_special_symbol(bool read_upcase, unsigned char token);
+bool is_special_symbol(bool read_upcase_val, unsigned char token);
 
-Cell bool_cast(bool val, SExprsFarm& farm);
+inline Cell bool_cast(bool val, SExprsFarm& farm) { return (val) ? farm.T() : farm.nil(); }
 bool is_null(const Cell& c);
 bool is_null_symbol(const Symbol& c);
 bool is_null_symbol(const Cell& c);
@@ -36,8 +36,8 @@ Cell cons_range(InputIt beg_it, InputIt end_it, SExprsFarm& farm);
 
 Cell append(const Cell& f, const Cell& s, SExprsFarm& farm);
 
-void rplaca(DotPair& rh, const Cell& exp);
-void rplacd(DotPair& rh, const Cell& exp);
+inline void rplaca(DotPair& rh, const Cell& exp) { rh.t_first = exp; }
+inline void rplacd(DotPair& rh, const Cell& exp) { rh.t_second = exp; }
 
 Cell tree_copy(const Cell& rh, SExprsFarm& farm);
 

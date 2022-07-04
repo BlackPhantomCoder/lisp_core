@@ -1,0 +1,20 @@
+digraph INITIAL {
+		rankdir=TR;
+		concentrate=true;
+		node [fontname="ArialNarrow"];
+		edge [fontname="Courier"];
+
+		init [root=true,peripheries=0,label="INITIAL",fontname="Courier"];
+		init -> start;
+
+		start [label=""];
+		start -> start [label="-"];
+		start -> z_numb [label="цифра"];
+
+		z_numb [label="z_numb",peripheries=2];
+		z_numb -> z_numb [label="цифра"];
+		z_numb -> r_numb [label="."];
+
+		r_numb [label="r_numb",peripheries=2];
+		r_numb -> r_numb [label="цифра"];
+}

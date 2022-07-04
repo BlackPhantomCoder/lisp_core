@@ -35,14 +35,15 @@ public:
     void rewind();
 
 protected:
-    virtual char t_read_char() override;
-    virtual char t_peek_char() override;
+    virtual int t_read_char() override;
+    virtual int t_peek_char() override;
     virtual bool t_alive() const override;
 private:
     Array t_lines;
     typename Array::const_iterator t_pos;
     size_t t_pos_at_str = 0;
     CoreData::stream_read_mode t_mode;
+    bool t_eos = false;;
 };
 
 //template <class Array>
@@ -128,12 +129,24 @@ StdCoreInputValArrayInput<Array>::StdCoreInputValArrayInput(const StdCoreInputVa
 template <class Array>
 bool StdCoreInputValArrayInput<Array>::t_alive() const
 {
-    return t_pos != std::end(t_lines);
+    if (t_pos == std::end(t_lines) && t_eos) {
+        return false;
+    }
+    return true;
+
+    //return t_pos != std::end(t_lines);
 }
 template <class Array>
-char StdCoreInputValArrayInput<Array>::t_read_char()
+int StdCoreInputValArrayInput<Array>::t_read_char()
 {
-    if (t_pos == std::end(t_lines)) throw "StdCoreInputValArrayInput::t_read_char: out of range";
+    if (t_pos == std::end(t_lines))
+    {
+        if (!t_eos) {
+            t_eos = true;
+            return -1;
+        }
+        throw "StdCoreInputValArrayInput::t_read_char: out of range";
+    }
     auto ch = (*t_pos)[t_pos_at_str++];
     if (t_pos_at_str == t_pos->size()) {
         t_pos_at_str = 0;
@@ -143,14 +156,20 @@ char StdCoreInputValArrayInput<Array>::t_read_char()
         }
     }
     
-    return ch;
+    return (unsigned char)ch;
 }
 
 template<class Array>
-inline char StdCoreInputValArrayInput<Array>::t_peek_char()
+inline int StdCoreInputValArrayInput<Array>::t_peek_char()
 {
-    if (t_pos == std::end(t_lines)) throw "StdCoreInputValArrayInput::t_read_char: out of range";
-    return (*t_pos)[t_pos_at_str];
+    if (t_pos == std::end(t_lines))
+    {
+        if (!t_eos) {
+            return -1;
+        }
+        throw "StdCoreInputValArrayInput::t_peek_char: out of range";
+    }
+    return (unsigned char)(*t_pos)[t_pos_at_str];
 }
 
 template <class Array>
@@ -164,4 +183,5 @@ void StdCoreInputValArrayInput<Array>::rewind()
 {
     t_pos = std::begin(t_lines);
     t_pos_at_str = 0;
+    t_eos = false;
 }

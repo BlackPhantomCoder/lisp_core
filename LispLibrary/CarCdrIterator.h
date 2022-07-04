@@ -6,7 +6,7 @@ class CarCdrConstIterator;
 class CarCdrIterator {
 public:
     using iterator_category = std::forward_iterator_tag;
-    using value_type = Cell ;
+    using value_type = Cell;
     using pointer = Cell*;
     using reference = Cell&;
     using const_reference = const Cell&;

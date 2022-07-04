@@ -12,8 +12,8 @@ using namespace std;
 const unordered_set<char> read_updcase_special_tokens = {'\\', ';', '\"', ',', '\'', '`', '|' , ' ' };
 const unordered_set<char> noread_updcase_special_tokens = { '\\', '\"', '|', ' ', ',' };
 
-bool is_special_symbol(bool read_upcase, unsigned char token) {
-    if (read_upcase) {
+bool is_special_symbol(bool read_upcase_val, unsigned char token) {
+    if (read_upcase_val) {
         if (auto it = read_updcase_special_tokens.find(token); it != end(read_updcase_special_tokens)) {
             return true;
         }
@@ -27,11 +27,6 @@ bool is_special_symbol(bool read_upcase, unsigned char token) {
         }
     }
     return false;
-}
-
-Cell bool_cast(bool val, SExprsFarm& farm)
-{
-    return (val) ? farm.T() : farm.nil();
 }
 
 bool is_null(const Cell& c)
@@ -141,15 +136,6 @@ Cell append(const Cell& f, const Cell& s, SExprsFarm& farm)
     return cons(car(f), append(cdr(f), s, farm), farm);
 }
 
-void rplaca(DotPair& rh, const Cell& exp)
-{
-    rh.t_first = exp;
-}
-
-void rplacd(DotPair& rh, const Cell& exp)
-{
-    rh.t_second = exp;
-}
 
 struct tree_copy_frame {
     CarCdrConstIterator it;
@@ -216,7 +202,7 @@ std::optional<std::reference_wrapper<const macro>> is_macro_call(const Cell& m, 
     if (!(!is_list(m) || is_null_list(to_list(m)))) {
         auto& c = car(m);
         if (is_symbol(c)) {
-            if (auto f_opt = e.t_funcs.find(to_symbol(c))) {
+            if (auto f_opt = e.funcs().find(to_symbol(c))) {
                 if (auto l = get_if<macro>(&f_opt->get())) {
                     return { *l };
                 }

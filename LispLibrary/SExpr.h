@@ -16,6 +16,13 @@ class SExpr
 public:
 	typedef void (*del_func_ptr) (SExpr*);
 public:
+	SExpr() = default;
+	SExpr(SExpr&& rh) noexcept;
+	SExpr(const SExpr& rh);
+
+	SExpr& operator=(SExpr&& rh) noexcept;
+	SExpr& operator=(const SExpr& rh);
+
 	virtual ~SExpr() = default;
 	virtual bool is_real() const;
 	virtual bool is_integer() const;

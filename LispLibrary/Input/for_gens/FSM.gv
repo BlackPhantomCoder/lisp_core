@@ -1,0 +1,48 @@
+digraph INITIAL {
+		rankdir=LR;
+		concentrate=true;
+		node [fontname="ArialNarrow"];
+		edge [fontname="Courier"];
+
+		init [root=true,peripheries=0,label="INITIAL",fontname="Courier"];
+		init -> N00B5BCF4;
+
+/*START*/	N00B5BCF4 [label=""];
+		N00B5BCF4 -> N00B5BE04 [label="\\0-\\b"];
+		N00B5BCF4 -> N00B5BE8C [label="\\t-\\n"];
+		N00B5BCF4 -> N00B5BE04 [label="\\v-\\f"];
+		N00B5BCF4 -> N00B5BE8C [label="\\r"];
+		N00B5BCF4 -> N00B5BE04 [label="\\x0e-\\x1f"];
+		N00B5BCF4 -> N00B5BE8C [label="\\x20"];
+		N00B5BCF4 -> N00B5BE04 [label="!"];
+		N00B5BCF4 -> N00B5BD38 [label="\""];
+		N00B5BCF4 -> N00B5BE04 [label="#-&"];
+		N00B5BCF4 -> N00B5BE04 [label="*-,"];
+		N00B5BCF4 -> N00B5BD7C [label="-"];
+		N00B5BCF4 -> N00B5BE04 [label=".-/"];
+		N00B5BCF4 -> N00B5BDC0 [label="0-9"];
+		N00B5BCF4 -> N00B5BE04 [label=":"];
+		N00B5BCF4 -> N00B5BD38 [label=";"];
+		N00B5BCF4 -> N00B5BE04 [label="<-["];
+		N00B5BCF4 -> N00B5BE48 [label="\\"];
+		N00B5BCF4 -> N00B5BE04 [label="^-{"];
+		N00B5BCF4 -> N00B5BD38 [label="|"];
+		N00B5BCF4 -> N00B5BE04 [label="}-\\xff"];
+
+/*ACCEPT 2*/	N00B5BD38 [label="[2]",peripheries=2];
+
+/*ACCEPT 3*/	N00B5BD7C [label="[3]",peripheries=2];
+		N00B5BD7C -> N00B5BDC0 [label="0-9"];
+
+/*ACCEPT 4*/	N00B5BDC0 [label="[4]",peripheries=2];
+
+/*ACCEPT 5*/	N00B5BE04 [label="[5]",peripheries=2];
+
+/*STATE*/	N00B5BE48 [label=""];
+		N00B5BE48 -> N00B5BE04 [label="\\0-\\xff"];
+
+/*ACCEPT 1*/	N00B5BE8C [label="[1]",peripheries=2];
+		N00B5BE8C -> N00B5BE8C [label="\\t-\\n"];
+		N00B5BE8C -> N00B5BE8C [label="\\r"];
+		N00B5BE8C -> N00B5BE8C [label="\\x20"];
+}

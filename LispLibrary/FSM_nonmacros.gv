@@ -1,0 +1,46 @@
+digraph INITIAL {
+		rankdir=LR;
+		concentrate=true;
+		node [fontname="ArialNarrow"];
+		edge [fontname="Courier"];
+
+		init [root=true,peripheries=0,label="INITIAL",fontname="Courier"];
+		init -> N0147CE5C;
+
+/*START*/	N0147CE5C [label=""];
+		N0147CE5C -> N0147CEE4 [label="\""];
+		N0147CE5C -> N0147CEA0 [label=";"];
+		N0147CE5C -> N0147CF28 [label="|"];
+
+/*STATE*/	N0147CEA0 [label=""];
+		N0147CEA0 -> N0147CEA0 [label="\\0-\\t"];
+		N0147CEA0 -> N0147CF6C [label="\\n"];
+		N0147CEA0 -> N0147CEA0 [label="\\v-\\xff"];
+		N0147CEA0 -> N0147CF6C [label="EOB",style="dashed"];
+
+/*STATE*/	N0147CEE4 [label=""];
+		N0147CEE4 -> N0147CEE4 [label="\\0-!"];
+		N0147CEE4 -> N0147CFB0 [label="\""];
+		N0147CEE4 -> N0147CEE4 [label="#-["];
+		N0147CEE4 -> N0147CFF4 [label="\\"];
+		N0147CEE4 -> N0147CEE4 [label="]-\\xff"];
+
+/*STATE*/	N0147CF28 [label=""];
+		N0147CF28 -> N0147CF28 [label="\\0-["];
+		N0147CF28 -> N0147D07C [label="\\"];
+		N0147CF28 -> N0147CF28 [label="]-{"];
+		N0147CF28 -> N0147D038 [label="|"];
+		N0147CF28 -> N0147CF28 [label="}-\\xff"];
+
+/*ACCEPT 1*/	N0147CF6C [label="[1]",peripheries=2];
+
+/*ACCEPT 2*/	N0147CFB0 [label="[2]",peripheries=2];
+
+/*STATE*/	N0147CFF4 [label=""];
+		N0147CFF4 -> N0147CEE4 [label="\\0-\\xff"];
+
+/*ACCEPT 3*/	N0147D038 [label="[3]",peripheries=2];
+
+/*STATE*/	N0147D07C [label=""];
+		N0147D07C -> N0147CF28 [label="\\0-\\xff"];
+}

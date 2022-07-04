@@ -14,7 +14,8 @@ class FuncsEvaler
 public:
 	FuncsEvaler(CoreEnvironment* env);
 
-	Cell eval(Cell& arg);
+	//Cell eval(Cell& arg);
+	Cell eval(CoreData::HolderPtr&& func);
 
 	void clear();
 private:

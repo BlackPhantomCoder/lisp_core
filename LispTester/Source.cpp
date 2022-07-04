@@ -17,10 +17,18 @@ using namespace CoreData;
 #include "TestsList.h"
 #include "STDMutexed.h"
 
-void cin_execute_kostil_repl(CoreInputStreamInt& is) {
-    cin.get();
-    auto core = make_core_w_predfuncs();
+void save_load_state() {
+    auto s_saved = stringstream();
     {
+        ofstream f("programs/s.json");
+        auto core = make_core_w_predfuncs();
+        core.save_state(f);
+    }
+}
+
+void cin_execute_kostil_repl(CoreInputStreamInt& is) {
+    auto core = make_core_w_predfuncs();
+   {
         auto os = ostringstream();
         auto out = StdCoreOutputStream(os);
         auto streams = RefCESP(is, out);
@@ -29,6 +37,8 @@ void cin_execute_kostil_repl(CoreInputStreamInt& is) {
             core.execute_all(streams);
         }
     }
+
+
     //auto is = istringstream("(loop (print (eval (progn (print '>) (read)))))");
     {
         auto s = StdCoreInputStream(cin, stream_read_mode::new_string);
@@ -38,14 +48,27 @@ void cin_execute_kostil_repl(CoreInputStreamInt& is) {
     }
 }
 
+#include "Func.h"
+#include "RangeBifunc.h"
+#include "RangeNBifunc.h"
+#include "Bifuncs.h"
+#include "SupportFuncs.h"
+#include <locale>
 int main()
 {
+    //для ввода...
+    system("chcp 1251");
+
+    //установка локали
+    setlocale(LC_ALL, "ru-RU");
+    locale::global(locale("ru-RU"));
+
     //запуск тестов (в эту функцию писать все запуски тестов)
     run_all_tests();
     //запуск репла с cin + предзагрузка из потока (в данном случае - файл) 
     ifstream f("programs/1.lsp");
     auto cf = StdCoreInputStream(f, stream_read_mode::s_expression);
-    //for (size_t i = 0; i < 1000000; ++i) new long[480];
     cin_execute_kostil_repl(cf);
 
+    //save_load_state();
 }

@@ -22,10 +22,10 @@ std::string OutputController::to_string(const Cell& exp)
         return t_to_string_list(exp);
     }
     else if (is_symbol(exp)) {
-        return t_to_string(to_symbol(exp));
+        return to_string(to_symbol(exp));
     }
     else if (is_number(exp)) {
-        return t_to_string(to_number(exp));
+        return to_string(to_number(exp));
     }
     else {
         throw "to_string: unknown object";
@@ -38,10 +38,10 @@ std::string OutputController::to_string_raw(const Cell& exp)
         return t_to_string_list_raw(exp);
     }
     else if (is_symbol(exp)) {
-        return t_to_string_raw(to_symbol(exp));
+        return to_string_raw(to_symbol(exp));
     }
     else if (is_number(exp)) {
-        return t_to_string_raw(to_number(exp));
+        return to_string_raw(to_number(exp));
     }
     else {
         throw "to_string: unknown object";
@@ -80,7 +80,7 @@ std::string OutputController::t_to_string_list(const Cell& d)
 const std::unordered_set<char> skip_symbols = { ' ', '\t' };
 const std::unordered_set<char> specital_single_symbols = { '.', ',', '|', '\\', '\"', '\'', '`', '(', ')' };
 
-std::string OutputController::t_to_string(const Symbol& s)
+std::string OutputController::to_string(const Symbol& s)
 {
     std::string str = s.to_string();
     if (str.empty()) return "||";
@@ -124,7 +124,7 @@ std::string OutputController::t_to_string(const Symbol& s)
     return str;
 }
 
-std::string OutputController::t_to_string(const Number& n)
+std::string OutputController::to_string(const Number& n)
 {
     if (is_integer(n)) {
         return to_integer(n).to_string();
@@ -151,7 +151,11 @@ std::string OutputController::t_to_string(const Number& n)
         ostringstream s;
         s << setprecision(i + 1);
         s << result;
-        return s.str();
+        auto str = s.str();
+        if (auto pos = str.find(','); pos != str.npos) {
+            str[pos] = '.';
+        }
+        return str;
     }
     else {
         throw "to_string: unknown object";
@@ -182,12 +186,26 @@ std::string OutputController::t_to_string_list_raw(const Cell& d)
     return s;
 }
 
-std::string OutputController::t_to_string_raw(const Symbol& s)
+std::string OutputController::to_string_raw(const Symbol& s)
 {
     return s.to_string();
 }
 
-std::string OutputController::t_to_string_raw(const Number& n)
+std::string OutputController::to_string_raw(const Number& n)
 {
-    return t_to_string(n);
+    if (is_integer(n)) {
+        return to_integer(n).to_string();
+    }
+    else if (is_real(n)) {
+        ostringstream s;
+        s << to_real(n);
+        auto str = s.str();
+        if (auto pos = str.find(','); pos != str.npos) {
+            str[pos] = '.';
+        }
+        return str;
+    }
+    else {
+        throw "to_string: unknown object";
+    }
 }

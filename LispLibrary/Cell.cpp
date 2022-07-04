@@ -1,5 +1,17 @@
 #include "Cell.h"
+#include "Symbol.h"
+#include "Number.h"
+#include "DotPair.h"
 using namespace std;
+
+cell_type type(const Cell& exp) {
+    if (exp.t_data->is_list()) return cell_type::list;
+    if (exp.t_data->is_number()) return cell_type::numb;
+    if (exp.t_data->is_symbol()) return cell_type::symbol;
+    throw std::logic_error("type");
+}
+
+
 
 Cell::Cell(SExprShare core):
     t_data(move(core))

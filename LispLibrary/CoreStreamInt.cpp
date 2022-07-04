@@ -3,17 +3,19 @@
 
 bool CoreInputStreamInt::alive() const
 {
-    if (!t_alive()) return t_unreaded;
-    return  true;
+    if (t_unreaded) return t_last != -1;
+    return t_alive();
+    //if (!t_alive()) return t_unreaded;
+    //return  true;
 }
 
-char CoreInputStreamInt::peek_char()
+int CoreInputStreamInt::peek_char()
 {
     if (t_unreaded) return t_last;
     return t_peek_char();
 }
 
-char CoreInputStreamInt::get_char()
+int CoreInputStreamInt::get_char()
 {
     if (t_unreaded) {
         t_unreaded = false;

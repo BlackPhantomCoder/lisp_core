@@ -1,5 +1,6 @@
 #pragma once
-#include "AFuncs.h"
+#include "Func.h"
+#include "RangeNBifunc.h"
 #include "CellEnvironment.h"
 #include "LambdaCell.h"
 #include "MacroCell.h"
@@ -23,16 +24,20 @@ public:
 private:
 	CellEnvironment::frame t_create_frame();
 private:
-	std::reference_wrapper<const lambda> t_l;
+	std::variant<
+		CoreData::HolderPtr,
+		Cell,
+		std::pair<CarCdrIterator, CarCdrIterator>,
+		std::monostate
+	> t_args = std::monostate{};
 	Cell t_costil_param;
 	Cell t_costil_body;
 	Cell t_temp;
-
-	std::optional<CoreData::HolderPtr> t_args_eval_func;
-	std::variant<Cell, std::pair<CarCdrIterator, CarCdrIterator>, std::monostate> t_args = std::monostate{};
+	lambda_args_types t_arg_type;
 };
 
 
+//! c передаётся по ссылке
 class EvalQuote : public Func {
 public:
 	EvalQuote(CoreEnvironment& env, Cell& c);
@@ -84,11 +89,12 @@ private:
 	virtual bool t_eval_args() override;
 	virtual void t_internal_execute() override;
 private:
-	Cell* t_fnc;
+	std::variant<Cell*, CoreData::bifunc, lambda> t_buf;
+	//Cell* t_fnc;
 	CarCdrIterator t_args_beg;
 	CarCdrIterator t_args_end;
-	CoreData::bifunc t_bifunc = nullptr;
-	std::optional<lambda> t_buf;
+	//CoreData::bifunc t_bifunc = nullptr;
+	//std::optional<lambda> t_buf;
 	bool t_forse_noeval_func;
 };
 
@@ -111,7 +117,6 @@ private:
 private:
 	virtual void t_init_from_buf();
 private:
-	bool t_forse_noeval;
 	const macro* t_macro;
 
 	Cell t_param_list;
@@ -119,6 +124,7 @@ private:
 	CarCdrIterator t_param_list_e;
 	Cell t_args;
 	Cell t_buf;
+	bool t_forse_noeval;
 	bool t_buf_flag = false;
 	bool t_once;
 };

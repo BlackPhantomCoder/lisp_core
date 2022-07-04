@@ -117,6 +117,11 @@ double BigInt::to_double() const
     return mpz_get_d(t_val);
 }
 
+int BigInt::to_int() const
+{
+    return mpz_get_si(t_val);
+}
+
 std::string BigInt::to_string() const
 {
     std::string result;

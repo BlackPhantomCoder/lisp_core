@@ -34,6 +34,7 @@ public:
 
 	bool is_castable_to_double()const;
 	double to_double()const;
+	int to_int() const;
 	std::string to_string()const;
 private:
 	mpz_t t_val;

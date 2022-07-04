@@ -3,10 +3,10 @@
 #include "STDMutexed.h"
 #include "StdCoreInputStream.h"
 #include "StdCoreOutputStream.h"
+#include "Errors.h"
 
 #include <tuple>
 #include <utility>
-
 
 using namespace std;
 using namespace CoreData;
@@ -18,36 +18,66 @@ Core::Core(Core&& rh) noexcept:
 
 }
 
+Core::Core(std::istream& state_stream, std::unique_ptr<IMutexed<bool>>&& custom_mutex):
+    Core(std::optional<std::reference_wrapper<std::istream>>{state_stream}, move(custom_mutex))
+{
+
+}
+
+Core::Core(std::istream& state_stream) :
+    Core(std::optional<std::reference_wrapper<std::istream>>{ state_stream }, nullopt)
+{
+}
+
 Core::Core(
     CoreEnvStreamsProviderInt& predfuncs,
     std::unique_ptr<IMutexed<bool>>&& custom_mutex
 ):
-    Core(move(custom_mutex))
+    Core(nullopt, move(custom_mutex))
 {
     this->execute_all(predfuncs);
 }
 
 Core::Core(std::unique_ptr<IMutexed<bool>>&& custom_mutex) :
-    Core()
+    Core(nullopt, move(custom_mutex))
 {
-    t_stop = move(custom_mutex);
-    t_stop->set(false);
+
 }
 
 Core::Core(CoreEnvStreamsProviderInt& predfuncs):
-    Core()
+    Core(nullopt, nullopt)
 {
     this->execute_all(predfuncs);
 }
 
-Core::Core() :
-    t_env(make_unique<CoreEnvironment>())
+void Core::save_state(std::ostream& os)
 {
-    t_stop = make_unique<STDMutexed<bool>>(false);
+    t_env->save_state(os);
 }
+
+bool Core::load_state(std::istream& is)
+{
+    return t_env->load_state(is);
+}
+
+Core::Core(
+    std::optional<std::reference_wrapper<std::istream>> state_stream,
+    std::optional<std::unique_ptr<IMutexed<bool>>> custom_mutex
+):
+    t_env(make_unique<CoreEnvironment>(state_stream))
+{
+        if (!custom_mutex)
+            t_stop = make_unique<STDMutexed<bool>>(false);
+        else {
+            t_stop = std::move(*custom_mutex);
+            t_stop->set(false);
+        }
+}
+
 
 Core::~Core()
 {
+    t_env->t_clear();
     if (t_stop) {
         t_stop->set(true);
     }
@@ -58,39 +88,7 @@ Core::result_type Core::execute_all(CoreEnvStreamsProviderInt& streams)
     if (t_stop->get()) {
         t_stop->set(false);
     }
-    bool success = true;
-
-    #ifndef EX_CATCH
-    t_env->execute_all(streams, *t_stop);;
-    #endif
-
-    #ifdef EX_CATCH
-        try
-        {
-           t_env->execute_all(streams, *t_stop);
-        }
-        catch (const char* str)
-        {
-            success = false;
-            streams.t_output_stream().out_new_line("error: "s + str);
-        }
-        catch (const std::string& str)
-        {
-            success = false;
-            streams.t_output_stream().out_new_line("error: "s + str);
-        }
-        catch (const throw_stop_helper&)
-        {
-            return Core::result_type::stopped;
-        }
-        catch (...)
-        {
-            success = false;
-            streams.t_output_stream().out_new_line("error: "s + "unknown");
-        }
-    #endif
-    if (!success) return Core::result_type::fail;
-    return Core::result_type::success;
+    return t_under_catch([this, &streams]() {t_env->execute_all(streams, *t_stop); }, streams, false);
 }
 
 Core::result_type Core::execute_one(CoreEnvStreamsProviderInt& streams)
@@ -98,39 +96,7 @@ Core::result_type Core::execute_one(CoreEnvStreamsProviderInt& streams)
     if (t_stop->get()) {
         t_stop->set(false);
     }
-    bool success = true;
-
-    #ifndef EX_CATCH
-        t_env->execute_one(streams, *t_stop);
-    #endif
-
-    #ifdef EX_CATCH
-        try
-        {
-            t_env->execute_one(streams, *t_stop);
-        }
-        catch (const char* str)
-        {
-            success = false;
-            streams.t_output_stream().out_new_line("error: "s + str);
-        }
-        catch (const std::string& str)
-        {
-            success = false;
-            streams.t_output_stream().out_new_line("error: "s + str);
-        }
-        catch (const throw_stop_helper&)
-        {
-            return Core::result_type::stopped;
-        }
-        catch (...)
-        {
-            success = false;
-            streams.t_output_stream().out_new_line("error: "s + "unknown");
-        }
-    #endif
-        if (!success) return Core::result_type::fail;
-        return Core::result_type::success;
+    return t_under_catch([this, &streams]() {t_env->execute_one(streams, *t_stop); }, streams );
 }
 
 Core::result_type Core::execute_driver(CoreEnvStreamsProviderInt& streams)
@@ -138,39 +104,7 @@ Core::result_type Core::execute_driver(CoreEnvStreamsProviderInt& streams)
     if (t_stop->get()) {
         t_stop->set(false);
     }
-    bool success = true;
-
-    #ifndef EX_CATCH
-        t_env->execute_driver(streams, *t_stop);
-    #endif
-        
-    #ifdef EX_CATCH
-        try
-        {
-            t_env->execute_driver(streams, *t_stop);
-        }
-        catch (const char* str)
-        {
-            success = false;
-            streams.t_output_stream().out_new_line("error: "s + str);
-        }
-        catch (const std::string& str)
-        {
-            success = false;
-            streams.t_output_stream().out_new_line("error: "s + str);
-        }
-        catch (const throw_stop_helper&)
-        {
-            return Core::result_type::stopped;
-        }
-        catch (...)
-        {
-            success = false;
-            streams.t_output_stream().out_new_line("error: "s + "unknown");
-        }
-    #endif
-    if (!success) return Core::result_type::fail;
-    return Core::result_type::success;
+    return t_under_catch([this, &streams]() {t_env->execute_driver(streams, *t_stop); }, streams, false);
 }
 
 void Core::stop()

@@ -11,8 +11,7 @@ using namespace std;
 using namespace CoreData;
 
 SExprsFarm::SExprsFarm(CoreEnvironment& env):
-	t_env(env),
-	symbols(std::make_unique<SymbolsFarm>())
+	t_env(env)
 {
 	t_nil = make_symbol_cell(nil_str);
 	t_T = make_symbol_cell(T_str);
@@ -25,14 +24,14 @@ SExprsFarm::SExprsFarm(CoreEnvironment& env):
 Symbol SExprsFarm::make_symbol(const std::string& data)
 {
 	Symbol c;
-	c.t_data = symbols->make_or_copy(data);
+	t_init_symb(c, data);
 	return c;
 }
 
 Symbol SExprsFarm::make_symbol(std::string&& data)
 {
 	Symbol c;
-	c.t_data = symbols->make_or_copy(move(data));
+	t_init_symb(c, move(data));
 	return c;
 }
 
@@ -104,8 +103,14 @@ Cell SExprsFarm::make_number_cell(const Number& s)
 
 Cell SExprsFarm::make_empty_list_cell()
 {
+	// пустой лист не нуждается в инициализации
+	return make_cell_list_noinit();
+}
+
+Cell SExprsFarm::make_list_cell(const DotPair& dp)
+{
 	auto c = make_cell_list_noinit();
-	t_init_empty_list(to_list(c));
+	to_list(c) = dp;
 	return c;
 }
 
@@ -156,21 +161,44 @@ Cell SExprsFarm::T()
 	return t_T;
 }
 
+const SymbolsFarm::oblist& SExprsFarm::get_lst() const
+{
+	return t_symbols.get_lst();
+}
+
+void SExprsFarm::init(std::optional<std::reference_wrapper<nlohmann::json>> state)
+{
+	if (state) {
+		load_state(*state);
+	}
+}
+
+void SExprsFarm::save_state(nlohmann::json& j)
+{
+	t_symbols.save_state(j);
+}
+
+void SExprsFarm::load_state(const nlohmann::json& j)
+{
+	t_symbols.load_state(j);
+}
+
 void SExprsFarm::t_init_list(DotPair& p, const Cell& f, const Cell& s)
 {
-	p.t_farm = this;
 	p.t_first = f;
 	p.t_second = s;
 }
 
+int i = 0;
+
 void SExprsFarm::t_init_symb(Symbol& s, const std::string& data)
 {
-	s.t_data = symbols->make_or_copy(data);
+	t_symbols.make_or_copy(s, data);
 }
 
 void SExprsFarm::t_init_symb(Symbol& s, std::string&& data)
 {
-	s.t_data = symbols->make_or_copy(move(data));
+	t_symbols.make_or_copy(s, move(data));
 }
 
 void SExprsFarm::t_init_numb(Number& n, double val)
@@ -198,9 +226,3 @@ Cell SExprsFarm::make_cell_numb_noinit()
 {
 	return Cell(make_SExprShare_numb_noinit());
 }
-
-void SExprsFarm::t_init_empty_list(DotPair& d)
-{
-	d.t_farm = this;
-}
-

@@ -90,7 +90,7 @@
       <PreprocessorDefinitions>EX_CATCH;TREAT_SAFE_MEMORY_CONTROL;WIN32;_DEBUG;LISPLIBRARY_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
       <DisableSpecificWarnings>4146</DisableSpecificWarnings>
       <AdditionalIncludeDirectories>$(SolutionDir)\ProfileLib;$(SolutionDir)\LispLibrary;$(MyLibsPath)\</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -100,13 +100,17 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>&gt;ProfileLib_dr.lib;1.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ProfileLib_d.lib;1.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)libs\ProfileLib;$(SolutionDir)libs\gmp</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>
       </Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -139,26 +143,40 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="ArgsCounter.h" />
-    <ClInclude Include="AFuncs.h" />
     <ClInclude Include="Bifuncs.h" />
     <ClInclude Include="BigInt.h" />
     <ClInclude Include="CarCdrIterator.h" />
     <ClInclude Include="Cell.h" />
     <ClInclude Include="CellEnvironment.h" />
+    <ClInclude Include="CellSerializer.h" />
     <ClInclude Include="Core.h" />
     <ClInclude Include="CoreEnv.h" />
     <ClInclude Include="CoreEnvStreamsProvider.h" />
     <ClInclude Include="CoreStreamInt.h" />
     <ClInclude Include="DotPair.h" />
+    <ClInclude Include="Errors.h" />
+    <ClInclude Include="FSM_Scanner.h" />
+    <ClInclude Include="FSM_Symbols.h" />
+    <ClInclude Include="Func.h" />
     <ClInclude Include="FuncInt.h" />
     <ClInclude Include="Funcs.h" />
     <ClInclude Include="CoreData.h" />
     <ClInclude Include="FuncsEvaler.h" />
     <ClInclude Include="FuncsStorage.h" />
+    <ClInclude Include="Input.h" />
+    <ClInclude Include="Input\FSM\FSM.h" />
+    <ClInclude Include="Input\FSM\FSM_nonmacros.h" />
+    <ClInclude Include="Input\FSM_Num\FSM_Num.h" />
+    <ClInclude Include="Input\MacroTable.h" />
+    <ClInclude Include="Input\Scanner.h" />
+    <ClInclude Include="Input\parser.tab.h" />
     <ClInclude Include="LambdaCell.h" />
+    <ClInclude Include="parser.h" />
+    <ClInclude Include="ParserHelper.h" />
+    <ClInclude Include="RangeBifunc.h" />
+    <ClInclude Include="RangeNBifunc.h" />
     <ClInclude Include="StdCoreInputArrayInput.h" />
     <ClInclude Include="SupportFuncs.h" />
-    <ClInclude Include="Lexer.h" />
     <ClInclude Include="MacroCell.h" />
     <ClInclude Include="MPool.h" />
     <ClInclude Include="Mutexed.h" />
@@ -177,7 +195,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ArgsCounter.cpp" />
-    <ClCompile Include="AFuncs.cpp" />
+    <ClCompile Include="CellSerializer.cpp" />
+    <ClCompile Include="Func.cpp" />
     <ClCompile Include="Bifuncs.cpp" />
     <ClCompile Include="BigInt.cpp" />
     <ClCompile Include="CarCdrIterator.cpp" />
@@ -189,13 +208,23 @@
     <ClCompile Include="CoreEnvStreamsProvider.cpp" />
     <ClCompile Include="CoreStreamInt.cpp" />
     <ClCompile Include="DotPair.cpp" />
+    <ClCompile Include="FSM_Scanner.cpp" />
+    <ClCompile Include="FSM_Symbols.cpp" />
     <ClCompile Include="Funcs.cpp" />
     <ClCompile Include="FuncsEvaler.cpp" />
     <ClCompile Include="FuncsStorage.cpp" />
+    <ClCompile Include="Input.cpp" />
+    <ClCompile Include="Input\FSM_Num\FSM_Num.cpp" />
+    <ClCompile Include="Input\MacroTable.cpp" />
+    <ClCompile Include="Input\Scanner.cpp" />
+    <ClCompile Include="Input\parser.tab.c" />
     <ClCompile Include="LambdaCell.cpp" />
+    <ClCompile Include="ParserHelper.cpp" />
+    <ClCompile Include="parser_tokens.cpp" />
+    <ClCompile Include="RangeBifunc.cpp" />
+    <ClCompile Include="RangeNBifunc.cpp" />
     <ClCompile Include="StdCoreInputArrayInput.cpp" />
     <ClCompile Include="SupportFuncs.cpp" />
-    <ClCompile Include="Lexer.cpp" />
     <ClCompile Include="MacroCell.cpp" />
     <ClCompile Include="Number.cpp" />
     <ClCompile Include="OutputController.cpp" />
@@ -207,6 +236,54 @@
     <ClCompile Include="StdCoreOutputStream.cpp" />
     <ClCompile Include="Symbol.cpp" />
     <ClCompile Include="SymbolsFarm.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="Input\for_gens\FSM.l">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd $(ProjectDir)%(RelativeDir)
+$(SolutionDir)external_programs\gens\reflex.exe --graphs-file=%(Filename) %(FullPath)
+cd $(ProjectDir)Input\FSM
+$(SolutionDir)external_programs\gens\dist\fsm_gen.exe $(ProjectDir)Input\for_gens\%(Filename).gv $(ProjectDir)Input\for_gens\%(Filename).l %(Filename).h %(Filename).gv %(Filename)</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Gen FSM: %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Input\FSM\%(Filename).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd $(ProjectDir)%(RelativeDir)
+$(SolutionDir)external_programs\gens\reflex.exe --graphs-file=%(Filename) %(FullPath)
+cd $(ProjectDir)Input\FSM
+$(SolutionDir)external_programs\gens\dist\fsm_gen.exe $(ProjectDir)Input\for_gens\%(Filename).gv $(ProjectDir)Input\for_gens\%(Filename).l %(Filename).h %(Filename).gv %(Filename)</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Gen FSM: %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Input\FSM\%(Filename).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="Input\for_gens\FSM_nonmacros.l">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd $(ProjectDir)%(RelativeDir)
+$(SolutionDir)external_programs\gens\reflex.exe --graphs-file=%(Filename) %(FullPath)
+cd $(ProjectDir)Input\FSM
+$(SolutionDir)external_programs\gens\dist\fsm_gen.exe $(ProjectDir)Input\for_gens\%(Filename).gv $(ProjectDir)Input\for_gens\%(Filename).l %(Filename).h %(Filename).gv %(Filename)</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Gen FSM: %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Input\FSM\%(Filename).h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd $(ProjectDir)%(RelativeDir)
+$(SolutionDir)external_programs\gens\reflex.exe --graphs-file=%(Filename) %(FullPath)
+cd $(ProjectDir)Input\FSM
+$(SolutionDir)external_programs\gens\dist\fsm_gen.exe $(ProjectDir)Input\for_gens\%(Filename).gv $(ProjectDir)Input\for_gens\%(Filename).l %(Filename).h %(Filename).gv %(Filename)</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Gen FSM: %(Filename)</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Input\FSM\%(Filename).h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="Input\for_gens\parser.y">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd $(ProjectDir)Input\
+$(SolutionDir)external_programs\gens\win_bison.exe -d %(FullPath)
+</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)\Input\parser.tab.h;$(ProjectDir)\Input\parser.tab.c;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Bison: %(Filename)</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Bison: %(Filename)</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd $(ProjectDir)Input\
+$(SolutionDir)external_programs\gens\win_bison.exe -d %(FullPath)
+</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)\Input\parser.tab.h;$(ProjectDir)\Input\parser.tab.c;%(Outputs)</Outputs>
+    </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

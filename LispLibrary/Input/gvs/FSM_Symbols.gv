@@ -1,0 +1,22 @@
+digraph INITIAL {
+		rankdir=LR;
+		concentrate=true;
+		node [fontname="ArialNarrow"];
+		edge [fontname="Courier"];
+
+		init [root=true,peripheries=0,label="INITIAL",fontname="Courier"];
+		init -> start;
+
+		start [label=""];
+		start -> escape [label="\\"];
+		start -> accept  [label="не входит в [' ', '\\t', '\\n', '\\r', ';', '\\\"', '|',  '(', ')', '\\\'', ']']"];
+		start -> accept  [label="входит в [' ', '\\t', '\\n', '\\r', ';', '\\\"', '|',  '(', ')', '\\\'', ']'], но является неограничивающим макрочаром"];
+
+		escape [label=""];
+		escape -> accept [label="любой"];
+
+		accept [label="symbol",peripheries=2];
+		accept -> escape [label="\\"];
+		accept -> accept  [label="не входит в [' ', '\\t', '\\n', '\\r', ';', '\\\"', '|',  '(', ')', '\\\'', ']']"];
+		accept -> accept  [label="входит в [' ', '\\t', '\\n', '\\r', ';', '\\\"', '|',  '(', ')', '\\\'', ']'], но является неограничивающим макрочаром"];
+}

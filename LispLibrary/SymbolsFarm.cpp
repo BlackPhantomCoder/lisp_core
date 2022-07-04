@@ -17,7 +17,12 @@ SymbolsFarm::SymbolsFarm()
     t_nil = symbol_core(it, *this);
 }
 
-SymbolsFarm::symbol_core SymbolsFarm::make_or_copy(std::string&& str)
+SymbolsFarm::~SymbolsFarm()
+{
+    t_nil.clear();
+}
+
+void SymbolsFarm::make_or_copy(Symbol& s, std::string&& str)
 {
     auto [it, reason] = t_symbol_to_it_and_count.insert({ move(str), { end(t_oblist), 0 } });
     if (reason) {
@@ -25,19 +30,18 @@ SymbolsFarm::symbol_core SymbolsFarm::make_or_copy(std::string&& str)
         it->second.first = begin(t_oblist);
         it->second.second = 0;
     }
-    return symbol_core(it, *this);
+    s.t_data = symbol_core(it, *this);
 }
 
-SymbolsFarm::symbol_core SymbolsFarm::make_or_copy(const std::string& str)
+void SymbolsFarm::make_or_copy(Symbol& s, const std::string& str)
 {
-
     auto [it, reason] = t_symbol_to_it_and_count.insert({ str, { end(t_oblist), 0 } });
     if (reason) {
         t_oblist.push_front(it->first);
         it->second.first = begin(t_oblist);
         it->second.second = 0;
     }
-    return symbol_core(it, *this);
+    s.t_data = symbol_core(it, *this);
 }
 
 void SymbolsFarm::del_symbol(symb_mp::iterator it)
@@ -49,6 +53,24 @@ void SymbolsFarm::del_symbol(symb_mp::iterator it)
 const SymbolsFarm::oblist& SymbolsFarm::get_lst() const
 {
     return t_oblist;
+}
+
+void SymbolsFarm::init(std::optional<std::reference_wrapper<nlohmann::json>> state)
+{
+    if (state) {
+        load_state(*state);
+    }
+}
+
+void SymbolsFarm::save_state(nlohmann::json& j)
+{
+    //oblist нужен?
+    //...
+}
+
+void SymbolsFarm::load_state(const nlohmann::json& j)
+{
+    //
 }
 
 SymbolsFarm::symbol_core::symbol_core():

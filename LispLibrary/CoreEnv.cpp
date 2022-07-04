@@ -6,13 +6,22 @@
 #include <iostream>
 #include <algorithm>
 #include <sstream>
+#include "SupportFuncs.h"
+#include "Bifuncs.h"
+#include "json/include/json.hpp"
 
 using namespace std;
 using namespace CoreData;
+using namespace nlohmann;
 
 #define arg1 *b
 #define arg2 *(next(b, 1))
 #define arg3 *(next(b, 2))
+
+
+
+
+
 
 lambda support_funcs::make_spread_lambda_form(
     lambda_types lambda_type,
@@ -20,7 +29,7 @@ lambda support_funcs::make_spread_lambda_form(
     Cell& body
 )
 {
-    return  make_lambda(lambda_type, lambda_args_types::spread, params, body, env->t_farm);
+    return  make_lambda(lambda_type, lambda_args_types::spread, params, body, env->farm());
 }
 
 lambda support_funcs::make_nospread_lambda_form(
@@ -29,7 +38,7 @@ lambda support_funcs::make_nospread_lambda_form(
     Cell& body
 )
 {
-    return  make_lambda(lambda_type, lambda_args_types::nospread, env->t_farm.make_symbol_cell( param ), body, env->t_farm);
+    return  make_lambda(lambda_type, lambda_args_types::nospread, env->farm().make_symbol_cell( param ), body, env->farm());
 }
 
 macro support_funcs::make_spread_macro_form(
@@ -37,8 +46,8 @@ macro support_funcs::make_spread_macro_form(
     const Cell& body
 )
 {
-    auto buf = tree_copy(params, env->t_farm);
-    return  make_macro(lambda_args_types::spread, buf, body, env->t_farm);
+    auto buf = tree_copy(params, env->farm());
+    return  make_macro(lambda_args_types::spread, buf, body, env->farm());
 }
 
 macro support_funcs::make_nospread_macro_form(
@@ -46,8 +55,8 @@ macro support_funcs::make_nospread_macro_form(
     const Cell& body
 )
 {
-    auto buf = env->t_farm.make_symbol_cell(param);
-    return  make_macro(lambda_args_types::nospread, buf, body, env->t_farm);
+    auto buf = env->farm().make_symbol_cell(param);
+    return  make_macro(lambda_args_types::nospread, buf, body, env->farm());
 }
 
 lambda support_funcs::make_lambda_form(Cell& lst)
@@ -56,14 +65,14 @@ lambda support_funcs::make_lambda_form(Cell& lst)
     auto& second = car(cdr(lst));
     if (is_list(second)) {
         return make_spread_lambda_form(
-            (to_symbol(car(lst)) == to_symbol(env->t_farm.lambda_symbol())) ? lambda_types::lambda : lambda_types::nlambda,
+            (to_symbol(car(lst)) == to_symbol(env->farm().lambda_symbol())) ? lambda_types::lambda : lambda_types::nlambda,
             second,
             cdr(cdr(lst))
         );
     }
     else if(is_symbol(second)){
         return make_nospread_lambda_form(
-            (to_symbol(car(lst)) == to_symbol(env->t_farm.lambda_symbol())) ? lambda_types::lambda : lambda_types::nlambda,
+            (to_symbol(car(lst)) == to_symbol(env->farm().lambda_symbol())) ? lambda_types::lambda : lambda_types::nlambda,
             to_symbol(second),
             cdr(cdr(lst))
         );
@@ -71,7 +80,7 @@ lambda support_funcs::make_lambda_form(Cell& lst)
     throw "get_lambda_form error";
 }
 
-Cell CoreEnvironment::numbers_compare(iter b, iter e, numbers_compare_type type)
+Cell CoreEnvironment::t_numbers_compare(iter b, iter e, numbers_compare_type type)
 {
     if (ArgsCounter{b, e} == 0) return t_farm.T();
     if (ArgsCounter{b, e} == 1) return t_farm.T();
@@ -121,6 +130,61 @@ void CoreEnvironment::t_clear()
     t_clear_mem();
 }
 
+SExprsFarm& CoreEnvironment::farm()
+{
+    return t_farm;
+}
+
+std::optional<std::reference_wrapper<const IMutexed<bool>>>& CoreEnvironment::stop_flag()
+{
+    return t_stop_flag;
+}
+
+std::optional<std::reference_wrapper<CoreOutputStreamInt>>& CoreEnvironment::cos()
+{
+    return t_cos;
+}
+
+support_funcs& CoreEnvironment::support_funcs()
+{
+    return t_support;
+}
+
+OutputController& CoreEnvironment::output_control()
+{
+    return t_output_control;
+}
+
+CellEnvironment& CoreEnvironment::envs()
+{
+    return t_envs;
+}
+
+MacroTable& CoreEnvironment::macrotable()
+{
+    return t_macrotable;
+}
+
+Input& CoreEnvironment::input()
+{
+    return t_input;
+}
+
+Scanner& CoreEnvironment::scanner()
+{
+    return t_scanner;
+}
+
+FuncsStorage& CoreEnvironment::funcs()
+{
+    return t_funcs;
+}
+
+CellSerializer& CoreEnvironment::cserial()
+{
+    return t_cserial;
+}
+
 void support_funcs::set_value(const Cell& name, const Cell& val)
 {
     if (!is_symbol(name)) {
@@ -130,12 +194,12 @@ void support_funcs::set_value(const Cell& name, const Cell& val)
     }
     else {
         const auto& symb = to_symbol(name);
-        env->t_envs.set(symb, val);
+        env->envs().set(symb, val);
 
         //special vars
-        if (symb == to_symbol(env->t_farm.read_up_case_symbol())) {
+        if (symb == to_symbol(env->farm().read_up_case_symbol())) {
             bool val_b = !is_null(val);
-            env->t_output_control.set_read_upcase(val_b);
+            env->output_control().set_read_upcase(val_b);
         }
     }
 }
@@ -149,88 +213,145 @@ Cell support_funcs::eval_atom(const Cell& atom) {
 
 Cell support_funcs::eval_symbol(const Cell& symbol) {
     if (is_null(symbol)) {
-        return env->t_farm.nil();
+        return env->farm().nil();
     }
-    if (auto val = env->t_envs.get(to_symbol(symbol)); !empty(val)) {
+    if (auto val = env->envs().get(to_symbol(symbol)); !empty(val)) {
         return val;
     }
     return symbol;
 }
 
 
-CoreEnvironment::CoreEnvironment():
+CoreEnvironment::CoreEnvironment(std::optional<std::reference_wrapper<std::istream>> state):
     t_farm(*this),
-    t_funcs(t_farm),
-    t_streams(nullopt),
-    t_syntaxer(*this),
-    t_output_control(t_farm),
+    t_funcs(*this),
+    t_input(*this),
+    t_scanner(*this),
+    t_envs(*this),
+    t_support{ this },
     //t_funcs_evaler(this),
-    t_envs(t_farm),
-    t_support{ this }
+    t_macrotable(*this),
+    t_cserial(*this),
+    t_streams(nullopt),
+    t_output_control(t_farm)
 {
+    if (state) {
+        auto j  = json();
+        *state >> j;
+        t_farm.init(j.at(0));
+        t_funcs.init(j.at(1));
+        t_envs.init(j.at(2));
+        t_macrotable.init(j.at(3));
+    }
+    else {
+        t_farm.init(nullopt);
+        t_funcs.init(nullopt);
+        t_envs.init(nullopt);
+        t_macrotable.init(nullopt);
+    }
 }
 
-CoreEnvironment::CoreEnvironment(CoreEnvStreamsProviderInt& streams) :
-    CoreEnvironment()
+CoreEnvironment::CoreEnvironment(
+    CoreEnvStreamsProviderInt& streams,
+    std::optional<std::reference_wrapper<std::istream>> state
+):
+    CoreEnvironment(state)
 {
     t_streams = streams;
 }
 
+
+void CoreEnvironment::save_state(std::ostream& os)
+{
+    auto j = json();
+    t_farm.save_state(j.emplace_back());
+    t_funcs.save_state(j.emplace_back());
+    t_envs.save_state(j.emplace_back());
+    t_macrotable.save_state(j.emplace_back());
+    os << j;
+}
+
+bool CoreEnvironment::load_state(std::istream& is)
+{
+    
+    auto j = json();
+    try
+    {
+        is >> j;
+    }
+    catch (const std::exception& e)
+    {
+        cout << e.what() << endl;
+        return false;
+    }
+    catch (...)
+    {
+        return false;
+    }
+
+
+
+    try
+    {
+        t_farm.load_state(j.at(0));
+        t_funcs.load_state(j.at(1));
+        t_envs.load_state(j.at(2));
+        t_macrotable.load_state(j.at(3));
+    }
+    catch (const std::exception& e)
+    {
+        cout << e.what() << endl;
+        throw;
+    }
+    catch (...)
+    {
+        throw;
+        //return false;
+    }
+    return true;
+}
+
 void CoreEnvironment::execute_all(CoreEnvStreamsProviderInt& streams, const IMutexed<bool>& stop_flag)
 {
-    t_prepare(streams, stop_flag);
-    std::vector<std::string> result;
-    while (streams.t_input_stream().alive()) {
-        t_execute();
-    }
+    return t_core_env_under_catch(
+        [this, &streams, &stop_flag]() -> void {
+            t_prepare(streams, stop_flag);
+            std::vector<std::string> result;
+            while (t_input.alive()) {
+                t_execute();
+            }
+        }
+    );
 }
 
 void CoreEnvironment::execute_one(CoreEnvStreamsProviderInt& streams, const IMutexed<bool>& stop_flag)
 {
-    t_prepare(streams, stop_flag);
-    t_execute();
+    return t_core_env_under_catch(
+        [this, &streams, &stop_flag]() -> void {
+            t_prepare(streams, stop_flag);
+            t_execute();
+        }
+    );
 }
 
 void CoreEnvironment::execute_driver(CoreEnvStreamsProviderInt& streams, const IMutexed<bool>& stop_flag)
 {
     t_prepare(streams, stop_flag);
-    while(t_cis->get().alive())
+    while(t_input.alive())
     {
-        try
-        {
-            t_cos->get().out_without_new_line("> ");
-            auto c = t_syntaxer.read_sexpr();
-            auto a = DurationFunc([this](std::chrono::milliseconds time) {
-                t_cos->get().out_new_line(": " + to_string(time.count()) + " ms");
-            });
-            if (!(!t_cis->get().alive() && is_symbol(c) && t_output_control.to_string_raw(c) == "")) {
-                t_cos->get().out_new_line(t_output_control.to_string(t_execute(c)));
+        t_core_env_under_catch(
+            [this, &streams, &stop_flag]() -> void {
+                t_cos->get().out_without_new_line("> ");
+                auto c = t_execute(make_fnc<Read>(*this, CarCdrIterator(), CarCdrIterator()));
+                auto a = DurationFunc([this](std::chrono::milliseconds time) {
+                    t_cos->get().out_new_line(": " + to_string(time.count()) + " ms");
+                    });
+                if (!(!t_input.alive() && is_symbol(c) && t_output_control.to_string_raw(c) == "")) {
+                    t_cos->get().out_new_line(t_output_control.to_string(t_execute(c)));
+                }
             }
-        }
-        catch (const char* str)
-        {
-            streams.t_output_stream().out_new_line("error: "s + str);
-            t_clear();
-        }
-        catch (const std::string& str)
-        {
-            streams.t_output_stream().out_new_line("error: "s + str);
-            t_clear();
-        }
-        catch (...)
-        {
-            t_clear();
-
-            throw;
-        }
-
+        );
     }
-    
-}
-
-const CellEnvironment::mp& CoreEnvironment::vars() const
-{
-    return t_envs.get_globals();
 }
 
 void CoreEnvironment::set_streams(CoreEnvStreamsProviderInt& streams)
@@ -242,46 +363,25 @@ void CoreEnvironment::t_prepare(CoreEnvStreamsProviderInt& streams, const IMutex
 {
     t_streams = streams;
     t_stop_flag = { stop_flag };
-    t_cis = t_streams->get().t_input_stream();
+    t_input.change_cis(t_streams->get().t_input_stream());
     t_cos = t_streams->get().t_output_stream();
 }
 
 void CoreEnvironment::t_execute()
 {
-    auto c = t_syntaxer.read_sexpr();
-    if (!(!t_cis->get().alive() && is_symbol(c) && t_output_control.to_string_raw(c) == "")) {
-        t_cos->get().out_new_line(t_output_control.to_string(t_execute(c)));
-    }
-    
+    auto c = t_execute(make_fnc<Read>(*this, CarCdrIterator(), CarCdrIterator()));
+    t_cos->get().out_new_line(t_output_control.to_string(t_execute(c)));
 }
 
 Cell CoreEnvironment::t_execute(Cell& arg)
 {
+    return t_execute(make_fnc<EvalQuote>(*this, arg));
+}
+
+Cell CoreEnvironment::t_execute(CoreData::HolderPtr&& func)
+{
     auto t_funcs_evaler = FuncsEvaler(this);
-    #ifdef EX_CATCH
-    try
-    {
-        return t_funcs_evaler.eval(arg);
-    }
-    catch (std::bad_alloc&) {
-        t_clear();
-        throw "stack overflow";
-    }
-    catch (break_helper& e) {
-        t_clear();
-        throw "break: " + e.s;
-    }
-    catch (...)
-    {
-        t_clear();
-
-        throw;
-    }
-    #endif
-
-    #ifndef EX_CATCH
-        return t_funcs_evaler.eval(arg);
-    #endif
+    return t_funcs_evaler.eval(move(func));
 }
 
 void CoreEnvironment::t_clear_mem()
@@ -401,27 +501,27 @@ Cell CoreEnvironment::bifunc_div(iter b, iter e)
 
 Cell CoreEnvironment::bifunc_greater(iter b, iter e)
 {
-    return numbers_compare(b, e, numbers_compare_type::greater);
+    return t_numbers_compare(b, e, numbers_compare_type::greater);
 }
 
 Cell CoreEnvironment::bifunc_greater_equal(iter b, iter e)
 {
-    return numbers_compare(b, e, numbers_compare_type::greater_eq);
+    return t_numbers_compare(b, e, numbers_compare_type::greater_eq);
 }
 
 Cell CoreEnvironment::bifunc_less(iter b, iter e)
 {
-    return numbers_compare(b, e, numbers_compare_type::less);
+    return t_numbers_compare(b, e, numbers_compare_type::less);
 }
 
 Cell CoreEnvironment::bifunc_less_equal(iter b, iter e)
 {
-    return numbers_compare(b, e, numbers_compare_type::less_eq);
+    return t_numbers_compare(b, e, numbers_compare_type::less_eq);
 }
 
 Cell CoreEnvironment::bifunc_num_eq(iter b, iter e)
 {
-    return numbers_compare(b, e, numbers_compare_type::eq);
+    return t_numbers_compare(b, e, numbers_compare_type::eq);
 }
 
 Cell CoreEnvironment::bifunc_equal(iter b, iter e)
@@ -531,21 +631,6 @@ Cell CoreEnvironment::bifunc_getd(iter b, iter e)
         }
     }
     return t_farm.nil();
-}
-
-Cell CoreEnvironment::bifunc_read(iter b, iter e) {
-    if (t_streams) {
-        // stop input?
-        t_cis = t_streams->get().t_input_stream();
-        auto c = t_syntaxer.read_sexpr();
-        //auto [reason, cell] = t_syntaxer.read_sexpr((*t_streams).get().t_input_stream());
-        //if (reason == read_reason::success) { return cell; }
-        //else return t_farm.nil();
-        return c;
-    }
-    return t_farm.nil();
-    //if (t_stop_flag && (*t_stop_flag).get(iter b, iter e).get(iter b, iter e)) throw throw_stop_helper{};
-    //if (!t_streams.t_input_stream(iter b, iter e).alive(iter b, iter e)) return t_ferm.symbols->nil;
 }
 
 Cell CoreEnvironment::bifunc_print(iter b, iter e)
@@ -717,7 +802,7 @@ Cell CoreEnvironment::bifunc_integerp(iter b, iter e)
 
 Cell CoreEnvironment::bifunc_oblist(iter b, iter e)
 {
-    const auto& lst = t_farm.symbols->get_lst();
+    const auto& lst = t_farm.get_lst();
     std::vector <Cell> result;
     result.reserve(lst.size());
     for (const auto& symb : lst) {
@@ -808,23 +893,28 @@ Cell CoreEnvironment::bifunc_unpack(iter b, iter e)
 
 Cell CoreEnvironment::bifunc_read_char(iter b, iter e)
 {
-    return t_syntaxer.read_char((ArgsCounter{ b, e } >= 1) ? arg1 : t_farm.nil());
+    auto i = t_input.read_char((ArgsCounter{ b, e } >= 1) ? !is_null(arg1) : false);
+    if(i == -1)
+        throw "bifunc_read_char: eos";
+    return t_farm.make_symbol_cell(string() + char(i));
 }
 
 Cell CoreEnvironment::bifunc_unread_char(iter b, iter e)
 {
-    t_syntaxer.unread_char();
+    t_input.unread_char();
     return t_farm.nil();
 }
-
-Cell CoreEnvironment::bifunc_peek_char(iter b, iter e)
-{
-    return t_syntaxer.peek_char((ArgsCounter{ b, e } >= 1) ? arg1 : t_farm.nil());
-}
+//
+//Cell CoreEnvironment::bifunc_peek_char(iter b, iter e)
+//{
+//    auto ch = t_input.peek_char((ArgsCounter{ b, e } >= 1) ? arg1 : t_farm.nil());
+//    cout << "char:" << t_output_control.to_string(ch) << endl;
+//    return ch;
+//}
 
 Cell CoreEnvironment::bifunc_listen(iter b, iter e)
 {
-    return bool_cast(t_cis->get().alive(), t_farm);
+    return bool_cast(t_input.alive(), t_farm);
 }
 
 Cell CoreEnvironment::bifunc_break(iter b, iter e)
@@ -838,10 +928,10 @@ Cell CoreEnvironment::bifunc_get_macro_char(iter b, iter e)
     auto flag = (ArgsCounter{ b, e } >= 2) ? arg2 : t_farm.nil();
     auto raw = t_output_control.to_string_raw(arg1);
     if(raw.size() > 1) return t_farm.nil();
-    if(!t_syntaxer.get_macrochars().is_macro_char(raw[0])) return t_farm.nil();
-    if (auto var = t_syntaxer.get_macrochars().get_macro_char(raw[0]); holds_alternative<Cell>(var)) {
+    if(!t_macrotable.is_macro_char(raw[0])) return t_farm.nil();
+    if (auto var = t_macrotable.is_macro_char(raw[0]); var) {
         if (!is_null(flag)) return t_farm.make_symbol_cell("LAMBDA");
-        return get<Cell>(var);
+        return var->get().func;
     }
     return t_farm.nil();
     
@@ -858,10 +948,14 @@ Cell CoreEnvironment::bifunc_set_macro_char(iter b, iter e)
 
 
     if (is_symbol(flag) && to_symbol(flag) == t_farm.make_symbol("COMMENT")) {
-        throw "";
+        t_macrotable.set_macro_char(raw[0], macro_char{ macro_char::type_t::comment, defenition });
+        //throw "";
+    }
+    else if(is_null(flag)){
+        t_macrotable.set_macro_char(raw[0], macro_char{ macro_char::type_t::terminating, defenition });
     }
     else {
-        t_syntaxer.get_macrochars().set_macro_char(raw[0], defenition);
+        t_macrotable.set_macro_char(raw[0], macro_char{ macro_char::type_t::non_terminating, defenition });
     }
     
     return t_farm.make_symbol_cell(T_str);

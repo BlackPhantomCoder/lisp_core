@@ -40,6 +40,18 @@
     <Filter Include="Файлы заголовков\Core\FuncCells">
       <UniqueIdentifier>{e041e89c-f961-4db6-9585-3c3886cc91ee}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Файлы заголовков\Core\Support\Input">
+      <UniqueIdentifier>{b569c18a-45bd-4115-b833-bbdb93629025}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Файлы заголовков\Core\Support\Input\gens">
+      <UniqueIdentifier>{4940ddac-fab0-4931-8423-7a330ac21714}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Файлы заголовков\Core\Support\Input\FSMs">
+      <UniqueIdentifier>{73887ba7-a48e-46cf-be0d-56cb2afcd015}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Файлы заголовков\Core\SpecialFuncs\BaseFuncs">
+      <UniqueIdentifier>{e3f53ac1-d62d-4d43-b1b5-7d7898ef67c4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cell.h">
@@ -96,14 +108,8 @@
     <ClInclude Include="Mutexed.h">
       <Filter>Файлы заголовков\Ints</Filter>
     </ClInclude>
-    <ClInclude Include="FuncsStorage.h">
-      <Filter>Файлы заголовков\Core</Filter>
-    </ClInclude>
     <ClInclude Include="PoolDeleter.h">
       <Filter>Файлы заголовков\Tools</Filter>
-    </ClInclude>
-    <ClInclude Include="FuncsEvaler.h">
-      <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
     </ClInclude>
     <ClInclude Include="Bifuncs.h">
       <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
@@ -115,9 +121,6 @@
       <Filter>Файлы заголовков\Core\Support</Filter>
     </ClInclude>
     <ClInclude Include="CoreEnvStreamsProvider.h">
-      <Filter>Файлы заголовков\Core\Support</Filter>
-    </ClInclude>
-    <ClInclude Include="Lexer.h">
       <Filter>Файлы заголовков\Core\Support</Filter>
     </ClInclude>
     <ClInclude Include="ArgsCounter.h">
@@ -138,9 +141,6 @@
     <ClInclude Include="SupportFuncs.h">
       <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
     </ClInclude>
-    <ClInclude Include="AFuncs.h">
-      <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
-    </ClInclude>
     <ClInclude Include="FuncInt.h">
       <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
     </ClInclude>
@@ -149,6 +149,60 @@
     </ClInclude>
     <ClInclude Include="StdCoreInputArrayInput.h">
       <Filter>Файлы заголовков\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="Input\parser.tab.h">
+      <Filter>Файлы заголовков\Core\Support\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="parser.h">
+      <Filter>Файлы заголовков\Core\Support\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Input\FSM\FSM.h">
+      <Filter>Файлы заголовков\Core\Support\Input\FSMs</Filter>
+    </ClInclude>
+    <ClInclude Include="Input\FSM\FSM_nonmacros.h">
+      <Filter>Файлы заголовков\Core\Support\Input\FSMs</Filter>
+    </ClInclude>
+    <ClInclude Include="Input\FSM_Num\FSM_Num.h">
+      <Filter>Файлы заголовков\Core\Support\Input\FSMs</Filter>
+    </ClInclude>
+    <ClInclude Include="Input.h">
+      <Filter>Файлы заголовков\Core\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="Input\MacroTable.h">
+      <Filter>Файлы заголовков\Core\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="ParserHelper.h">
+      <Filter>Файлы заголовков\Core\Support\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Errors.h">
+      <Filter>Файлы заголовков\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="FSM_Scanner.h">
+      <Filter>Файлы заголовков\Core\Support\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Input\Scanner.h">
+      <Filter>Файлы заголовков\Core\Support\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="FSM_Symbols.h">
+      <Filter>Файлы заголовков\Core\Support\Input\FSMs</Filter>
+    </ClInclude>
+    <ClInclude Include="FuncsStorage.h">
+      <Filter>Файлы заголовков\Core\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="FuncsEvaler.h">
+      <Filter>Файлы заголовков\Core\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="Func.h">
+      <Filter>Файлы заголовков\Core\SpecialFuncs\BaseFuncs</Filter>
+    </ClInclude>
+    <ClInclude Include="RangeBifunc.h">
+      <Filter>Файлы заголовков\Core\SpecialFuncs\BaseFuncs</Filter>
+    </ClInclude>
+    <ClInclude Include="RangeNBifunc.h">
+      <Filter>Файлы заголовков\Core\SpecialFuncs\BaseFuncs</Filter>
+    </ClInclude>
+    <ClInclude Include="CellSerializer.h">
+      <Filter>Файлы заголовков\Core\Support</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -183,9 +237,6 @@
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="CoreData.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
-    <ClCompile Include="Lexer.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="Symbol.cpp">
@@ -236,14 +287,61 @@
     <ClCompile Include="SupportFuncs.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="AFuncs.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
     <ClCompile Include="SymbolsFarm.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="StdCoreInputArrayInput.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="Input\MacroTable.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="Input.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="Input\FSM_Num\FSM_Num.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="Input\parser.tab.c">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="parser_tokens.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="ParserHelper.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="FSM_Scanner.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="Input\Scanner.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="FSM_Symbols.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="Func.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="RangeNBifunc.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="RangeBifunc.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="CellSerializer.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="Input\for_gens\parser.y">
+      <Filter>Файлы заголовков\Core\Support\Input\gens</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Input\for_gens\FSM_nonmacros.l">
+      <Filter>Файлы заголовков\Core\Support\Input\gens</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Input\for_gens\FSM.l">
+      <Filter>Файлы заголовков\Core\Support\Input\gens</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

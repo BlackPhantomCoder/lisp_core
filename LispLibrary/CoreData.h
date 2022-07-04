@@ -13,12 +13,32 @@ class FuncHolder;
 
 namespace CoreData {
 
+	//константы
+
+	inline constexpr const char* nil_str =				"NIL";
+	inline constexpr const char* T_str =				"T";
+	inline constexpr const char* read_up_case_str =		"*READ-UPCASE*";
+	inline constexpr const char* read_base_str =		"*READ-BASE*";
+
+	inline constexpr const char* lambda_str =			"LAMBDA";
+	inline constexpr const char* nlambda_str =			"NLAMBDA";
+	inline constexpr const char* macro_str =			"MACRO";
+
+	inline constexpr auto bifuncs_count =				39;
+	inline constexpr auto nbifuncs_count =				3;
+
+	inline constexpr auto special_bifuncs_count =		8;
+	inline constexpr auto special_nbifuncs_count =		5;
+
+
+
 	#ifndef TREAT_SAFE_MEMORY_CONTROL
 		template<class T>
 		using allocator = boost::pool_allocator<T, boost::default_user_allocator_new_delete, boost::details::pool::null_mutex>;
 
 		template<class T>
 		using ObjPoll = MPool<T>;
+
 
 
 		template<class T>
@@ -30,6 +50,9 @@ namespace CoreData {
 		template<class T>
 		using allocator = boost::pool_allocator<T, boost::default_user_allocator_new_delete, boost::details::pool::default_mutex>;
 		
+		//template<class T>
+		//using ObjPoll = DebugPoolWMutex<T>;
+
 		template<class T>
 		using ObjPoll = MPoolWMutex<T>;
 
@@ -43,20 +66,7 @@ namespace CoreData {
 	enum class stream_read_mode { new_string, s_expression };
 
 	struct throw_stop_helper :std::exception {};
-	
-	const static char* const nil_str = "NIL";
-	const static char* const T_str = "T";
-	const static char* const read_up_case_str = "*READ-UPCASE*";
 
-	const static char* const lambda_str = "LAMBDA";
-	const static char* const nlambda_str = "NLAMBDA";
-	const static char* const macro_str = "MACRO";
-
-	const static auto bifuncs_count = 41;
-	const static auto nbifuncs_count = 3;
-
-	const static auto special_bifuncs_count = 6;
-	const static auto special_nbifuncs_count = 5;
 
 	typedef Cell(CoreEnvironment::* bifunc) (CarCdrIterator, CarCdrIterator);
 
@@ -79,7 +89,37 @@ namespace CoreData {
 	special_bifuncs_array special_bifunc_setup();
 	special_nbifuncs_array special_nbifunc_setup();
 
-	std::vector<std::function<void(void)>>& clear_pool_funcs();
+	extern const bifuncs_array bifuncs_arr;
+	extern const nbifuncs_array nbifuncs_arr;
+	extern const special_bifuncs_array special_bifuncs_arr;
+	extern const special_nbifuncs_array special_nbifuncs_arr;
+
+
+
+
+	struct funcs_pool {
+		void push_back(std::function<void(void)>&& func) {
+#ifdef TREAT_SAFE_MEMORY_CONTROL
+			auto g = std::lock_guard(m);
+#endif
+			p.push_back(std::move(func));
+		}
+		void clear() {
+#ifdef TREAT_SAFE_MEMORY_CONTROL
+			auto g = std::lock_guard(m);
+#endif
+			for (auto& fnc : p) {
+				fnc();
+			}
+			p.clear();
+		}
+#ifdef TREAT_SAFE_MEMORY_CONTROL
+		std::mutex m;
+#endif
+		std::vector<std::function<void(void)>> p;
+	};
+
+	funcs_pool& clear_pool_funcs();
 	void funcs_pools_clear();
 
 

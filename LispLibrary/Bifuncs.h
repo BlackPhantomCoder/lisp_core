@@ -1,8 +1,12 @@
 #pragma once
-#include "AFuncs.h"
+#include "Func.h"
+#include "RangeNBifunc.h"
+#include "RangeBifunc.h"
 #include "LambdaCell.h"
 #include "MacroCell.h"
 #include "CoreData.h"
+#include "parser.h"
+#include "ParserHelper.h"
 
 #include <optional>
 
@@ -39,6 +43,8 @@ public:
 	Eval(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval_func = false);
 	virtual void t_execute_func()  override;
 };
+
+
 
 class Cond : public RangeNBiFunc
 {
@@ -131,3 +137,33 @@ private:
 	bool t_finish = false;
 	bool t_ev = false;
 };
+
+
+class Read : public RangeBiFunc
+{
+public:
+	Read(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval_func = false);
+	virtual void t_execute_func()  override;
+private:
+	ParserHelper t_hp;
+	yypstate* t_parser = nullptr;
+	Cell t_buf;
+	bool t_macro = false;
+};
+
+class PeekChar : public RangeBiFunc
+{
+public:
+	PeekChar(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval_func = false);
+	virtual void t_init_after_args() override;
+	virtual void t_execute_func()  override;
+private:
+	int t_i = 0;
+	bool t_skip_comments = false;
+	bool t_until = false;
+	char t_until_char = 0;
+
+	bool t_skip_comments_cycle = false;
+	bool t_until_char_cycle = false;	
+};
+
