@@ -23,28 +23,36 @@ unsigned double_macheps()
 
 unsigned Number::epsilon = double_macheps();
 
+Number::Number(): SExpr(SExpr::type::number)
+{
+}
+
 Number::~Number()
 {
     clear();
 }
 
 Number::Number(Number&& rh)noexcept:
+    SExpr(SExpr::type::number),
     t_data(move(rh.t_data))
 {
     rh.t_data = monostate{};
 }
 
 Number::Number(const Number& rh):
+    SExpr(SExpr::type::number),
     t_data(rh.t_data)
 {
 }
 
 Number::Number(double val):
+    SExpr(SExpr::type::number),
     t_data(val)
 {
 }
 
 Number::Number(const BigInt& val) :
+    SExpr(SExpr::type::number),
     t_data(val)
 {
 }
@@ -594,25 +602,6 @@ bool Number::t_is_real() const
     return holds_alternative<double>(t_data);
 }
 
-bool Number::is_real() const
-{
-    return t_is_real();
-}
-
-bool Number::is_integer() const
-{
-    return t_is_integer();
-}
-
-bool Number::is_number() const
-{
-    return true;
-}
-
-bool Number::is_atom() const
-{
-    return true;
-}
 
 //const Number& Number::to_number() const
 //{
@@ -687,9 +676,4 @@ bool is_integer(const Number& numb) {
 
 bool is_real(const Number& numb) {
     return numb.is_real();
-}
-
-SExpr::del_func_ptr Number::get_del_fnc() const
-{
-   return &pool_delete_n;
 }

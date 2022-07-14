@@ -79,7 +79,7 @@ public:
 	virtual void t_execute_func()  override;
 private:
 	CarCdrIterator t_it;
-	bool t_imp = false;;
+	bool t_imp = false;
 };
 
 class Apply : public RangeBiFunc

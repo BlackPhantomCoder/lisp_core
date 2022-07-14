@@ -3,10 +3,15 @@
 
 using namespace std;
 DotPair::DotPair(const Cell& f, const Cell& s):
+	SExpr(SExpr::type::list),
 	t_first(f),
 	t_second(s)
 {
 
+}
+
+DotPair::DotPair() : SExpr(SExpr::type::list)
+{
 }
 
 DotPair::~DotPair()
@@ -16,6 +21,7 @@ DotPair::~DotPair()
 
 
 DotPair::DotPair(const DotPair& rh):
+	SExpr(SExpr::type::list),
 	t_first((rh.t_first)),
 	t_second((rh.t_second))
 {
@@ -23,6 +29,7 @@ DotPair::DotPair(const DotPair& rh):
 }
 
 DotPair::DotPair(DotPair&& rh)noexcept :
+	SExpr(SExpr::type::list),
 	t_first(move(rh.t_first)),
 	t_second(move(rh.t_second))
 {
@@ -38,11 +45,6 @@ void DotPair::clear() {
 		t_first.clear();
 		t_second.clear();
 	}
-}
-
-bool DotPair::is_list() const
-{
-	return true;
 }
 
 DotPair& DotPair::operator=(DotPair&& rh)noexcept {
@@ -65,10 +67,4 @@ DotPair& DotPair::operator=(const DotPair& rh) noexcept
 bool is_null_list(const DotPair& lst)
 {
 	return lst.t_first.empty();
-}
-
-
-SExpr::del_func_ptr DotPair::get_del_fnc() const
-{
-	return &pool_delete_dp;
 }

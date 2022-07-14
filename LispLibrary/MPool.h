@@ -346,7 +346,7 @@ public:
     template<class... Args>
     T* construct(Args&&... args) {
         std::lock_guard g(t_m);
-        return MPool<T, new_block_size>::construct(args);
+        return MPool<T, new_block_size>::construct(std::forward<Args&&>(args)...);
     }
 
     T* get_default() {

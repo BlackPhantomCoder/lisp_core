@@ -55,7 +55,7 @@ namespace NATests {
     template <bool cath_exceptions, class TestFunc>
     inline void Tester<async_mode>::add_test(TestFunc func, const std::string& test_name)
     {
-        auto fnc = [func, test_name]() -> test_result {
+        if constexpr (!async_mode) {
             test_result result = { test_name };
             result.fail = true;
             try {
@@ -74,9 +74,35 @@ namespace NATests {
                     throw;
                 }
             }
-            return result;
-        };
-        t_tests.push_back(fnc);
+            auto fnc = [result]() -> test_result {
+                return result;
+            };
+            t_tests.push_back(fnc);
+        }
+        else {
+            auto fnc = [func, test_name]() -> test_result {
+                test_result result = { test_name };
+                result.fail = true;
+                try {
+                    //LogDuration d;
+                    func();
+                    result.fail = false;
+                }
+                catch (std::exception& e) {
+                    result.output = e.what();
+                }
+                catch (...) {
+                    if constexpr (cath_exceptions) {
+                        result.output = "Unknown exception caught";
+                    }
+                    else {
+                        throw;
+                    }
+                }
+                return result;
+            };
+            t_tests.push_back(fnc);
+        }
     }
 
     template<bool async_mode>

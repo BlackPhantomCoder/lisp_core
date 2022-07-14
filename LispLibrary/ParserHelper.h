@@ -76,13 +76,13 @@ private:
 	Cell& t_get_cell(id_type id);
 	sp& t_get_sp(id_type id);
 private:
-	std::deque<int> t_ids;
-	int t_max_id = 0;
 	container t_data;
+	std::deque<int> t_ids;
+	CoreEnvironment* t_env = nullptr;
+	int t_max_id = 0;
 	Cell* t_saved = nullptr;
 	bool t_macro = false;
 	bool t_final = false;
-	CoreEnvironment* t_env = nullptr;
 };
 
 

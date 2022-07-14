@@ -141,9 +141,6 @@
     <ClInclude Include="SupportFuncs.h">
       <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
     </ClInclude>
-    <ClInclude Include="FuncInt.h">
-      <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
-    </ClInclude>
     <ClInclude Include="SExprsFarm.h">
       <Filter>Файлы заголовков\Core\Support</Filter>
     </ClInclude>

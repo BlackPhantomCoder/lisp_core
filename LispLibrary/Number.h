@@ -13,6 +13,7 @@ public:
 
 
 private:
+    friend class SExpr;
     friend class SExprsFarm;
 
     friend bool is_integer(const Number& numb);
@@ -22,12 +23,10 @@ private:
     friend Number::real& to_real(Number& numb);
     friend const Number::integer& to_integer(const Number& numb);
     friend const Number::real& to_real(const Number& numb);
-
-    virtual SExpr::del_func_ptr get_del_fnc() const override;
 public:
     static unsigned epsilon;
 public:
-    Number() = default;
+    Number();
     ~Number();
 
     Number(Number&& rh)noexcept;
@@ -58,14 +57,6 @@ public:
 
     bool empty() const;
     void clear();
-
-    virtual bool is_real() const override;
-    virtual bool is_integer() const override;
-    virtual bool is_number() const override;
-    virtual bool is_atom() const override;
-
-    //virtual const Number& to_number() const override;
-    //virtual Number& to_number() override;
 private:
     Number(double val);
     Number(const BigInt& val);
@@ -79,6 +70,7 @@ private:
     Number::integer& to_integer() ;
     Number::real& to_real() ;
 private:
+
     std::variant<integer, real, std::monostate> t_data = std::monostate{};
 };
 

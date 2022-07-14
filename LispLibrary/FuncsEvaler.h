@@ -1,5 +1,5 @@
 #pragma once
-#include "FuncInt.h"
+#include "Func.h"
 #include "Cell.h"
 #include "CellEnvironment.h"
 #include "CoreData.h"
@@ -21,11 +21,10 @@ public:
 private:
 	CoreEnvironment* t_env;
 	struct frame {
-		frame(CoreData::HolderPtr&& p) : ptr(move(p)), func((*ptr)()){
+		frame(CoreData::HolderPtr&& p) : ptr(move(p)){
 
 		}
 		CoreData::HolderPtr ptr;
-		FuncInt& func;
 	};
 	std::vector<frame> t_frames;
 };

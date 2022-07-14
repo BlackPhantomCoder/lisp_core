@@ -6,7 +6,7 @@ class Symbol : public SExpr {
     friend class SymbolsFarm;
     friend bool is_null_symbol(const Symbol& c);
 public:
-    Symbol() = default;
+    Symbol();
     ~Symbol();
 
     Symbol(Symbol&& rh) noexcept = default;
@@ -25,11 +25,6 @@ public:
 
     bool empty() const;
     void clear();
-
-
-    virtual bool is_symbol() const override;
-    virtual bool is_atom() const override;
-    virtual SExpr::del_func_ptr get_del_fnc() const override;
 private:
     Symbol(const SymbolsFarm::symbol_core& data);
 private:

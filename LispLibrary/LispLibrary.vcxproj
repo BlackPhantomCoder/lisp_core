@@ -158,7 +158,6 @@
     <ClInclude Include="FSM_Scanner.h" />
     <ClInclude Include="FSM_Symbols.h" />
     <ClInclude Include="Func.h" />
-    <ClInclude Include="FuncInt.h" />
     <ClInclude Include="Funcs.h" />
     <ClInclude Include="CoreData.h" />
     <ClInclude Include="FuncsEvaler.h" />

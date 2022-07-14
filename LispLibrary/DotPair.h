@@ -18,7 +18,7 @@ class DotPair : public SExpr
 
     friend bool is_null_list(const DotPair& lst);
 public:
-    DotPair() = default;
+    DotPair();
     ~DotPair();
 
     DotPair(const DotPair& rh);
@@ -29,11 +29,6 @@ public:
 
     bool empty() const;
     void clear();
-
-
-    virtual bool is_list() const override;
-
-    virtual SExpr::del_func_ptr get_del_fnc() const override;
 private:
     DotPair(const Cell& f, const Cell& s);
 private:

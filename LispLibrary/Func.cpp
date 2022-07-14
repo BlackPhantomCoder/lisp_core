@@ -1,9 +1,9 @@
-#include "Funcs.h"
+#include "Func.h"
 #include "CoreEnv.h"
 #include "Bifuncs.h"
 #include "SupportFuncs.h"
-
-#include "Func.h"
+#include "CoreEnv.h"
+#include "Funcs.h"
 
 using namespace std;
 
