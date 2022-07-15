@@ -1,5 +1,7 @@
 #include "RangeBifunc.h"
 #include "SupportFuncs.h"
+#include "CoreData.h"
+using namespace CoreData;
 using namespace std;
 
 RangeBiFunc::RangeBiFunc(CoreEnvironment& env, CarCdrIterator beg_it, CarCdrIterator end_it, bool forse_noeval) :

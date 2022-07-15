@@ -3,6 +3,7 @@
 
 class RangeNBiFunc : public Func {
 public:
+	RangeNBiFunc() = default;
 	RangeNBiFunc(CoreEnvironment& env, CarCdrIterator beg_it, CarCdrIterator end_it);
 protected:
 	virtual void t_execute_func() = 0;

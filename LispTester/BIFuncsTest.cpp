@@ -21,7 +21,7 @@ constexpr auto treads_count = 6;
 //Дебаг
 #ifdef _DEBUG
 	// true - асинхронно, false - последовательно
-using tester_type = NATests::Tester<true>;
+using tester_type = NATests::Tester<false>;
 #endif
 
 //релиз (в нём лучше без асинхронных)

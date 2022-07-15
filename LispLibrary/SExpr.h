@@ -1,6 +1,5 @@
 #pragma once
 #include "boost/smart_ptr/intrusive_ptr.hpp"
-#include "PoolDeleter.h"
 
 class Number;
 class Symbol;

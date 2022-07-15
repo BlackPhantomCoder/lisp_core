@@ -1,9 +1,9 @@
 #pragma once
 #include "Func.h"
 
-
 class RangeBiFunc : public Func {
 public:
+	RangeBiFunc() = default;
 	RangeBiFunc(CoreEnvironment& env, CarCdrIterator beg_it, CarCdrIterator end_it, bool forse_noeval = false);
 protected:
 	virtual void t_execute_func() = 0;

@@ -291,9 +291,7 @@ private:
             return t_buffer--;
         }
         else if (t_mem_last_i != 0) {
-            auto temp = t_mem.at(t_mem_last_i - 1);
-            --t_mem_last_i;
-            return temp;
+            return t_mem.at(--t_mem_last_i);
         }
         else {
             t_blocks.push_back(std::make_unique<T[]>(new_block_size));

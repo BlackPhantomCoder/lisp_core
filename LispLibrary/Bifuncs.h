@@ -12,6 +12,7 @@
 
 class Prog1 : public RangeNBiFunc
 {
+	default_func(Prog1)
 public:
 	Prog1(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it);
 	virtual void t_execute_func()  override;
@@ -24,6 +25,7 @@ private:
 
 class ProgN : public RangeNBiFunc
 {
+	default_func(ProgN)
 public:
 	ProgN(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it);
 	virtual void t_init_after_args() override;
@@ -39,6 +41,7 @@ private:
 
 class Eval : public RangeBiFunc
 {
+	default_func(Eval)
 public:
 	Eval(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval_func = false);
 	virtual void t_execute_func()  override;
@@ -48,6 +51,7 @@ public:
 
 class Cond : public RangeNBiFunc
 {
+	default_func(Cond)
 public:
 	Cond(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it);
 	virtual void t_init_after_args() override;
@@ -63,6 +67,7 @@ private:
 
 class Append : public RangeBiFunc
 {
+	default_func(Append)
 public:
 	Append(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval_func = false);
 	virtual void t_init_after_args() override;
@@ -73,6 +78,7 @@ private:
 
 class Loop : public RangeNBiFunc
 {
+	default_func(Loop)
 public:
 	Loop(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it);
 	virtual void t_init_after_args() override;
@@ -84,6 +90,7 @@ private:
 
 class Apply : public RangeBiFunc
 {
+	default_func(Apply)
 public:
 	Apply(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval);
 	virtual void t_init_after_args() override;
@@ -94,6 +101,7 @@ private:
 
 class SetQ : public RangeNBiFunc
 {
+	default_func(SetQ)
 public:
 	SetQ(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it);
 	virtual void t_init_after_args() override;
@@ -105,26 +113,29 @@ private:
 
 class MacroExpand1 : public RangeBiFunc
 {
+	default_func(MacroExpand1)
 public:
 	MacroExpand1(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval);
 	virtual void t_init_after_args() override;
 	virtual void t_execute_func()  override;
 private:
-	bool t_forse_noeval;
+	bool t_forse_noeval = false;
 };
 
 class MacroExpand : public RangeBiFunc
 {
+	default_func(MacroExpand)
 public:
 	MacroExpand(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval);
 	virtual void t_init_after_args() override;
 	virtual void t_execute_func()  override;
 private:
-	bool t_forse_noeval;
+	bool t_forse_noeval = false;
 };
 
 class MapCar : public RangeBiFunc
 {
+	default_func(MapCar)
 public:
 	MapCar(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval);
 	virtual void t_init_after_args() override;
@@ -141,6 +152,7 @@ private:
 
 class Read : public RangeBiFunc
 {
+	default_func(Read)
 public:
 	Read(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval_func = false);
 	virtual void t_execute_func()  override;
@@ -153,6 +165,7 @@ private:
 
 class PeekChar : public RangeBiFunc
 {
+	default_func(PeekChar)
 public:
 	PeekChar(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval_func = false);
 	virtual void t_init_after_args() override;

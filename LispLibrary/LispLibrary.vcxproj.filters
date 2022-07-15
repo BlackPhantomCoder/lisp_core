@@ -108,9 +108,6 @@
     <ClInclude Include="Mutexed.h">
       <Filter>Файлы заголовков\Ints</Filter>
     </ClInclude>
-    <ClInclude Include="PoolDeleter.h">
-      <Filter>Файлы заголовков\Tools</Filter>
-    </ClInclude>
     <ClInclude Include="Bifuncs.h">
       <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
     </ClInclude>
@@ -200,6 +197,9 @@
     </ClInclude>
     <ClInclude Include="CellSerializer.h">
       <Filter>Файлы заголовков\Core\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="FuncHolder.h">
+      <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -327,6 +327,9 @@
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="CellSerializer.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="FuncHolder.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>

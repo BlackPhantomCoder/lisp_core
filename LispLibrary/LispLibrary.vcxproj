@@ -158,6 +158,7 @@
     <ClInclude Include="FSM_Scanner.h" />
     <ClInclude Include="FSM_Symbols.h" />
     <ClInclude Include="Func.h" />
+    <ClInclude Include="FuncHolder.h" />
     <ClInclude Include="Funcs.h" />
     <ClInclude Include="CoreData.h" />
     <ClInclude Include="FuncsEvaler.h" />
@@ -181,7 +182,6 @@
     <ClInclude Include="Mutexed.h" />
     <ClInclude Include="Number.h" />
     <ClInclude Include="OutputController.h" />
-    <ClInclude Include="PoolDeleter.h" />
     <ClInclude Include="PredLispFuncs.h" />
     <ClInclude Include="SExpr.h" />
     <ClInclude Include="SExprsFarm.h" />
@@ -209,6 +209,7 @@
     <ClCompile Include="DotPair.cpp" />
     <ClCompile Include="FSM_Scanner.cpp" />
     <ClCompile Include="FSM_Symbols.cpp" />
+    <ClCompile Include="FuncHolder.cpp" />
     <ClCompile Include="Funcs.cpp" />
     <ClCompile Include="FuncsEvaler.cpp" />
     <ClCompile Include="FuncsStorage.cpp" />

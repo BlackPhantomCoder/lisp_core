@@ -21,7 +21,7 @@ public:
 private:
 	CoreEnvironment* t_env;
 	struct frame {
-		frame(CoreData::HolderPtr&& p) : ptr(move(p)){
+		frame(CoreData::HolderPtr&& p) : ptr(std::move(p)){
 
 		}
 		CoreData::HolderPtr ptr;

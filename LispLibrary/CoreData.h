@@ -3,13 +3,12 @@
 #include "MPool.h"
 #include "Cell.h"
 #include "CarCdrIterator.h"
-#include "PoolDeleter.h"
+#include "FuncHolder.h"
 
 #include <array>
 #include <exception>
 
 class CoreEnvironment;
-class FuncHolder;
 
 namespace CoreData {
 
@@ -77,8 +76,9 @@ namespace CoreData {
 	bifuncs_array bifunc_setup();
 	nbifuncs_array nbifunc_setup();
 
-
-	using HolderPtr = std::unique_ptr<FuncHolder, PollObjDeleter<FuncHolder>>;
+	using HolderPtr = FuncHolder;
+	template<class T, class... Args>
+	CoreData::HolderPtr make_fnc(Args&&... args);
 
 	typedef HolderPtr(*special_bifunc_make) (CoreEnvironment&, CarCdrIterator, CarCdrIterator, bool forse_noeval);
 	typedef HolderPtr(*special_nbifunc_make) (CoreEnvironment&, CarCdrIterator, CarCdrIterator);
@@ -145,4 +145,10 @@ namespace CoreData {
 		static auto p = construct_pool<T>();
 		return p;
 	}
+	template<class T, class... Args>
+	CoreData::HolderPtr make_fnc(Args&&... args) {
+		auto* obj_ptr = CoreData::get_pool<T>().construct(std::forward<Args&&>(args)...);
+		return FuncHolder(obj_ptr);
+	}
+
 }

@@ -8,7 +8,7 @@
 using namespace std;
 
 Func::Func(CoreEnvironment& env):
-    t_env_data(env)
+    t_env_data(&env)
 {
 }
 
@@ -81,7 +81,7 @@ CoreData::HolderPtr Func::get_next()
 Cell Func::result() 
 {
     if (!holds_alternative<Cell>(t_bufs)) throw "";
-    return get<Cell>(t_bufs);
+    return move(get<Cell>(t_bufs));
 }
 
 void Func::t_init_before_args()
@@ -94,12 +94,12 @@ void Func::t_init_after_args()
 
 CoreEnvironment& Func::t_env()
 {
-    return t_env_data;
+    return *t_env_data;
 }
 
 const CoreEnvironment& Func::t_env() const
 {
-    return t_env_data;
+    return *t_env_data;
 }
 
 void Func::t_return(const Cell& result)

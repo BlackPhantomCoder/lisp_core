@@ -8,6 +8,7 @@
 class CoreEnvironment;
 class EvalLambda : public Func
 {
+	default_func(EvalLambda)
 public:
 	EvalLambda(
 		CoreEnvironment& env,
@@ -39,6 +40,7 @@ private:
 
 //! c передаётся по ссылке
 class EvalQuote : public Func {
+	default_func(EvalQuote)
 public:
 	EvalQuote(CoreEnvironment& env, Cell& c);
 private:
@@ -52,6 +54,7 @@ private:
 
 class EvalQuoteRange : public RangeNBiFunc
 {
+	default_func(EvalQuoteRange)
 public:
 	EvalQuoteRange(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it);
 	virtual void t_init_after_args()  override;
@@ -66,6 +69,7 @@ private:
 };
 
 class ImplicitCond : public Func {
+	default_func(ImplicitCond)
 public:
 	ImplicitCond(CoreEnvironment& env, Cell& atom);
 
@@ -83,6 +87,7 @@ private:
 
 class EvalFunc : public Func
 {
+	default_func(EvalFunc)
 public:
 	EvalFunc(CoreEnvironment& env, Cell& fnc, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval = false);
 private:
@@ -102,6 +107,7 @@ private:
 
 class ExpandMacro : public RangeNBiFunc
 {
+	default_func(ExpandMacro)
 public:
 	ExpandMacro(
 		CoreEnvironment& env,
@@ -131,6 +137,7 @@ private:
 
 class EvalMacro : public Func
 {
+	default_func(EvalMacro)
 public:
 	EvalMacro(
 		CoreEnvironment& env,
@@ -143,7 +150,7 @@ private:
 	virtual bool t_eval_args() override;
 	virtual void t_internal_execute() override;
 private:
-	CoreData::HolderPtr t_fnc;
+	CoreData::HolderPtr t_fnc = nullptr;
 	Cell t_buf;
 	bool t_ev = false;
 };

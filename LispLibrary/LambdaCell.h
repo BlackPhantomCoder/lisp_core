@@ -3,6 +3,7 @@
 #include "Symbol.h"
 #include "DotPair.h"
 #include "Number.h"
+#include "SExprsFarm.h"
 #include "json/include/json.hpp"
 #include <vector>
 

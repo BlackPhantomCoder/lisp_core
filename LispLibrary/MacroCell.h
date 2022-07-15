@@ -1,6 +1,5 @@
 #pragma once
 #include "LambdaCell.h"
-
 #include <vector>
 
 struct macro {
