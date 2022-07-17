@@ -76,8 +76,17 @@ template <class Fnc>
 Core::result_type Core::t_under_catch(Fnc fnc, CoreEnvStreamsProviderInt& streams, bool eos_error) {
     auto result = Core::result_type::fail;
 #ifndef EX_CATCH
-    fnc();
-    result = Core::result_type::success;
+    try
+    {
+        fnc();
+        result = Core::result_type::success;
+    }
+    catch (errors::eos& e)
+    {
+        if (!eos_error)
+            result = Core::result_type::success;
+        else throw e;
+    }
 #endif
 
 #ifdef EX_CATCH

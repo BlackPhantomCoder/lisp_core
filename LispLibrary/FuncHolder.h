@@ -13,6 +13,8 @@ public:
 	FuncHolder& operator=(const FuncHolder& rh) = delete;
 
 	Func& operator*() const;
+	Func* operator->() const;
+	Func* get()const;
 private:
 	Func* t_func = nullptr;
 };

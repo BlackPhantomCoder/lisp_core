@@ -15,13 +15,13 @@ using namespace CoreData;
 using namespace std;
 
 
-//количество потоков для асинхронных тестов (оптимально - по половине ядер)
-constexpr auto treads_count = 6;
+//количество доп потоков для асинхронных тестов (оптимально - по половине ядер -1 (или нет?))
+constexpr auto treads_count = 4;
 
 //Дебаг
 #ifdef _DEBUG
 	// true - асинхронно, false - последовательно
-using tester_type = NATests::Tester<false>;
+using tester_type = NATests::Tester<true>;
 #endif
 
 //релиз (в нём лучше без асинхронных)
@@ -336,6 +336,11 @@ void lists() {
 	one_assert("(cdr (quote (1 2 3)))", "(2 3)");
 	one_assert("(cdr (quote ((1 1) 2 3)))", "(2 3)");
 
+	one_assert("(cadr '(1 2 3 4 5))", "2");
+	one_assert("(caddr '(1 2 3 4 5))", "3");
+	one_assert("(cadddr '(1 2 3 4 5))", "4");
+	one_assert("(cddddr '(1 2 3 4 5))", "(5)");
+
 	one_assert("(append (quote (1 1)) (quote (2 2)) (quote (3 3)))", "(1 1 2 2 3 3)");
 	one_assert("(append 2 (quote (1 1)) (quote (2 2)) (quote (3 3)))", "(1 1 2 2 3 3)");
 	one_assert("(append (quote (1 1)) (quote (2 (4 4) 2)) (quote (3 3)))", "(1 1 2 (4 4) 2 3 3)");
@@ -435,6 +440,39 @@ void calcfun() {
 	one_assert("(progn (setq a 2) ((null T) nil) (eval 'b))", "B");
 	one_assert("(eval '(+ 1 2))", "3");
 	one_assert("(eval ((lambda (x) (* x x)) 3))", "9");
+
+	several_assert(
+		({
+			"(SETQ A '(1 2 3))",
+			"(SETQ B '(4 5 6))",
+			"(NCONC A B)",
+		}),
+		({
+			"(1 2 3)",
+			"(4 5 6)",
+			"(1 2 3 4 5 6)",
+		})
+	);
+
+	several_assert(
+		({
+			"(SETQ A '(1 2 3))",
+			"(SETQ B '(4 5 6))",
+			"(SETQ C (NCONC A B))",
+			"A",
+			"B"
+		}),
+		({
+			"(1 2 3)",
+			"(4 5 6)",
+			"(1 2 3 4 5 6)",
+			"(1 2 3 4 5 6)",
+			"(4 5 6)"
+			})
+	);
+			
+
+	one_assert("(eval `((lambda (x) (* x x)) 3))", "9");
 	one_assert("(eval ````((lambda (x) (* x x)) 3))","9");
 	one_assert("(quote a)", "A");
 	one_assert("'(quote a)", "(QUOTE A)");
@@ -501,6 +539,40 @@ void control_calc() {
 	raw_assert(
 		"(progn (setq lst '(1 (2 3) (2 . 3) a nil 4 5)) (loop ((not (car lst)) (cdr lst)) (print lst) (setq lst (cdr lst))))",
 		"(1 (2 3) (2 . 3) A NIL 4 5)\n((2 3) (2 . 3) A NIL 4 5)\n((2 . 3) A NIL 4 5)\n(A NIL 4 5)\n(4 5)\n"
+	);
+
+	several_assert(
+		({
+			"(SETQ A 1 B 2)",
+			"A",
+			"B",
+			"(SETQ A 3 B)",
+			"A",
+			"B",
+		}),
+		({
+			"2",
+			"1",
+			"2",
+			"NIL",
+			"3",
+			"NIL",
+		})
+	);
+
+	several_assert(
+		({
+			"(SETQ A 1 B 2 C E)",
+			"A",
+			"B",
+			"C",
+		}),
+		({
+			"E",
+			"1",
+			"2",
+			"E",
+		})
 	);
 }
 

@@ -115,11 +115,11 @@ namespace NATests {
             std::vector<future<std::vector<test_result>>> asyncs;
             asyncs.reserve(processor_count);
            
-            const auto block_size = t_tests.size() / (threads-1);
+            const auto block_size = t_tests.size() / (threads);
             auto it = std::begin(t_tests);
             for (; it < (std::end(t_tests) - 2 * block_size); it += block_size) {
-                asyncs.emplace_back(std::async(std::launch::async, 
-                    [block_size](auto it) -> auto  {
+                asyncs.emplace_back(std::async(std::launch::async,
+                    [block_size](auto it) -> auto {
                         //LogDuration d{};
                         auto result = std::vector<test_result>();
                         result.reserve(block_size);
@@ -130,7 +130,7 @@ namespace NATests {
                         return result;
                     },
                     it
-                ));
+                        ));
             }
 
             {

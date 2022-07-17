@@ -14,338 +14,318 @@
 using namespace std;
 using namespace CoreData;
 
-#define arg1 *t_args_beg()
-#define arg2 *(next(t_args_beg()))
-#define arg3 *(next(t_args_beg()), 2)
+#define arg1 *args_beg()
+#define arg2 *(next(args_beg()))
+#define arg3 *(next(args_beg()), 2)
 
 
-ProgN::ProgN(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it):
-    RangeNBiFunc(env, args_beg_it, args_end_it)
+
+void Prog1::execute(CoreEnvironment& env)
 {
-}
-
-void ProgN::t_init_after_args()
-{
-    t_it = t_args_beg();
-    return t_cycle();
-}
-
-void ProgN::t_execute_func()
-{
-    if (t_it == t_args_end()) return t_return(t_env().farm().nil());
-    //cout << "progn " << t_env.t_output_control.to_string(t_env.t_farm.make_list_cell(t_args_beg_it, t_args_end_it)) << endl;
-    if(t_to_last) return t_to_last_f();
-
-    auto& last = *t_it;
-    if (t_imp) {
-        if (is_null(t_last_eval_val())) {
-            throw "nbifunc_progn error -> implicit cond at the end, but t_ferm.symbols->nil";
-        }
+    switch (t_stage)
+    {
+    case stage::start:
+        if (args_beg() == args_end())
+            return f_return(env.farm().nil());
         else {
-            return t_return(car(t_last_eval_val()));
-        }
-    }
-    if (is_implicit_cond(last, t_env().farm())) {
-        t_imp = true;
-        return  t_eval_next(make_fnc<ImplicitCond>(t_env(), last));
-    }
-    else {
-        return t_return_next(make_fnc<EvalQuote>(t_env(), last));
-    }
-}
-
-void ProgN::t_to_last_f()
-{
-    if (t_imp) {
-        if (is_null(t_last_eval_val())) {
-            t_imp = false;
-            ++t_it;
-            return t_cycle();
-        }
-        else {
-            return t_return(car(t_last_eval_val()));
-        }
-    }
-    if (next(t_it) != t_args_end()) {
-        if (is_implicit_cond(*t_it, t_env().farm())) {
-            t_imp = true;
-            return  t_eval_next(make_fnc<ImplicitCond>(t_env(), *t_it));
-        }
-        else {
-            t_args_buf = *t_it;
-            ++t_it;
-            return t_eval_next(
-                make_fnc<EvalQuote>(
-                    t_env(),
-                    t_args_buf
-                )
-            );
-        }
-    }
-    else {
-        t_to_last = false;
-        return t_cycle();
-    }
-}
-
-Eval::Eval(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval_func):
-    RangeBiFunc(env, args_beg_it, args_end_it, forse_noeval_func)
-{
-}
-
-void Eval::t_execute_func()
-{
-    if (t_args_beg() == t_args_end()) return t_return(t_env().farm().nil());
-    return t_return_next(
-        make_fnc<EvalQuote>(
-            t_env(),
-            arg1
-        )
-    );
-}
-
-Cond::Cond(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it) :
-    RangeNBiFunc(env, args_beg_it, args_end_it)
-{
-}
-
-void Cond::t_init_after_args()
-{
-    t_it = t_args_beg();
-    return t_cycle();
-}
-
-void Cond::t_execute_func()
-{
-    if (t_it == t_args_end()) return t_return(t_env().farm().nil());
-    if (t_imp) {
-        if (is_null(t_last_eval_val())) {
-            t_imp = false;
-            ++t_it;
-            return t_cycle();
-        }
-        else {
-            return t_return(car(t_last_eval_val()));
-        }
-    }
-    if (t_ev) {
-        t_ev = false;
-        auto& elem = *t_it;
-        t_buf = t_last_eval_val();
-        if (!is_null(t_buf)) {
-            auto& cdr_buf = cdr(elem);
-            if (!is_list(cdr_buf) || is_null_list(to_list(cdr_buf)))
-            {
-                return t_return(t_buf);
+            if (is_implicit_cond(*args_beg(), env.farm())) {
+                t_stage = stage::imp;
+                return f_eval_next(make_fnc<ImplicitCond>(*args_beg()));
             }
-            return t_return_next(
-                make_fnc<ProgN>(
-                    t_env(),
-                    begin(cdr_buf),
-                    end(cdr_buf)
-                    )
-            );
+            else {
+                t_stage = stage::ev;
+                return f_eval_next(make_fnc<EvalQuote>(*args_beg()));
+            }
         }
-        else {
-            ++t_it;
-            return t_cycle();
-        }
-    }
-
-    auto& elem = *t_it;
-    if (!is_implicit_cond(elem, t_env().farm())) {
-        if (!is_list(elem) || is_null_list(to_list(elem))) {
-            ++t_it;
-            return t_cycle();
-        }
-        t_ev = true;
-        return t_eval_next(make_fnc<EvalQuote>(t_env(), car(elem)));
-    }
-    t_imp = true;
-    return t_eval_next(make_fnc<ImplicitCond>(t_env(), elem));
-}
-
-Prog1::Prog1(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it) :
-    RangeNBiFunc(env, args_beg_it, args_end_it)
-{
-}
-
-void Prog1::t_execute_func()
-{
-    if (t_args_beg() == t_args_end()) return t_return(t_env().farm().nil());
-    //cout << "prog1 " << t_env.t_output_control.to_string(t_env.t_farm.make_list_cell(t_args_beg_it, t_args_end_it)) << endl;
-    if (t_progn) {
-        return t_return(t_result_buf);
-    }
-
-    if (t_ev) {
-        t_ev = false;
-        t_result_buf = t_last_eval_val();
-        t_progn = true;
-        return t_eval_next(make_fnc<ProgN>(t_env(), next(t_args_beg()), t_args_end()));
-    }
-
-    if (t_imp) {
-        t_imp = false;
-        if (is_null(t_last_eval_val())) {
+    case stage::imp:
+        if (is_null(s_last_eval_val())) {
             throw "nbifunc_progn error -> implicit cond at the end, but t_ferm.symbols->nil";
         }
         else {
-            t_result_buf = car(t_last_eval_val());
+            t_result_buf = car(s_last_eval_val());
         }
-        t_progn = true;
-        return t_eval_next(make_fnc<ProgN>(t_env(), next(t_args_beg()), t_args_end()));
-    }
-
-    if (is_implicit_cond(*t_args_beg(), t_env().farm())) {
-        t_imp = true;
-        return t_eval_next(make_fnc<ImplicitCond>(t_env(), *t_args_beg()));
-    }
-    else {
-        t_ev = true;
-        return t_eval_next(make_fnc<EvalQuote>(t_env(), *t_args_beg()));
+        t_stage = stage::progn;
+        return f_eval_next(make_fnc<ProgN>(next(args_beg()), args_end()));
+    case stage::ev:
+        t_result_buf = s_last_eval_val();
+        t_stage = stage::progn;
+        return f_eval_next(make_fnc<ProgN>(next(args_beg()), args_end()));
+    case stage::progn:
+        return f_return(t_result_buf);
+    default:
+        throw logic_error(" Prog1::execute: unknown stage");
     }
 }
 
-Append::Append(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval_func):
-    RangeBiFunc(env, args_beg_it, args_end_it, forse_noeval_func)
+
+void ProgN::execute(CoreEnvironment& env)
+{
+    switch (t_stage)
+    {
+    case ProgN::stage::start:
+        t_it = args_beg();
+        if (t_it == args_end()) 
+            return f_return(env.farm().nil());
+        t_stage = stage::eval;
+        [[fallthrough]];
+    case ProgN::stage::eval:
+        if (next(t_it) != args_end()) {
+            if (is_implicit_cond(*t_it, env.farm())) {
+                t_stage = stage::eval_imp;
+                return  f_eval_next(make_fnc<ImplicitCond>(*t_it));
+            }
+            else {
+                t_args_buf = *t_it;
+                ++t_it;
+                return f_eval_next(make_fnc<EvalQuote>(t_args_buf));
+            }
+        }
+        else {
+            t_stage = stage::last;
+            return f_cycle();
+        }
+    case ProgN::stage::eval_imp:
+        if (is_null(s_last_eval_val())) {
+            t_stage = stage::eval;
+            ++t_it;
+            return f_cycle();
+        }
+        else {
+            return f_return(car(s_last_eval_val()));
+        }
+    case ProgN::stage::last_imp:
+        if (is_null(s_last_eval_val())) {
+            throw "nbifunc_progn error -> implicit cond at the end, but t_ferm.symbols->nil";
+        }
+        else {
+            return f_return(car(s_last_eval_val()));
+        }
+    case ProgN::stage::last:
+        {
+            auto& last = *t_it;
+            if (is_implicit_cond(last, env.farm())) {
+                t_stage = stage::last_imp;
+                return  f_eval_next(make_fnc<ImplicitCond>(last));
+            }
+            else {
+                return f_return_next(make_fnc<EvalQuote>(last));
+            }
+        }
+    default:
+        throw logic_error(" ProgN::execute: unknown stage");
+    }
+}
+
+Eval::Eval(CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval_func):
+    RangeBiFunc(func_id::eval, args_beg_it, args_end_it, forse_noeval_func)
 {
 }
 
-void Append::t_init_after_args()
+void Eval::execute(CoreEnvironment& env)
 {
-    if (t_args_beg() == t_args_end()) t_return(t_env().farm().nil());
-    t_it = t_args_beg();
-    return t_cycle();
+    if (args_beg() == args_end()) return f_return(env.farm().nil());
+    return f_return_next(make_fnc<EvalQuote>(arg1));
 }
 
-void Append::t_execute_func()
+void Cond::execute(CoreEnvironment& env)
 {
-    while (t_it != t_args_end() && (is_atom(*t_it) || is_null_list(to_list(*t_it)))) {
+    switch (t_stage)
+    {
+    case Cond::stage::start:
+        t_it = args_beg();
+        t_stage = stage::main;
+        [[fallthrough]];
+    case Cond::stage::main:
+        {
+            if (t_it == args_end()) return f_return(env.farm().nil());
+            auto& elem = *t_it;
+            if (!is_implicit_cond(elem, env.farm())) {
+                if (!is_list(elem) || is_null_list(to_list(elem))) {
+                    ++t_it;
+                    return f_cycle();
+                }
+                t_stage = stage::ev;
+                return f_eval_next(make_fnc<EvalQuote>(car(elem)));
+            }
+            t_stage = stage::imp;
+            return f_eval_next(make_fnc<ImplicitCond>(elem));
+        }
+    case Cond::stage::imp:
+    {
+        if (is_null(s_last_eval_val())) {
+            t_stage = stage::main;
+            ++t_it;
+            return f_cycle();
+        }
+        else {
+            return f_return(car(s_last_eval_val()));
+        }
+    }
+    case Cond::stage::ev:
+        {
+            t_stage = stage::main;
+            auto& elem = *t_it;
+            t_buf = s_last_eval_val();
+            if (!is_null(t_buf)) {
+                auto& cdr_buf = cdr(elem);
+                if (!is_list(cdr_buf) || is_null_list(to_list(cdr_buf)))
+                {
+                    return f_return(t_buf);
+                }
+                return f_return_next(
+                    make_fnc<ProgN>(
+                        begin(cdr_buf),
+                        end(cdr_buf)
+                    )
+                );
+            }
+            else {
+                ++t_it;
+                return f_cycle();
+            }
+        }
+    default:
+        throw logic_error("Cond::execute: unknown stage");
+    }
+}
+
+Append::Append(CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval_func):
+    RangeBiFunc(func_id::append, args_beg_it, args_end_it, forse_noeval_func)
+{
+}
+
+void Append::after_args_eval(CoreEnvironment& env)
+{
+    if (args_beg() == args_end()) return f_return(env.farm().nil());
+    t_it = args_beg();
+}
+
+void Append::execute(CoreEnvironment& env)
+{
+    while (t_it != args_end() && (is_atom(*t_it) || is_null_list(to_list(*t_it)))) {
         ++t_it;
     }
-    if(t_it == t_args_end()) return t_return(t_env().farm().nil());
-    if(next(t_it) == t_args_end()) return t_return(*t_it);
+    if(t_it == args_end()) return f_return(env.farm().nil());
+    if(next(t_it) == args_end()) return f_return(*t_it);
     Cell s = *t_it;
     ++t_it;
-    for(; t_it != t_args_end(); ++t_it){
-        s = append(s, *t_it, t_env().farm());
+    for(; t_it != args_end(); ++t_it){
+        s = append(s, *t_it, env.farm());
     }
-    return t_return(s);
+    return f_return(s);
 
 }
 
-Loop::Loop(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it) :
-    RangeNBiFunc(env, args_beg_it, args_end_it)
+void Loop::execute(CoreEnvironment& env)
 {
-}
-
-void Loop::t_init_after_args()
-{
-    t_it = t_args_beg();
-    return t_cycle();
-}
-
-void Loop::t_execute_func()
-{
-    if (t_imp) {
-        t_imp = false;
-        if (!is_null(t_last_eval_val())) {
-            auto& res = car(t_last_eval_val());
-            if(!is_null(res)) return t_return(res);
+    switch (t_stage)
+    {
+    case Loop::stage::start:
+        t_it = args_beg();
+        [[fallthrough]];
+    case Loop::stage::main:
+        if (t_it == args_end()) 
+            t_it = args_beg();
+        if (is_implicit_cond(*t_it, env.farm())) {
+            t_stage = stage::imp;
+            return f_eval_next(make_fnc<ImplicitCond>(*t_it++));
         }
-    }
-
-    if(t_it == t_args_end()) t_it = t_args_beg();
-    if (is_implicit_cond(*t_it, t_env().farm())) {
-        t_imp = true;
-        return t_eval_next(make_fnc<ImplicitCond>(t_env(), *t_it++));
-    }
-    else {
-        return t_eval_next(make_fnc<EvalQuote>(t_env(), *t_it++));
+        else {
+            return f_eval_next(make_fnc<EvalQuote>(*t_it++));
+        }
+    case Loop::stage::imp:
+        if (!is_null(s_last_eval_val())) {
+            auto& res = car(s_last_eval_val());
+            if (!is_null(res)) 
+                return f_return(res);
+        }
+        t_stage = stage::main;
+        return f_cycle();
+    default:
+        throw logic_error("Loop::execute: unknown stage");
     }
 }
 
-Apply::Apply(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval) :
-    RangeBiFunc(env, args_beg_it, args_end_it, forse_noeval)
+Apply::Apply(CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval) :
+    RangeBiFunc(func_id::apply, args_beg_it, args_end_it, forse_noeval)
 {
 }
 
-void Apply::t_init_after_args()
+void Apply::after_args_eval(CoreEnvironment& env)
 {
-    if (t_args_beg() == t_args_end()) throw "bifunc_apply error (unknown function)";
-    return t_cycle();
+    if (args_beg() == args_end()) throw "bifunc_apply error (unknown function)";
 }
 
-void Apply::t_execute_func()
+void Apply::execute(CoreEnvironment& env)
 {
-    if (ArgsCounter{t_args_beg(), t_args_end()} >= 2) {
+    if (ArgsCounter{args_beg(), args_end()} >= 2) {
         if(is_list(arg2)) {
             auto& buf = arg2;
-            return t_return_next(make_fnc<EvalFunc>(t_env(), arg1, begin(buf), end(buf), true));
+            return f_return_next(make_fnc<EvalFunc>(arg1, begin(buf), end(buf), true));
         }
-        t_eval_buf = t_env().farm().make_list_cell({ arg1 });
-        return t_return_next(make_fnc<EvalQuote>(t_env(), t_eval_buf));
+        t_eval_buf = env.farm().make_list_cell({ arg1 });
+        return f_return_next(make_fnc<EvalQuote>(t_eval_buf));
     }
     else {
-        t_eval_buf = t_env().farm().make_list_cell({ arg1 });
-        return t_return_next(make_fnc<EvalQuote>(t_env(), t_eval_buf));
+        t_eval_buf = env.farm().make_list_cell({ arg1 });
+        return f_return_next(make_fnc<EvalQuote>(t_eval_buf));
     }
 }
 
-SetQ::SetQ(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it) :
-    RangeNBiFunc(env, args_beg_it, args_end_it)
+void SetQ::execute(CoreEnvironment& env)
 {
+    switch (t_stage)
+    {
+    case SetQ::stage::start:
+        t_it = args_beg();
+        if (t_it == args_end())
+            return f_return(env.farm().nil());
+        [[fallthrough]];
+    case SetQ::stage::repeat_start:
+        if (next(t_it) == args_end()) {
+            env.support_funcs().set_value(*t_it, env.farm().nil());
+            return f_return(env.farm().nil());
+        }
+        [[fallthrough]];
+    case SetQ::stage::main:
+        t_stage = stage::ev;
+        return f_eval_next(make_fnc<EvalQuote>(*next(t_it)));
+    case SetQ::stage::ev:
+        {
+            auto t_val = s_last_eval_val();
+            env.support_funcs().set_value(*t_it, t_val);
+            t_it = next(t_it, 2);
+            if (t_it != args_end()) {
+                t_stage = stage::repeat_start;
+                return f_cycle();
+            }
+            else {
+                return f_return(t_val);
+            }
+        }
+    default:
+        throw logic_error("SetQ::execute: unknown stage");
+    }
 }
 
-void SetQ::t_init_after_args()
-{
-    if (t_args_beg() == t_args_end()) return t_return(t_env().farm().nil());
-    if (next(t_args_beg()) == t_args_end()) {
-        t_env().support_funcs().set_value(*t_args_beg(), t_env().farm().nil());
-        return t_return(t_env().farm().nil());
-    }
-    t_it = next(t_args_beg());
-    return t_cycle();
-}
 
-void SetQ::t_execute_func()
-{
-    if(!t_ev && t_it != t_args_end()){
-        t_ev = true;
-        return t_eval_next(make_fnc<EvalQuote>(t_env(), *t_it));
-    }
-
-    auto t_val = t_last_eval_val();
-
-    t_env().support_funcs().set_value(*t_args_beg(), t_val);
-    if (t_it != t_args_end() && next(t_it, 1) != t_args_end()) {
-        return t_return_next(make_fnc<SetQ>(t_env(), next(t_it, 1), t_args_end()));
-    }
-    else {
-        return t_return(t_val);
-    }
-}
-
-
-MacroExpand1::MacroExpand1(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval) :
-    RangeBiFunc(env, args_beg_it, args_end_it, forse_noeval),
+MacroExpand1::MacroExpand1(CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval) :
+    RangeBiFunc(func_id::macroexpand1, args_beg_it, args_end_it, forse_noeval),
     t_forse_noeval(forse_noeval)
 {
 }
 
-void MacroExpand1::t_init_after_args()
+void MacroExpand1::after_args_eval(CoreEnvironment& env)
 {
-    if (t_args_beg() == t_args_end()) t_return(t_env().farm().nil());
+    if (args_beg() == args_end()) f_return(env.farm().nil());
 }
 
-void MacroExpand1::t_execute_func()
+void MacroExpand1::execute(CoreEnvironment& env)
 {   
-    if (auto m_opt = is_macro_call(arg1, t_env())) {
+    if (auto m_opt = is_macro_call(arg1, env)) {
         auto& cd = cdr(arg1);
-        return t_return_next(
+        return f_return_next(
             make_fnc<ExpandMacro>(
-                t_env(),
                 m_opt->get(),
                 begin(cd),
                 end(cd),
@@ -354,27 +334,26 @@ void MacroExpand1::t_execute_func()
             )
         );
     }
-    return t_return(arg1);
+    return f_return(arg1);
 }
 
-MacroExpand::MacroExpand(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval) :
-    RangeBiFunc(env, args_beg_it, args_end_it, forse_noeval),
+MacroExpand::MacroExpand(CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval) :
+    RangeBiFunc(func_id::macroexpand, args_beg_it, args_end_it, forse_noeval),
     t_forse_noeval(forse_noeval)
 {
 }
 
-void MacroExpand::t_init_after_args()
+void MacroExpand::after_args_eval(CoreEnvironment& env)
 {
-    if (t_args_beg() == t_args_end()) t_return(t_env().farm().nil());
+    if (args_beg() == args_end()) f_return(env.farm().nil());
 }
 
-void MacroExpand::t_execute_func()
+void MacroExpand::execute(CoreEnvironment& env)
 {
-    if (auto m_opt = is_macro_call(arg1, t_env())) {
+    if (auto m_opt = is_macro_call(arg1, env)) {
         auto& cd = cdr(arg1);
-        return t_return_next(
+        return f_return_next(
             make_fnc<ExpandMacro>(
-                t_env(),
                 m_opt->get(),
                 begin(cd),
                 end(cd),
@@ -383,22 +362,22 @@ void MacroExpand::t_execute_func()
             )
         );
     }
-    return t_return(arg1);
+    return f_return(arg1);
 }
 
-MapCar::MapCar(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval) :
-    RangeBiFunc(env, args_beg_it, args_end_it, forse_noeval)
+MapCar::MapCar(CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval) :
+    RangeBiFunc(func_id::mapcar, args_beg_it, args_end_it, forse_noeval)
 {
 }
 
-void MapCar::t_init_after_args()
+void MapCar::after_args_eval(CoreEnvironment& env)
 {
-    if (t_args_beg() == t_args_end()) return  t_return(t_env().farm().nil());
-    if (next(t_args_beg()) == t_args_end())return  t_return(t_env().farm().nil());
-    t_func = *t_args_beg();
+    if (args_beg() == args_end()) return  f_return(env.farm().nil());
+    if (next(args_beg()) == args_end())return  f_return(env.farm().nil());
+    t_func = *args_beg();
 
     bool nil = false;
-    for (auto it = next(t_args_beg()); it != t_args_end(); ++it) {
+    for (auto it = next(args_beg()); it != args_end(); ++it) {
         if (is_null(*it) || !is_list(*it)) {
             nil = true;
             break;
@@ -407,18 +386,18 @@ void MapCar::t_init_after_args()
             t_lists.push_back(*it);
         }
     }
-    if(nil) return t_return(t_env().farm().nil());
+    if(nil) return f_return(env.farm().nil());
 }
 
-void MapCar::t_execute_func()
+void MapCar::execute(CoreEnvironment& env)
 {
     if (t_ev) {
         t_ev = false;
-        t_result.push_back(t_last_eval_val());
+        t_result.push_back(s_last_eval_val());
     }
 
     if (t_finish) {
-        return t_return(t_env().farm().make_list_cell(begin(t_result), end(t_result)));
+        return f_return(env.farm().make_list_cell(begin(t_result), end(t_result)));
     }
 
     std::vector<Cell> buf;
@@ -432,19 +411,23 @@ void MapCar::t_execute_func()
             *it = cd;
         }
     }
-    t_buf = t_env().farm().make_list_cell(begin(buf), end(buf));
+    t_buf = env.farm().make_list_cell(begin(buf), end(buf));
     t_ev = true;
-    return t_eval_next(make_fnc<EvalFunc>(t_env(), t_func, begin(t_buf), end(t_buf)));
+    return f_eval_next(make_fnc<EvalFunc>(t_func, begin(t_buf), end(t_buf)));
 }
 
-Read::Read(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval_func):
-    RangeBiFunc(env, args_beg_it, args_end_it, forse_noeval_func),
-    t_hp(env)
+Read::Read(CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval_func):
+    RangeBiFunc(func_id::read, args_beg_it, args_end_it, forse_noeval_func)
 {
     t_parser = yypstate_new();
 }
 
-void Read::t_execute_func()
+void Read::before_args_eval(CoreEnvironment& env)
+{
+    t_hp.set_env(env);
+}
+
+void Read::execute(CoreEnvironment& env)
 {
     try
     {
@@ -456,10 +439,10 @@ void Read::t_execute_func()
         //если запрошен макрос
         if (t_macro) {
             t_macro = false;
-            val = t_last_eval_val();
-            //cout << t_env().output_control().to_string(*val) << endl;
+            val = s_last_eval_val();
+            //cout << env.output_control().to_string(*val) << endl;
             
-           /*if (t_env().read_supp().read_final_supp.size() != t_last_finals_count) {
+           /*if (env.read_supp().read_final_supp.size() != t_last_finals_count) {
                 macro_final = true;
                 code = tokens::FinalMacro;
             }
@@ -471,13 +454,13 @@ void Read::t_execute_func()
         else {
 
             // получаем токен
-            tie(code, val) = t_env().scanner().lex();
+            tie(code, val) = env.scanner().lex();
             // запрашиваем макрос
             if (code == tokens::Macro) {
                 t_macro = true;
                 t_buf = *val;
-                //cout << t_env().output_control().to_string(*val) << endl;
-                return this->t_eval_next(make_fnc<EvalQuote>(t_env(), t_buf));
+                //cout << env.output_control().to_string(*val) << endl;
+                return this->f_eval_next(make_fnc<EvalQuote>(t_buf));
             }
         }
         // сохраняем Cell 
@@ -487,7 +470,7 @@ void Read::t_execute_func()
         // пушим
         auto status = yypush_parse(t_parser, code, &parse_val, &t_hp);
         // продолжаем пушить
-        if (status == tokens::YYPUSH_MORE) return t_cycle();
+        if (status == tokens::YYPUSH_MORE) return f_cycle();
         // если конец файла
         if (code == 0 && status != 0) {
             throw errors::eos{};
@@ -499,10 +482,10 @@ void Read::t_execute_func()
         t_parser = nullptr;
         // доп проверка на специальные макрочары
         if (t_hp.is_saved_macro()) {
-            return t_return_next(make_fnc<EvalQuote>(t_env(), t_hp.get_saved()));
+            return f_return_next(make_fnc<EvalQuote>(t_hp.get_saved()));
         }
         // возвращаем
-        return t_return(t_hp.get_saved());
+        return f_return(t_hp.get_saved());
     }
     catch (...) {
         if (t_parser) {
@@ -513,48 +496,47 @@ void Read::t_execute_func()
     }
 }
 
-PeekChar::PeekChar(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval_func):
-    RangeBiFunc(env, args_beg_it, args_end_it, forse_noeval_func)
+PeekChar::PeekChar(CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval_func):
+    RangeBiFunc(func_id::peekchar, args_beg_it, args_end_it, forse_noeval_func)
 {
 }
 
-void PeekChar::t_init_after_args()
+void PeekChar::after_args_eval(CoreEnvironment& env)
 {
-    if (!t_env().input().alive()) throw "peek_char: empty stream";
+    if (!env.input().alive()) throw "peek_char: empty stream";
     if (is_symbol(arg1) && !is_null(arg1)) {
         t_skip_comments = to_symbol(arg1) == CoreData::T_str;
         if (!t_skip_comments) {
             t_until = true;
-            auto raw = t_env().output_control().to_string_raw(arg1);
+            auto raw = env.output_control().to_string_raw(arg1);
             if (empty(raw)) throw "empty symbol";
             t_until_char = raw[0];
         }
     }
 }
 
-
 //!!!!!
 //Для удобства программирования символ, выдаваемый PEEK-CHAR, кроме того, присваивается переменной RATOM
-void PeekChar::t_execute_func()
+void PeekChar::execute(CoreEnvironment& env)
 {
     //until_char
     if (t_until_char) {
         if (t_until_char_cycle) {
             if (t_i == -1) {
                 //stream set eos
-                t_env().input().read_char();
+                env.input().read_char();
                 throw errors::eos{};
             }
             auto ch = char(t_i);
             while (ch != t_until_char) {
-                t_i = t_env().input().read_char();
+                t_i = env.input().read_char();
             }
-            t_env().input().unread_char();
-            return t_return(t_env().farm().make_symbol_cell(string() + t_until_char));
+            env.input().unread_char();
+            return f_return(env.farm().make_symbol_cell(string() + t_until_char));
         }
         t_until_char_cycle = true;
-        t_i = t_env().input().read_char();
-        return t_cycle();
+        t_i = env.input().read_char();
+        return f_cycle();
     }
     else {
         //skip_comments | peek
@@ -562,31 +544,31 @@ void PeekChar::t_execute_func()
         if (t_skip_comments_cycle) {
             if (t_i == -1) {
                 //stream set eos
-                t_env().input().read_char();
+                env.input().read_char();
                 throw errors::eos{};
             }
             auto ch = char(t_i);
             if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') {
-                t_env().input().read_char();
-                t_i = t_env().input().peek_char();
-                return t_cycle();
+                env.input().read_char();
+                t_i = env.input().peek_char();
+                return f_cycle();
             }
-            return t_return(t_env().farm().make_symbol_cell(string() + ch));
+            return f_return(env.farm().make_symbol_cell(string() + ch));
         }
 
         if (t_skip_comments) {
             t_skip_comments_cycle = true;
-            t_i = t_env().input().peek_char();
-            return t_cycle();
+            t_i = env.input().peek_char();
+            return f_cycle();
         }
 
-        auto i = t_env().input().peek_char();
+        auto i = env.input().peek_char();
         if (i == -1) {
             //stream set eos
-            t_env().input().read_char();
+            env.input().read_char();
             throw errors::eos{};
         }
 
-        return t_return(t_env().farm().make_symbol_cell(string() + char(i)));
+        return f_return(env.farm().make_symbol_cell(string() + char(i)));
     }
 }

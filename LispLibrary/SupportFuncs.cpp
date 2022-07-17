@@ -15,116 +15,99 @@
 using namespace std;
 using namespace CoreData;
 
-#define arg1 *t_args_beg()
-#define arg2 *(next(t_args_beg()))
-#define arg3 *(next(t_args_beg()), 2)
+#define arg1 *args_beg()
+#define arg2 *(next(args_beg()))
+#define arg3 *(next(args_beg()), 2)
 
 EvalLambda::EvalLambda(
-    CoreEnvironment& env,
     const lambda& l,
     CarCdrIterator beg_it,
     CarCdrIterator end_it,
     bool forse_noeval_args
 ):
-    Func(env),
+    Func(func_id::evallambda, true),
     t_arg_type(l.arg_type)
 {
     if (l.type == lambda_types::nlambda || forse_noeval_args) {
         t_args = pair{ beg_it , end_it };
+        t_stage = stage::main_noeval;
     }
     else {
-        t_args = make_fnc<EvalQuoteRange>(t_env(), beg_it, end_it);
+        t_args = make_fnc<EvalQuoteRange>(beg_it, end_it);
+        t_stage = stage::args_eval;
     }
     t_costil_param = { l.params };
     t_costil_body = { l.body };
 }
 
-void EvalLambda::t_init_before_args()
+void EvalLambda::execute(CoreEnvironment& env)
 {
-    if (holds_alternative<CoreData::HolderPtr>(t_args)) {
-        t_eval_next(move(get<CoreData::HolderPtr>(t_args)));
-        t_args = monostate{};
+    switch (t_stage)
+    {
+    case EvalLambda::stage::args_eval:
+        t_stage = stage::args_evaled;
+        return f_eval_next(move(get<CoreData::HolderPtr>(t_args)));
+    case EvalLambda::stage::args_evaled:
+        t_args = s_last_eval_val();
+        [[fallthrough]];
+    case EvalLambda::stage::main:
+        t_stage = stage::evaled;
+        {
+            auto buf = CellEnvironment::frame{};
+            if (t_arg_type == lambda_args_types::spread) {
+                buf.first = { begin(t_costil_param), end(t_costil_param) };
+                buf.second = { begin(get<Cell>(t_args)), end(get<Cell>(t_args)) };
+            }
+            else {
+                t_temp = env.farm().make_list_cell({ get<Cell>(t_args) });
+                buf.first = { begin(t_costil_param), end(t_costil_param) };
+                buf.second = { begin(t_temp), end(t_temp) };
+            }
+            env.envs().push(move(buf));
+        }
+        return f_eval_next(make_fnc<ProgN>(begin(t_costil_body), end(t_costil_body)));
+    case EvalLambda::stage::main_noeval:
+        t_stage = stage::evaled;
+        {
+            auto buf = CellEnvironment::frame{};
+            if (t_arg_type == lambda_args_types::spread) {
+                buf.first = { begin(t_costil_param), end(t_costil_param) };
+                buf.second = { 
+                    get<pair<CarCdrIterator, CarCdrIterator>>(t_args).first,
+                    get<pair<CarCdrIterator, CarCdrIterator>>(t_args).second
+                };
+            }
+            else {
+                t_temp = env.farm().make_list_cell(env.farm().make_list_cell(
+                    get<pair<CarCdrIterator, CarCdrIterator>>(t_args).first,
+                    get<pair<CarCdrIterator, CarCdrIterator>>(t_args).second
+                ));
+                buf.first = { begin(t_costil_param), end(t_costil_param) };
+                buf.second = { begin(t_temp), end(t_temp) };
+            }
+            env.envs().push(move(buf));
+        }
+        return f_eval_next(make_fnc<ProgN>(begin(t_costil_body), end(t_costil_body)));
+    case EvalLambda::stage::evaled:
+        env.envs().pop();
+        return f_return(s_last_eval_val());
+    default:
+        throw logic_error("EvalLambda::execute: unknown stage");
     }
-    return t_cycle();
+
 }
 
-void EvalLambda::t_init_after_args()
-{
-    return t_eval_next(
-        make_fnc<ProgN>(
-            t_env(),
-            begin(t_costil_body),
-            end(t_costil_body)
-        )
-    );
-}
-
-bool EvalLambda::t_eval_args()
-{
-    if(holds_alternative<monostate>(t_args)) t_args = t_last_eval_val();
-    t_env().envs().push(t_create_frame());
-    return true;
-}
-
-void EvalLambda::t_internal_execute()
-{
-    t_env().envs().pop();
-    return t_return(t_last_eval_val());
-}
-
-CellEnvironment::frame EvalLambda::t_create_frame()
-{
-    if (holds_alternative<monostate>(t_args)) throw "";
-    CellEnvironment::frame buf;
-    if (t_arg_type == lambda_args_types::spread) {
-        CarCdrIterator arg_it;
-        CarCdrIterator arg_end_it;
-        if (holds_alternative<Cell>(t_args)) {
-            arg_it = begin(get<Cell>(t_args));
-            arg_end_it = end(get<Cell>(t_args));
-        }
-        else {
-            arg_it = get<pair<CarCdrIterator, CarCdrIterator>>(t_args).first;
-            arg_end_it = get<pair<CarCdrIterator, CarCdrIterator>>(t_args).second;
-        }
-        buf.first = { begin(t_costil_param), end(t_costil_param) };
-        buf.second = { arg_it, arg_end_it };
-    }
-    else {
-        if (holds_alternative<Cell>(t_args)) {
-            t_temp = t_env().farm().make_list_cell({ get<Cell>(t_args) });
-            buf.first = { begin(t_costil_param), end(t_costil_param) };
-            buf.second = { begin(t_temp), end(t_temp) };
-        }
-        else {
-            t_temp = t_env().farm().make_list_cell(t_env().farm().make_list_cell(
-                get<pair<CarCdrIterator, CarCdrIterator>>(t_args).first,
-                get<pair<CarCdrIterator, CarCdrIterator>>(t_args).second
-            ));
-            buf.first = { begin(t_costil_param), end(t_costil_param) };
-            buf.second = { begin(t_temp), end(t_temp) };
-        }
-      
-    }
-    return buf;
-}
-
-
-EvalQuote::EvalQuote(CoreEnvironment& env, Cell& c) :
-    Func(env),
+EvalQuote::EvalQuote(Cell& c) :
+    Func(func_id::evalquote),
     t_arg(&c)
 {
 }
 
-bool EvalQuote::t_eval_args()
-{
-    return true;
-}
 
-void EvalQuote::t_internal_execute()
+void EvalQuote::execute(CoreEnvironment& env)
 {
     if (is_list(*t_arg)) {
-        if (is_null_list(to_list(*t_arg))) return t_return(t_env().farm().nil());
+        if (is_null_list(to_list(*t_arg))) return f_return(env.farm().nil());
         if (auto& cdr_buf = cdr(*t_arg); is_list(cdr_buf)) {
             return t_eval_func(car(*t_arg), begin(cdr_buf), end(cdr_buf));
         }
@@ -134,141 +117,123 @@ void EvalQuote::t_internal_execute()
         }
     }
     else {
-        return t_return(
-            t_env().support_funcs().eval_atom(*t_arg)
+        return f_return(
+            env.support_funcs().eval_atom(*t_arg)
         );
     }
 }
 
 void EvalQuote::t_eval_func(Cell& fnc, CarCdrIterator args_beg_it, CarCdrIterator args_end_it)
 {
-    return t_return_next(make_fnc<EvalFunc>(t_env(), fnc, args_beg_it, args_end_it));
+    return f_return_next(make_fnc<EvalFunc>(fnc, args_beg_it, args_end_it));
 }
 
-
-EvalQuoteRange::EvalQuoteRange(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it) :
-    RangeNBiFunc(env, args_beg_it, args_end_it)
+void EvalQuoteRange::execute(CoreEnvironment& env)
 {
-}
-
-void EvalQuoteRange::t_init_after_args()
-{
-    t_it = t_args_beg();
-    if (t_args_beg() == t_args_end()) {
-        return t_return(t_env().farm().make_empty_list_cell());
+    switch (t_stage)
+    {
+    case EvalQuoteRange::stage::start:
+        if (args_beg() == args_end()) {
+            return f_return(env.farm().make_empty_list_cell());
+        }
+        t_it = args_beg();
+        t_stage = stage::main;
+        [[fallthrough]];
+    case EvalQuoteRange::stage::main:
+        //cycle because light work
+        {
+            auto cycles = 0;
+            while (t_it != args_end()) {
+                auto& c = *t_it++;
+                if (!is_list(c)) {
+                    t_push_back(env, env.support_funcs().eval_atom(c));
+                }
+                else if (is_null_list(to_list(c))) {
+                    t_push_back(env, c);
+                }
+                else {
+                    t_stage = stage::func_evaled;
+                    if (auto& cdr_buf = cdr(c); is_list(cdr_buf)) {
+                        return f_eval_next(make_fnc<EvalFunc>(car(c), begin(cdr_buf), end(cdr_buf)));
+                    }
+                    else {
+                        //if args is dotpair
+                        return f_eval_next(make_fnc<EvalFunc>(car(c), CarCdrIterator(), CarCdrIterator()));
+                    }
+                }
+                //return f_cycle();
+                ++cycles;
+                if(cycles == 100) return f_cycle();
+            }
+        }
+        
+        return f_return(t_result);
+    case EvalQuoteRange::stage::func_evaled:
+        t_push_back(env, s_last_eval_val());
+        t_stage = stage::main;
+        return f_cycle();
+    default:
+        throw logic_error("EvalQuoteRange::execute: unknown stage");
     }
-
-    return t_to_next();
 }
 
-void EvalQuoteRange::t_execute_func()
+void EvalQuoteRange::t_push_back(CoreEnvironment& env, const Cell& c)
 {
-    if (t_it != t_args_end()) {
-        t_result_v.push_back(t_last_eval_val());
-        return t_to_next();
-    }
-    if (!t_last)t_result_v.push_back(t_last_eval_val());
-    return t_return(t_env().farm().make_list_cell(begin(t_result_v), end(t_result_v)));
-}
-
-void EvalQuoteRange::t_to_next()
-{
-    std::reference_wrapper<Cell> c = *t_it++;
-    while (t_it != t_args_end()) {
-        if (!is_list(c)) {
-            t_result_v.push_back(t_env().support_funcs().eval_atom(c));
-        }
-        else if (is_null_list(to_list(c))) {
-            t_result_v.push_back(c);
-        }
-        else {
-            break;
-        }
-        c = *t_it++;
-    }
-    if (is_list(c)) {
-        if (is_null_list(to_list(c))) {
-            t_result_v.push_back(c);
-        }
-        else {
-            return t_eval_fnc(c);
-        }
+    if (t_result_last != nullptr) {
+        rplacd(to_list(*t_result_last), env.farm().make_list_cell(c));
+        t_result_last = &cdr(*t_result_last);
     }
     else {
-        t_result_v.push_back(t_env().support_funcs().eval_atom(c));
-    }
-    t_last = t_it == t_args_end();
-    return t_cycle();
-}
-
-void EvalQuoteRange::t_eval_fnc(Cell lst)
-{
-    if (auto& cdr_buf = cdr(lst); is_list(cdr_buf)) {
-        return t_eval_next(make_fnc<EvalFunc>(t_env(), car(lst), begin(cdr_buf), end(cdr_buf)));
-    }
-    else {
-        //if args is dotpair
-        return t_eval_next(make_fnc<EvalFunc>(t_env(), car(lst), CarCdrIterator(), CarCdrIterator()));
+        t_result = env.farm().make_list_cell(c);
+        t_result_last = &t_result;
     }
 }
 
-
-ImplicitCond::ImplicitCond(CoreEnvironment& env, Cell& atom) :
-    Func(env),
+ImplicitCond::ImplicitCond( Cell& atom) :
+    Func(func_id::implicitcond, true),
     t_atom(&atom)
 {
 }
 
-void ImplicitCond::t_init_after_args()
+void ImplicitCond::execute(CoreEnvironment& env)
 {
-    return t_eval_next(
-        make_fnc<EvalQuote>(
-            t_env(),
-            car(*t_atom)
-        )
-    );
-}
-
-bool ImplicitCond::t_eval_args()
-{
-    return true;
-}
-
-void ImplicitCond::t_internal_execute()
-{
-    if (t_next_res) {
-        return t_return(t_env().farm().make_list_cell(t_last_eval_val()));
-    }
-
-    if (empty(t_predicate_val_buf)) {
-        t_predicate_val_buf = t_last_eval_val();
-    }
-    //cout << "cond " << t_env.t_output_control.to_string(t_atom) << endl;
-    //cout << "cond " << t_env.t_output_control.to_string(*t_predicate_val_buf) << endl;
-
-    if (!is_null(t_predicate_val_buf)) {
-        //cout << "cond " << t_env.t_output_control.to_string(cdr(t_atom)) << endl;
-        auto& cdr_buf = cdr(*t_atom);
-        if (!is_list(cdr_buf) || is_null(cdr_buf))
+    switch (t_stage)
+    {
+    case ImplicitCond::stage::start:
+        t_stage = stage::main;
+        return f_eval_next(make_fnc<EvalQuote>(car(*t_atom)));
+    case ImplicitCond::stage::main:
+        //cout << "cond " << t_env.t_output_control.to_string(t_atom) << endl;
+        //cout << "cond " << t_env.t_output_control.to_string(*t_predicate_val_buf) << endl;
         {
-            return t_return(t_env().farm().make_list_cell(t_predicate_val_buf));
+            auto predicate_val_buf = s_last_eval_val();
+            if (!is_null(predicate_val_buf)) {
+                //cout << "cond " << t_env.t_output_control.to_string(cdr(t_atom)) << endl;
+                auto& cdr_buf = cdr(*t_atom);
+                if (!is_list(cdr_buf) || is_null(cdr_buf))
+                {
+                    return f_return(env.farm().make_list_cell(predicate_val_buf));
+                }
+                t_stage = stage::res;
+                return f_eval_next(
+                    make_fnc<ProgN>(
+                        begin(cdr_buf),
+                        end(cdr_buf)
+                    )
+                );
+            }
+            return f_return(env.farm().nil());
         }
-        t_next_res = true;
-        return t_eval_next(
-            make_fnc<ProgN>(
-                t_env(),
-                begin(cdr_buf),
-                end(cdr_buf)
-            )
-        );
+    case ImplicitCond::stage::res:
+        return f_return(env.farm().make_list_cell(s_last_eval_val()));
+    default:
+        throw logic_error("ImplicitCond::execute: unknown stage");
     }
-
-    return t_return(t_env().farm().nil());
 }
 
 
-EvalFunc::EvalFunc(CoreEnvironment& env, Cell& fnc, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval) :
-    Func(env),
+EvalFunc::EvalFunc(Cell& fnc, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval) :
+    Func(func_id::evalfunc, true),
     t_args_beg(args_beg_it),
     t_args_end(args_end_it),
     //t_fnc(&fnc),
@@ -277,30 +242,18 @@ EvalFunc::EvalFunc(CoreEnvironment& env, Cell& fnc, CarCdrIterator args_beg_it, 
 {
 }
 
-bool EvalFunc::t_eval_args()
-{
-    return true;
-}
 
-// helper type_t for the visitor #4
-template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
-// explicit deduction guide (not needed as of C++20)
-template<class... Ts> overloaded(Ts...)->overloaded<Ts...>;
-
-void EvalFunc::t_internal_execute()
+void EvalFunc::execute(CoreEnvironment& env)
 {
-    if (holds_alternative<CoreData::bifunc>(t_buf)) {
-        // direct call bifunc
-        auto c = t_last_eval_val();
-        return t_return(((&t_env())->*(get<CoreData::bifunc>(t_buf)))(begin(c), end(c)));
-    }
-    else if (holds_alternative<Cell*>(t_buf)) {
+    switch (t_buf.index())
+    {
+    case 0:
+    {
         auto* fnc = get<Cell*>(t_buf);
-        if (is_lambda_form(*fnc, t_env().farm())) {
-            t_buf = t_env().support_funcs().make_lambda_form(*fnc);
-            return t_return_next(
+        if (is_lambda_form(*fnc, env.farm())) {
+            t_buf = env.support_funcs().make_lambda_form(*fnc);
+            return f_return_next(
                 make_fnc<EvalLambda>(
-                    t_env(),
                     get<lambda>(t_buf),
                     t_args_beg,
                     t_args_end,
@@ -309,132 +262,156 @@ void EvalFunc::t_internal_execute()
             );
         }
 
-        if (!is_symbol(*fnc)) throw string("eval_fnc: unknown function ") + t_env().output_control().to_string(*fnc);
-        if (auto fnc_r = t_env().funcs().find(to_symbol(*fnc))) {
-            return std::visit(overloaded{
-                    [this](const FuncsStorage::bifunc& arg) {
-                        t_buf = arg.ptr;
-                        return t_eval_next(make_fnc<EvalQuoteRange>(t_env(), t_args_beg, t_args_end));
-                    },
-                    [this](const FuncsStorage::nbifunc& arg) {
-                        return t_return(((&t_env())->*(arg.ptr))(t_args_beg, t_args_end));
-                    },
-                    [this](const lambda& arg) {
-                        return t_return_next(
-                           make_fnc<EvalLambda>(
-                               t_env(),
-                               arg,
-                               t_args_beg,
-                               t_args_end,
-                               t_forse_noeval_func
-                               )
-                        );
-                    },
-                    [this](const CoreData::special_bifunc_make& arg) {
-                        return t_return_next(arg(t_env(), t_args_beg, t_args_end, t_forse_noeval_func));
-                    },
-                    [this](const macro& arg) {
-                        return t_return_next(make_fnc<EvalMacro>(t_env(),arg, t_args_beg, t_args_end, t_forse_noeval_func));
-                    },
-                    [this](const CoreData::special_nbifunc_make& arg) {
-                         return t_return_next(arg(t_env(), t_args_beg, t_args_end));
+        if (!is_symbol(*fnc)) throw string("eval_fnc: unknown function ") + env.output_control().to_string(*fnc);
+        //cout << "func: " << env.output_control().to_string(*fnc) << endl;
+        if (auto fnc_r = env.funcs().find(to_symbol(*fnc))) {
+            return std::visit([this, &env](auto&& arg) {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, FuncsStorage::bifunc>)
+                {
+                    t_buf = arg.ptr;
+                    if (t_args_beg == t_args_end) {
+                        return f_return(((&env)->*(get<CoreData::bifunc>(t_buf)))(t_args_beg, t_args_end));
                     }
-
+                    return f_eval_next(make_fnc<EvalQuoteRange>(t_args_beg, t_args_end));
+                }
+                else if constexpr (std::is_same_v<T, FuncsStorage::nbifunc>)
+                {
+                    return f_return(((&env)->*(arg.ptr))(t_args_beg, t_args_end));
+                }
+                else if constexpr (std::is_same_v<T, lambda>)
+                {
+                    return f_return_next(
+                        make_fnc<EvalLambda>(
+                            arg,
+                            t_args_beg,
+                            t_args_end,
+                            t_forse_noeval_func
+                            )
+                    );
+                }
+                else if constexpr (std::is_same_v<T, special_bifunc_make>)
+                {
+                    return f_return_next(arg(t_args_beg, t_args_end, t_forse_noeval_func));
+                }
+                else if constexpr (std::is_same_v<T, macro>)
+                {
+                    return f_return_next(make_fnc<EvalMacro>(arg, t_args_beg, t_args_end, t_forse_noeval_func));
+                }
+                else if constexpr (std::is_same_v<T, CoreData::special_nbifunc_make>)
+                {
+                    return f_return_next(arg(t_args_beg, t_args_end));
+                }
+                else {
+                    auto i = 0;
+                }
                 }, fnc_r->get());
         }
         else {
-            throw "eval_fnc error " + t_env().output_control().to_string(
-                t_env().farm().make_list_cell({ *fnc, t_env().farm().make_list_cell(t_args_beg , t_args_end) })
+            throw "eval_fnc error " + env.output_control().to_string(
+                env.farm().make_list_cell({ *fnc, env.farm().make_list_cell(t_args_beg , t_args_end) })
             );
         }
     }
-    else
-        throw logic_error("EvalFunc: t_internal_execute");
+    case 1:
+    {
+        // direct call bifunc
+        auto c = s_last_eval_val();
+        //cout << env.output_control().to_string(c) << endl;
+        return f_return(((&env)->*(get<CoreData::bifunc>(t_buf)))(begin(c), end(c)));
+    }
+    default:
+        throw logic_error("EvalFunc: execute");
+    }
 }
 
 ExpandMacro::ExpandMacro(
-    CoreEnvironment& env,
     const macro& macro,
     CarCdrIterator args_beg_it,
     CarCdrIterator args_end_it,
     bool forse_noeval,
     bool once
 ) :
-    RangeNBiFunc(env, args_beg_it, args_end_it),
+    RangeNBiFunc(func_id::expandmacro, args_beg_it, args_end_it),
     t_macro(&macro),
     t_forse_noeval(forse_noeval),
-    t_once(once)
+    t_stage((once) ? stage::once_start: stage::start)
 {
 }
 
-void ExpandMacro::t_init_after_args()
+void ExpandMacro::execute(CoreEnvironment& env)
 {
-    if (t_args_beg() == t_args_end()) return t_return(t_env().farm().nil());
-    t_param_list_b = t_args_beg();
-    t_param_list_e = t_args_end();
-}
-
-void ExpandMacro::t_execute_func()
-{
-    if (t_buf_flag) {
-        t_buf = t_last_eval_val();
-        if (t_once) return t_return(t_buf);
-        return t_init_from_buf();
+    switch (t_stage)
+    {
+    case ExpandMacro::stage::once_start:
+        if (args_beg() == args_end()) return f_return(env.farm().nil());
+        t_buf = link_params(*t_macro, args_beg(), args_end(), env.farm());
+        return f_return_next(
+            make_fnc<EvalLambda>(
+                t_macro->body,
+                begin(t_buf),
+                end(t_buf),
+                t_forse_noeval
+            )
+        );
+    case ExpandMacro::stage::start:
+        {
+            if (args_beg() == args_end()) return f_return(env.farm().nil());
+            t_param_list_b = args_beg();
+            t_param_list_e = args_end();
+        }
+        [[fallthrough]];
+    case ExpandMacro::stage::main:
+        t_stage = stage::buf_evaled;
+        t_buf = link_params(*t_macro, t_param_list_b, t_param_list_e, env.farm());
+        return f_eval_next(
+            make_fnc<EvalLambda>(
+                t_macro->body,
+                begin(t_buf),
+                end(t_buf),
+                t_forse_noeval
+            )
+        );
+    case ExpandMacro::stage::buf_evaled:
+        t_buf = s_last_eval_val();
+        if (auto m_opt = is_macro_call(t_buf, env)) {
+            t_macro = &m_opt->get();
+            t_param_list = cdr(t_buf);
+            t_param_list_b = begin(t_param_list);
+            t_param_list_e = end(t_param_list);
+            t_stage = stage::main;
+            return f_cycle();
+        }
+        return f_return(t_buf);
+    default:
+        throw logic_error("ExpandMacro::execute: unknown stage");
     }
-    t_buf_flag = true;
-    t_args = link_params(*t_macro, t_param_list_b, t_param_list_e, t_env().farm());
-    return t_eval_next(
-        make_fnc<EvalLambda>(
-            t_env(),
-            t_macro->body,
-            begin(t_args),
-            end(t_args),
-            t_forse_noeval
-        )
-    );
-}
-
-void ExpandMacro::t_init_from_buf()
-{
-    if (auto m_opt = is_macro_call(t_buf, t_env())) {
-        t_macro = &m_opt->get();
-        auto& c = cdr(t_buf);
-        t_param_list = c;
-        t_param_list_b = begin(t_param_list);
-        t_param_list_e = end(t_param_list);
-        t_buf_flag = false;
-        return t_cycle();
-    }
-
-    return t_return(t_buf);
 }
 
 
 EvalMacro::EvalMacro(
-    CoreEnvironment& env,
+    
     const macro& macro,
     CarCdrIterator args_beg_it,
     CarCdrIterator args_end_it,
     bool forse_noeval
 ) :
-    Func(env),
-    t_fnc( make_fnc<ExpandMacro>(env, macro, args_beg_it, args_end_it, forse_noeval))
+    Func(func_id::evalmacro, true),
+    t_buf( make_fnc<ExpandMacro>(macro, args_beg_it, args_end_it, forse_noeval))
 {
 }
 
-bool EvalMacro::t_eval_args()
+void EvalMacro::execute(CoreEnvironment& env)
 {
-    if (t_ev) {
-        t_buf = t_last_eval_val();
-        return true;
+    switch (t_stage)
+    {
+    case EvalMacro::stage::start:
+        t_stage = stage::ev;
+        return f_eval_next(move(get<HolderPtr>(t_buf)));
+    case EvalMacro::stage::ev:
+        t_buf = s_last_eval_val();
+        return f_return_next(make_fnc<EvalQuote>(get<Cell>(t_buf)));
+    default:
+        throw logic_error("EvalMacro::execute: unknown stage");
     }
-    t_eval_next(move(t_fnc));
-    t_ev = true;
-    return false;
-}
-
-void EvalMacro::t_internal_execute()
-{
-    //cout << t_env().t_output_control.to_string(t_buf) << endl;
-    return t_return_next(make_fnc<EvalQuote>(t_env(), t_buf));
 }

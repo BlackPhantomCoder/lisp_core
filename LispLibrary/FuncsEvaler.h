@@ -11,6 +11,7 @@
 class CoreEnvironment;
 class FuncsEvaler
 {
+	enum class execute_result {result, external, check};
 public:
 	FuncsEvaler(CoreEnvironment* env);
 
@@ -19,13 +20,9 @@ public:
 
 	void clear();
 private:
+	execute_result t_func_execute(Func& func);
+private:
 	CoreEnvironment* t_env;
-	struct frame {
-		frame(CoreData::HolderPtr&& p) : ptr(std::move(p)){
-
-		}
-		CoreData::HolderPtr ptr;
-	};
-	std::vector<frame> t_frames;
+	std::vector<CoreData::HolderPtr> t_funcs;
 };
 

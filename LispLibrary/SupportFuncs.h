@@ -6,24 +6,19 @@
 #include "MacroCell.h"
 
 class CoreEnvironment;
+
+
 class EvalLambda : public Func
 {
 	default_func(EvalLambda)
 public:
 	EvalLambda(
-		CoreEnvironment& env,
 		const lambda& l,
 		CarCdrIterator beg_it,
 		CarCdrIterator end_it,
 		bool forse_noeval_args
 	);
-	virtual void t_init_before_args() override;
-	virtual void t_init_after_args() override;
-	virtual bool t_eval_args() override;
-	virtual void t_internal_execute() override;
-
-private:
-	CellEnvironment::frame t_create_frame();
+	void execute(CoreEnvironment& env);
 private:
 	std::variant<
 		CoreData::HolderPtr,
@@ -35,6 +30,7 @@ private:
 	Cell t_costil_body;
 	Cell t_temp;
 	lambda_args_types t_arg_type;
+	enum class stage : unsigned char { args_eval, args_evaled, main, main_noeval, evaled } t_stage = stage::main;
 };
 
 
@@ -42,46 +38,38 @@ private:
 class EvalQuote : public Func {
 	default_func(EvalQuote)
 public:
-	EvalQuote(CoreEnvironment& env, Cell& c);
-private:
-	virtual bool t_eval_args() override;
-	virtual void t_internal_execute() override;
+	EvalQuote(Cell& c);
+	void execute(CoreEnvironment& env);
 private:
 	void t_eval_func(Cell& fnc, CarCdrIterator args_beg_it, CarCdrIterator args_end_it);
 private:
-	Cell* t_arg;
+	Cell* t_arg = nullptr;
 };
+
 
 class EvalQuoteRange : public RangeNBiFunc
 {
-	default_func(EvalQuoteRange)
-public:
-	EvalQuoteRange(CoreEnvironment& env, CarCdrIterator args_beg_it, CarCdrIterator args_end_it);
-	virtual void t_init_after_args()  override;
-	virtual void t_execute_func()  override;
+	simple_rangenbifunc(EvalQuoteRange, func_id::evalquoterange)
+	void execute(CoreEnvironment& env);
 private:
-	void t_to_next();
-	void t_eval_fnc(Cell lst);
+	void t_push_back(CoreEnvironment& env, const Cell& c);
 private:
-	std::vector<Cell, CoreData::allocator<Cell>> t_result_v;
+	Cell t_result;
+	Cell* t_result_last = nullptr;
 	CarCdrIterator t_it;
-	bool t_last = false;
+	enum class stage : unsigned char { start, main, last, func_evaled } t_stage = stage::start;
 };
+
 
 class ImplicitCond : public Func {
 	default_func(ImplicitCond)
 public:
-	ImplicitCond(CoreEnvironment& env, Cell& atom);
+	ImplicitCond(Cell& atom);
 
-private:
-	virtual void t_init_after_args() override;
-	virtual bool t_eval_args() override;
-	virtual void t_internal_execute() override;
+	void execute(CoreEnvironment& env);
 private:
 	Cell* t_atom;
-	Cell t_predicate_val_buf;
-	Cell t_result;
-	bool t_next_res = false;
+	enum class stage : unsigned char { start, main, res} t_stage = stage::start;
 };
 
 
@@ -89,10 +77,9 @@ class EvalFunc : public Func
 {
 	default_func(EvalFunc)
 public:
-	EvalFunc(CoreEnvironment& env, Cell& fnc, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval = false);
-private:
-	virtual bool t_eval_args() override;
-	virtual void t_internal_execute() override;
+	EvalFunc(Cell& fnc, CarCdrIterator args_beg_it, CarCdrIterator args_end_it, bool forse_noeval = false);
+
+	void execute(CoreEnvironment& env);
 private:
 	std::variant<Cell*, CoreData::bifunc, lambda> t_buf;
 	//Cell* t_fnc;
@@ -104,53 +91,42 @@ private:
 };
 
 
-
 class ExpandMacro : public RangeNBiFunc
 {
 	default_func(ExpandMacro)
 public:
 	ExpandMacro(
-		CoreEnvironment& env,
 		const macro& macro,
 		CarCdrIterator args_beg_it,
 		CarCdrIterator args_end_it,
 		bool forse_noeval = false,
 		bool once = false
 	);
-private:
-	virtual void t_init_after_args()  override;
-	virtual void t_execute_func()  override;
-private:
-	virtual void t_init_from_buf();
+	void execute(CoreEnvironment& env);
 private:
 	const macro* t_macro;
 
 	Cell t_param_list;
 	CarCdrIterator t_param_list_b;
 	CarCdrIterator t_param_list_e;
-	Cell t_args;
 	Cell t_buf;
 	bool t_forse_noeval;
-	bool t_buf_flag = false;
-	bool t_once;
+	enum class stage : unsigned char { once_start, start, main, buf_evaled } t_stage = stage::start;
 };
+
 
 class EvalMacro : public Func
 {
 	default_func(EvalMacro)
 public:
 	EvalMacro(
-		CoreEnvironment& env,
 		const macro& macro,
 		CarCdrIterator args_beg_it,
 		CarCdrIterator args_end_it,
 		bool forse_noeval = false
 	);
+	void execute(CoreEnvironment& env);
 private:
-	virtual bool t_eval_args() override;
-	virtual void t_internal_execute() override;
-private:
-	CoreData::HolderPtr t_fnc = nullptr;
-	Cell t_buf;
-	bool t_ev = false;
+	std::variant<CoreData::HolderPtr, Cell, std::monostate> t_buf = std::monostate{};
+	enum class stage : unsigned char { start, ev } t_stage = stage::start;
 };

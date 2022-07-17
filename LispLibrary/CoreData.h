@@ -80,8 +80,8 @@ namespace CoreData {
 	template<class T, class... Args>
 	CoreData::HolderPtr make_fnc(Args&&... args);
 
-	typedef HolderPtr(*special_bifunc_make) (CoreEnvironment&, CarCdrIterator, CarCdrIterator, bool forse_noeval);
-	typedef HolderPtr(*special_nbifunc_make) (CoreEnvironment&, CarCdrIterator, CarCdrIterator);
+	typedef HolderPtr(*special_bifunc_make) (CarCdrIterator, CarCdrIterator, bool forse_noeval);
+	typedef HolderPtr(*special_nbifunc_make) (CarCdrIterator, CarCdrIterator);
 
 	using special_bifuncs_array = std::array<std::pair<const char*, special_bifunc_make>, special_bifuncs_count>;
 	using special_nbifuncs_array = std::array<std::pair<const char*, special_nbifunc_make>, special_nbifuncs_count>;

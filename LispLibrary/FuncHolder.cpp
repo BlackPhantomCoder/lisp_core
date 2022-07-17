@@ -1,6 +1,9 @@
 #include "FuncHolder.h"
 #include "Func.h"
 
+#include "FuncID.h"
+using namespace std;
+
 FuncHolder::FuncHolder(Func* ptr):
     t_func(ptr)
 {
@@ -15,7 +18,7 @@ FuncHolder::FuncHolder(FuncHolder&& rh)noexcept :
 FuncHolder::~FuncHolder()
 {
     if(t_func)
-        t_func->pool_free(t_func);
+        free_pool_by_funcid(t_func);
     t_func = nullptr;
 }
 
@@ -31,4 +34,14 @@ FuncHolder& FuncHolder::operator=(FuncHolder&& rh)noexcept
 Func& FuncHolder::operator*()const
 {
     return *t_func;
+}
+
+Func* FuncHolder::operator->() const
+{
+    return t_func;
+}
+
+Func* FuncHolder::get() const
+{
+    return t_func;
 }

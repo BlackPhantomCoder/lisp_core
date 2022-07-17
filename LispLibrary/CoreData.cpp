@@ -8,13 +8,13 @@ using namespace std;
 using namespace CoreData;
 
 template<class T>
-CoreData::HolderPtr make_special_bifunc(CoreEnvironment& env, CarCdrIterator b, CarCdrIterator e, bool forse_noeval) {
-    return make_fnc<T>(env, b, e, forse_noeval);
+CoreData::HolderPtr make_special_bifunc(CarCdrIterator b, CarCdrIterator e, bool forse_noeval) {
+    return make_fnc<T>(b, e, forse_noeval);
 }
 
 template<class T>
-CoreData::HolderPtr make_special_nbifunc(CoreEnvironment& env, CarCdrIterator b, CarCdrIterator e) {
-    return make_fnc<T>(env, b, e);
+CoreData::HolderPtr make_special_nbifunc(CarCdrIterator b, CarCdrIterator e) {
+    return make_fnc<T>(b, e);
 }
 
 

@@ -48,16 +48,6 @@ void Symbol::clear()
     t_data.clear();
 }
 
-//const Symbol& Symbol::to_symbol() const
-//{
-//    return *this;
-//}
-
-//Symbol& Symbol::to_symbol()
-//{
-//    return *this;
-//}
-
 Symbol::Symbol(const SymbolsFarm::symbol_core& data) :
     SExpr(SExpr::type::symbol),
     t_data(data)

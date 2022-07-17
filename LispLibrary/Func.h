@@ -9,51 +9,113 @@ class CoreEnvironment;
 enum class eval_types { eval, no_eval };
 enum class spread_types { spread, nospread };
 
-enum class stages : unsigned char { executed, need_external, intermediate, not_args_evaled, not_inited, not_started };
+enum class stages : unsigned char { 
+	executed,
+
+	before_args_eval,
+	need_external_before_args_eval,
+	need_external_before_args_eval_plus_next,
+	cycle_before_args_eval,
+
+	args_eval,
+	need_external_args_eval,
+	need_external_args_eval_plus_next,
+	cycle_args_eval,
+
+	after_args_eval,
+	need_external_after_args_eval,
+	need_external_after_args_eval_plus_next,
+	cycle_after_args_eval,
+
+	execution,
+	need_external_execution,
+	cycle_execution,
+
+	need_external_return_next,
+};
+
+enum class func_id : unsigned char { 
+	empty_id = 0,
+
+	//bifuncs
+	prog1,
+	progn,
+	eval,
+	cond,
+	append,
+	loop,
+	apply,
+	setq,
+	macroexpand1,
+	macroexpand,
+	mapcar,
+	read,
+	peekchar,
+
+	//support funcs
+	evallambda,
+	evalquote,
+	evalquoterange,
+	implicitcond,
+	evalfunc,
+	expandmacro,
+	evalmacro,
+
+	end_id
+};
+
 
 // дефолтный конструктор + дефолтная реализация освобождения через пул
 #define default_func(name)\
 public:\
-	name() = default;\
-	virtual void pool_free(Func* ptr) const override{\
-		auto ptr2 = (name*)ptr; *ptr2 = name(); CoreData::get_pool<name>().free(ptr2); \
-	}
+	name() = default;
 
 
 // для правильной работы любой наследник должен иметь дефортный конструктор и оператор копирования 
 class Func {
 public:
 	Func() = default;
-	Func(CoreEnvironment& env);
-	bool execute();
+	Func(func_id id, bool skip_eval_args = false);
 
-	void push_next(Cell&& result);
-	CoreData::HolderPtr get_next();
+	stages stage() const;
+	func_id id() const;
 
-	Cell result();
+	// функции управления состояниями
 
-	virtual void pool_free(Func* ptr) const = 0;
-protected:
-	virtual void t_init_before_args();
-	virtual void t_init_after_args();
-	virtual bool t_eval_args() = 0;
+	// вычислить и вернуть результат
+	void f_return_next(CoreData::HolderPtr&& next);
+	// вычислить (результат будет доступен в s_last_eval_val)
+	void f_eval_next(CoreData::HolderPtr&& next);
+	// вычислить и перейти (только для before_args_eval,args_eval,after_args_eval) (результат будет доступен в s_last_eval_val)
+	void f_eval_next_and_next(CoreData::HolderPtr&& next);
+	// ещё одна итерация
+	void f_cycle();
+	// вернуть результат
+	void f_return(const Cell& result);
 
-	virtual void t_internal_execute() = 0;
+	// вернуть результат вычисления запрошенной функции
+	void f_push_next(const Cell& result);
+	//переход 
+	void f_next();
 
-protected:
-	CoreEnvironment& t_env();
-	const CoreEnvironment& t_env() const;
 
-	void t_return(const Cell& result);
-	void t_return_next(CoreData::HolderPtr&& next);
-	void t_eval_next(CoreData::HolderPtr&& next);
-	void t_cycle();
-	Cell t_last_eval_val();
+	// получение данных
+
+	// результат последнего вычисления f_eval_next (выставленный f_push_next)
+	Cell s_last_eval_val();
+	// результат, выставленный через f_return (или при вычислении f_return_next)
+	Cell s_result();
+
+	// получить последнюю выставленную через f_eval_next/f_return_next функцию
+	CoreData::HolderPtr s_get_next();
 private:
 
-	std::variant<CoreData::HolderPtr, Cell, std::monostate> t_bufs = std::monostate{};
-	CoreEnvironment* t_env_data = nullptr;
-	stages t_stage = stages::not_started;
-	bool t_eval_next_flag = false;
-	bool t_eval_args_flag = false;
+	std::variant<
+		CoreData::HolderPtr,
+		Cell,
+		std::monostate
+	> t_bufs = std::monostate{};
+	stages t_stage = stages::before_args_eval;
+	func_id t_id = func_id::empty_id;
 };
+

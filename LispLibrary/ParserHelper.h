@@ -24,6 +24,8 @@ public:
 
 	ParserHelper(CoreEnvironment& env);
 
+	void set_env(CoreEnvironment& env);
+
 	// Sp -> S
 	sp_id make_empty_sp();
 

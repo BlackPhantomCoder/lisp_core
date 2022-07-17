@@ -2,20 +2,19 @@
 #include "Func.h"
 
 class RangeBiFunc : public Func {
+	friend class FuncsEvaler;
 public:
 	RangeBiFunc() = default;
-	RangeBiFunc(CoreEnvironment& env, CarCdrIterator beg_it, CarCdrIterator end_it, bool forse_noeval = false);
-protected:
-	virtual void t_execute_func() = 0;
-protected:
-	CarCdrIterator t_args_beg();
-	CarCdrIterator t_args_end();
+	RangeBiFunc(func_id id, CarCdrIterator beg_it, CarCdrIterator end_it, bool forse_noeval = false);
 
-	CarCdrConstIterator t_args_beg() const;
-	CarCdrConstIterator t_args_end() const;
+	CarCdrIterator args_beg();
+	CarCdrIterator args_end();
+
+	CarCdrConstIterator args_beg() const;
+	CarCdrConstIterator args_end() const;
+
 private:
-	virtual bool t_eval_args() final;
-	virtual void t_internal_execute() final;
+	void t_eval_args();
 private:
 	std::variant<
 		Cell,
@@ -24,3 +23,4 @@ private:
 		std::monostate
 	> t_args = std::monostate{};
 };
+

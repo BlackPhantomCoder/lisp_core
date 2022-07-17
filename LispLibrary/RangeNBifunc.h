@@ -1,21 +1,21 @@
 #pragma once
 #include "Func.h"
 
+#define simple_rangenbifunc(name, id)\
+default_func(name)\
+name(CarCdrIterator beg_it, CarCdrIterator end_it) : RangeNBiFunc(id, beg_it, end_it) {}
+
+//функции before_args_eval и after_args_eval не доступны
 class RangeNBiFunc : public Func {
 public:
 	RangeNBiFunc() = default;
-	RangeNBiFunc(CoreEnvironment& env, CarCdrIterator beg_it, CarCdrIterator end_it);
-protected:
-	virtual void t_execute_func() = 0;
-protected:
-	CarCdrIterator t_args_beg();
-	CarCdrIterator t_args_end();
+	RangeNBiFunc(func_id id, CarCdrIterator beg_it, CarCdrIterator end_it);
 
-	CarCdrConstIterator t_args_beg() const;
-	CarCdrConstIterator t_args_end() const;
-private:
-	virtual bool t_eval_args() final;
-	virtual void t_internal_execute() final;
+	CarCdrIterator args_beg() ;
+	CarCdrIterator args_end() ;
+
+	CarCdrConstIterator args_beg() const;
+	CarCdrConstIterator args_end() const;
 private:
 	std::pair<CarCdrIterator, CarCdrIterator> t_args;
 };

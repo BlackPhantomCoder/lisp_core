@@ -8,6 +8,11 @@ ParserHelper::ParserHelper(CoreEnvironment& env):
 {
 }
 
+void ParserHelper::set_env(CoreEnvironment& env)
+{
+    t_env = &env;
+}
+
 ParserHelper::sp_id ParserHelper::make_empty_sp()
 {
     return t_push_resourse(sp{});

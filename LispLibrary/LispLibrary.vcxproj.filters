@@ -201,6 +201,9 @@
     <ClInclude Include="FuncHolder.h">
       <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
     </ClInclude>
+    <ClInclude Include="FuncID.h">
+      <Filter>Файлы заголовков\Core\SpecialFuncs\BaseFuncs</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BigInt.cpp">
@@ -330,6 +333,12 @@
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="FuncHolder.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="RangeFunc.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="FuncID.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>

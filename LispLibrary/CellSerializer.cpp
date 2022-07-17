@@ -97,7 +97,7 @@ lambda CellSerializer::in_lambda(const nlohmann::json& j)
 {
     auto types = j.at(0).get<int>();
     return lambda{
-        lambda_types(types),
+        lambda_types(types % 2),
         lambda_args_types(types >> 1),
         in(j.at(1)),
         in(j.at(2))

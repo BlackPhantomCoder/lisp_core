@@ -194,6 +194,7 @@ void support_funcs::set_value(const Cell& name, const Cell& val)
     }
     else {
         const auto& symb = to_symbol(name);
+        //cout << env->output_control().to_string(name) << " = " << env->output_control().to_string(val) << endl;
         env->envs().set(symb, val);
 
         //special vars
@@ -342,7 +343,7 @@ void CoreEnvironment::execute_driver(CoreEnvStreamsProviderInt& streams, const I
         t_core_env_under_catch(
             [this, &streams, &stop_flag]() -> void {
                 t_cos->get().out_without_new_line("> ");
-                auto c = t_execute(make_fnc<Read>(*this, CarCdrIterator(), CarCdrIterator()));
+                auto c = t_execute(make_fnc<Read>(CarCdrIterator(), CarCdrIterator()));
                 auto a = DurationFunc([this](std::chrono::milliseconds time) {
                     t_cos->get().out_new_line(": " + to_string(time.count()) + " ms");
                     });
@@ -369,13 +370,13 @@ void CoreEnvironment::t_prepare(CoreEnvStreamsProviderInt& streams, const IMutex
 
 void CoreEnvironment::t_execute()
 {
-    auto c = t_execute(make_fnc<Read>(*this, CarCdrIterator(), CarCdrIterator()));
+    auto c = t_execute(make_fnc<Read>(CarCdrIterator(), CarCdrIterator()));
     t_cos->get().out_new_line(t_output_control.to_string(t_execute(c)));
 }
 
 Cell CoreEnvironment::t_execute(Cell& arg)
 {
-    return t_execute(make_fnc<EvalQuote>(*this, arg));
+    return t_execute(make_fnc<EvalQuote>(arg));
 }
 
 Cell CoreEnvironment::t_execute(CoreData::HolderPtr&& func)

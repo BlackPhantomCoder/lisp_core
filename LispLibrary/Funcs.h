@@ -56,7 +56,7 @@ inline Cell SExprsFarm::make_list_cell(InputIt first, InputIt last)
 {
     if (first == last) return this->make_empty_list_cell();
     if (std::next(first) == last) return cons(*first, this->make_empty_list_cell(), *this);
-    if constexpr (std::is_convertible<std::iterator_traits<InputIt>::iterator_category, std::bidirectional_iterator_tag >::value) {
+    if constexpr (std::is_convertible<typename std::iterator_traits<InputIt>::iterator_category, std::bidirectional_iterator_tag >::value) {
         Cell result = this->make_empty_list_cell();
         auto r_end = std::make_reverse_iterator(first);
         auto r_beg = std::make_reverse_iterator(last);
@@ -85,7 +85,7 @@ inline Cell cons_range(InputIt beg_it, InputIt end_it, SExprsFarm& farm)
 {
     if (beg_it == end_it) return cons(farm.nil(), farm.nil(), farm);
     if (std::next(beg_it) == end_it) return cons(*beg_it, farm.nil(), farm);
-    if constexpr (std::is_convertible<std::iterator_traits<InputIt>::iterator_category, std::bidirectional_iterator_tag >::value) {
+    if constexpr (std::is_convertible<typename std::iterator_traits<InputIt>::iterator_category, std::bidirectional_iterator_tag >::value) {
         auto r_end = std::make_reverse_iterator(beg_it);
         auto r_beg = std::make_reverse_iterator(end_it);
         Cell result = *r_beg;

@@ -21,13 +21,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -159,6 +159,7 @@
     <ClInclude Include="FSM_Symbols.h" />
     <ClInclude Include="Func.h" />
     <ClInclude Include="FuncHolder.h" />
+    <ClInclude Include="FuncID.h" />
     <ClInclude Include="Funcs.h" />
     <ClInclude Include="CoreData.h" />
     <ClInclude Include="FuncsEvaler.h" />
@@ -210,6 +211,7 @@
     <ClCompile Include="FSM_Scanner.cpp" />
     <ClCompile Include="FSM_Symbols.cpp" />
     <ClCompile Include="FuncHolder.cpp" />
+    <ClCompile Include="FuncID.cpp" />
     <ClCompile Include="Funcs.cpp" />
     <ClCompile Include="FuncsEvaler.cpp" />
     <ClCompile Include="FuncsStorage.cpp" />
@@ -222,6 +224,7 @@
     <ClCompile Include="ParserHelper.cpp" />
     <ClCompile Include="parser_tokens.cpp" />
     <ClCompile Include="RangeBifunc.cpp" />
+    <ClCompile Include="RangeFunc.cpp" />
     <ClCompile Include="RangeNBifunc.cpp" />
     <ClCompile Include="StdCoreInputArrayInput.cpp" />
     <ClCompile Include="SupportFuncs.cpp" />
