@@ -5,7 +5,117 @@
 #include "CoreEnv.h"
 #include "Funcs.h"
 
+#include <array>
 using namespace std;
+
+namespace Func_transitions {
+
+    //make array filled with value
+    template<typename T, size_t N>
+    constexpr auto make_array(T value)
+    {
+        auto a = std::array<T, N>{};
+        for (auto& x : a)
+            x = value;
+        return a;
+    }
+
+    constexpr auto f_next = []() {
+        auto result = make_array<stages, unsigned(stages::unkwnown)>(stages::unkwnown);
+
+        result[unsigned(stages::before_args_eval)] = stages::args_eval;
+        result[unsigned(stages::args_eval)] = stages::after_args_eval;
+        result[unsigned(stages::after_args_eval)] = stages::execution;
+        result[unsigned(stages::cycle_before_args_eval)] = stages::before_args_eval;
+        result[unsigned(stages::cycle_args_eval)] = stages::args_eval;
+        result[unsigned(stages::cycle_after_args_eval)] = stages::after_args_eval;
+        result[unsigned(stages::cycle_execution)] = stages::execution;
+
+        result[unsigned(stages::need_external_before_args_eval)] = stages::need_external_before_args_eval;
+        result[unsigned(stages::need_external_args_eval)] = stages::need_external_args_eval;
+        result[unsigned(stages::need_external_after_args_eval)] = stages::need_external_after_args_eval;
+        result[unsigned(stages::need_external_before_args_eval_plus_next)] = stages::need_external_before_args_eval_plus_next;
+        result[unsigned(stages::need_external_args_eval_plus_next)] = stages::need_external_args_eval_plus_next;
+        result[unsigned(stages::need_external_after_args_eval_plus_next)] = stages::need_external_after_args_eval_plus_next;
+        result[unsigned(stages::need_external_execution)] = stages::need_external_execution;
+        result[unsigned(stages::need_external_return_next)] = stages::need_external_return_next;
+        result[unsigned(stages::executed)] = stages::executed;
+
+        return result;
+    }();
+
+    constexpr auto f_return_next = []() {
+        auto result = make_array<stages, unsigned(stages::unkwnown)>(stages::unkwnown);
+
+        result[unsigned(stages::before_args_eval)] = stages::need_external_return_next;
+        result[unsigned(stages::args_eval)] = stages::need_external_return_next;
+        result[unsigned(stages::after_args_eval)] = stages::need_external_return_next;
+        result[unsigned(stages::execution)] = stages::need_external_return_next;
+
+        return result;
+    }();
+
+    constexpr auto f_eval_next = []() {
+        auto result = make_array<stages, unsigned(stages::unkwnown)>(stages::unkwnown);
+
+        result[unsigned(stages::before_args_eval)] = stages::need_external_before_args_eval;
+        result[unsigned(stages::args_eval)] = stages::need_external_args_eval;
+        result[unsigned(stages::after_args_eval)] = stages::need_external_after_args_eval;
+        result[unsigned(stages::execution)] = stages::need_external_execution;
+
+        return result;
+    }();
+
+    constexpr auto f_eval_next_and_next = []() {
+        auto result = make_array<stages, unsigned(stages::unkwnown)>(stages::unkwnown);
+
+        result[unsigned(stages::before_args_eval)] = stages::need_external_before_args_eval_plus_next;
+        result[unsigned(stages::args_eval)] = stages::need_external_args_eval_plus_next;
+        result[unsigned(stages::after_args_eval)] = stages::need_external_after_args_eval_plus_next;
+
+        return result;
+    }();
+
+    constexpr auto f_cycle = []() {
+        auto result = make_array<stages, unsigned(stages::unkwnown)>(stages::unkwnown);
+
+        result[unsigned(stages::before_args_eval)] = stages::cycle_before_args_eval;
+        result[unsigned(stages::args_eval)] = stages::cycle_args_eval;
+        result[unsigned(stages::after_args_eval)] = stages::cycle_after_args_eval;
+        result[unsigned(stages::execution)] = stages::cycle_execution;
+
+        return result;
+    }();
+
+    constexpr auto f_return = []() {
+        auto result = make_array<stages, unsigned(stages::unkwnown)>(stages::unkwnown);
+
+        result[unsigned(stages::before_args_eval)] = stages::executed;
+        result[unsigned(stages::args_eval)] = stages::executed;
+        result[unsigned(stages::after_args_eval)] = stages::executed;
+        result[unsigned(stages::execution)] = stages::executed;
+
+        return result;
+    }();
+
+    constexpr auto f_push_next = []() {
+        auto result = make_array<stages, unsigned(stages::unkwnown)>(stages::unkwnown);
+
+        result[unsigned(stages::need_external_before_args_eval)] = stages::before_args_eval;
+        result[unsigned(stages::need_external_args_eval)] = stages::args_eval;
+        result[unsigned(stages::need_external_after_args_eval)] = stages::after_args_eval;
+        result[unsigned(stages::need_external_before_args_eval_plus_next)] = stages::args_eval;
+        result[unsigned(stages::need_external_args_eval_plus_next)] = stages::after_args_eval;
+        result[unsigned(stages::need_external_after_args_eval_plus_next)] = stages::execution;
+        result[unsigned(stages::need_external_execution)] = stages::execution;
+        result[unsigned(stages::need_external_return_next)] = stages::executed;
+
+        return result;
+    }();
+
+
+    
+}
 
 Func::Func(func_id id, bool skip_eval_args):
     t_id(id),
@@ -25,172 +135,42 @@ func_id Func::id() const
 
 void Func::f_return_next(CoreData::HolderPtr&& next)
 {
-    switch (t_stage)
-    {
-    case stages::before_args_eval:
-    case stages::args_eval:
-    case stages::after_args_eval:
-    case stages::execution:
-        t_stage = stages::need_external_return_next;
-        t_bufs = move(next);
-        break;
-    default:
-        throw "Func::f_return_next: wrong stage";
-    }
+    t_stage = Func_transitions::f_return_next[unsigned(t_stage)];
+    t_bufs = move(next);
 }
 
 void Func::f_eval_next(CoreData::HolderPtr&& next)
 {
-    switch (t_stage)
-    {
-    case stages::before_args_eval:
-        t_stage = stages::need_external_before_args_eval;
-        break;
-    case stages::args_eval:
-        t_stage = stages::need_external_args_eval;
-        break;
-    case stages::after_args_eval:
-        t_stage = stages::need_external_args_eval;
-        break;
-    case stages::execution:
-        t_stage = stages::need_external_execution;
-        break;
-    default:
-        throw "Func::f_eval_next: wrong stage";
-    }
+    t_stage = Func_transitions::f_eval_next[unsigned(t_stage)];
     t_bufs = move(next);
 }
 
 void Func::f_eval_next_and_next(CoreData::HolderPtr&& next)
 {
-    switch (t_stage)
-    {
-    case stages::before_args_eval:
-        t_stage = stages::need_external_before_args_eval_plus_next;
-        break;
-    case stages::args_eval:
-        t_stage = stages::need_external_args_eval_plus_next;
-        break;
-    case stages::after_args_eval:
-        t_stage = stages::need_external_after_args_eval_plus_next;
-        break;
-    default:
-        throw "Func::f_eval_next_and_next: wrong stage";
-    }
+    t_stage = Func_transitions::f_eval_next_and_next[unsigned(t_stage)];
     t_bufs = move(next);
 }
 
 void Func::f_cycle()
 {
-
-    switch (t_stage)
-    {
-    case stages::before_args_eval:
-        t_stage = stages::cycle_before_args_eval;
-        break;
-    case stages::args_eval:
-        t_stage = stages::cycle_args_eval;
-        break;
-    case stages::after_args_eval:
-        t_stage = stages::cycle_after_args_eval;
-        break;
-    case stages::execution:
-        t_stage = stages::cycle_execution;
-        break;
-    default:
-        throw "Func::f_cycle: wrong stage";
-    }
+    t_stage = Func_transitions::f_cycle[unsigned(t_stage)];
 }
 
 void Func::f_return(const Cell& result)
 {
-    switch (t_stage)
-    {
-    case stages::before_args_eval:
-    case stages::args_eval:
-    case stages::after_args_eval:
-    case stages::execution:
-        t_bufs = result;
-        t_stage = stages::executed;
-        break;
-    default:
-        throw "Func::f_return: wrong stage";
-    }
+    t_stage = Func_transitions::f_return[unsigned(t_stage)];
+    t_bufs = result;
 }
 
 void Func::f_push_next(const Cell& result)
 {
-    switch (t_stage)
-    {
-    case stages::need_external_before_args_eval:
-        t_stage = stages::before_args_eval;
-        break;
-    case stages::need_external_args_eval:
-        t_stage = stages::args_eval;
-        break;
-    case stages::need_external_after_args_eval:
-        t_stage = stages::after_args_eval;
-        break;
-    case stages::need_external_before_args_eval_plus_next:
-        t_stage = stages::args_eval;
-        break;
-    case stages::need_external_args_eval_plus_next:
-        t_stage = stages::after_args_eval;
-        break;
-    case stages::need_external_after_args_eval_plus_next:
-        t_stage = stages::execution;
-        break;
-    case stages::need_external_execution:
-        t_stage = stages::execution;
-        break;
-    case stages::need_external_return_next:
-        t_stage = stages::executed;
-        break;
-    default:
-        throw "Func::f_push_next: wrong stage";
-    }
+    t_stage = Func_transitions::f_push_next[unsigned(t_stage)];
     t_bufs = result;
 }
 
 void Func::f_next()
 {
-
-    switch (t_stage)
-    {
-    case stages::before_args_eval:
-        t_stage = stages::args_eval;
-        break;
-    case stages::args_eval:
-        t_stage = stages::after_args_eval;
-        break;
-    case stages::after_args_eval:
-        t_stage = stages::execution;
-        break;
-    case stages::cycle_before_args_eval :
-        t_stage = stages::before_args_eval;
-        break;
-    case stages::cycle_args_eval :
-        t_stage = stages::args_eval;
-        break;
-    case stages::cycle_after_args_eval:
-        t_stage = stages::after_args_eval;
-        break;
-    case stages::cycle_execution :
-        t_stage = stages::execution;
-        break;
-    case stages::need_external_before_args_eval:
-    case stages::need_external_args_eval:
-    case stages::need_external_after_args_eval:
-    case stages::need_external_before_args_eval_plus_next:
-    case stages::need_external_args_eval_plus_next:
-    case stages::need_external_after_args_eval_plus_next:
-    case stages::need_external_execution:
-    case stages::need_external_return_next:
-    case stages::executed:
-        break;
-    default:
-        throw "Func::f_next: wrong stage";
-    }
+    t_stage = Func_transitions::f_next[unsigned(t_stage)];
 }
 
 Cell Func::s_last_eval_val()

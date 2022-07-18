@@ -10,7 +10,7 @@ enum class eval_types { eval, no_eval };
 enum class spread_types { spread, nospread };
 
 enum class stages : unsigned char { 
-	executed,
+	executed = 0,
 
 	before_args_eval,
 	need_external_before_args_eval,
@@ -32,6 +32,8 @@ enum class stages : unsigned char {
 	cycle_execution,
 
 	need_external_return_next,
+
+	unkwnown
 };
 
 enum class func_id : unsigned char { 

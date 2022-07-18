@@ -1,0 +1,97 @@
+digraph INITIAL {
+    rankdir=TR;
+    concentrate=true;
+    node [fontname="ArialNarrow", shape=circle];
+    edge [fontname="Courier"];
+
+    init1 [root=true,peripheries=0,label=""];
+    init2 [root=true,peripheries=0,label=""];
+
+    { rank=same; "init1" "init2"};
+
+    init1 -> before_args_eval [label="инициализация для остальных"];
+    init2 -> execution        [label="инициализация для range_bifunc"];
+
+    executed                    [label="executed",peripheries=2];
+
+    before_args_eval                [label="before args eval"];
+    args_eval                      [label="args eval"];
+    after_args_eval                [label="after args eval"];
+    execution                      [label="execution"];
+    need_external_return_next                        [label="retrun next"];
+    executed                    [label="executed",peripheries=2];
+
+    need_external_before_args_eval [label="need external\n before args eval"];
+    need_external_args_eval [label="need external\n args eval"];
+    need_external_after_args_eval [label="need external\n after args eval"];
+    need_external_before_args_eval_plus_next [label="need external\n before args eval"];
+    need_external_args_eval_plus_next [label="need external\n args eval\n and next"];
+    need_external_after_args_eval_plus_next [label="need external\n after args eval\n and next"];
+    need_external_execution [label="need external\n execution"];
+    need_external_return_next [label="need external\n return next"];
+
+    cycle_before_args_eval [label="cycle\n before args eval"];
+    cycle_args_eval [label="cycle\n args eval"];
+    cycle_after_args_eval  [label="cycle\n after args eval"];
+    cycle_execution [label="cycle\n execution"];
+
+
+
+    //f_next
+    before_args_eval -> args_eval [label="f_next"]
+    args_eval -> after_args_eval [label="f_next"]
+    after_args_eval -> execution [label="f_next"]
+    cycle_before_args_eval -> before_args_eval [label="f_next"]
+    cycle_args_eval -> args_eval [label="f_next"]
+    cycle_after_args_eval -> after_args_eval [label="f_next"]
+    cycle_execution -> execution [label="f_next"]
+
+    need_external_before_args_eval -> need_external_before_args_eval [label="f_next"]
+    need_external_args_eval -> need_external_args_eval [label="f_next"]
+    need_external_after_args_eval -> need_external_after_args_eval [label="f_next"]
+    need_external_before_args_eval_plus_next -> need_external_before_args_eval_plus_next [label="f_next"]
+    need_external_args_eval_plus_next -> need_external_args_eval_plus_next [label="f_next"]
+    need_external_after_args_eval_plus_next -> need_external_after_args_eval_plus_next [label="f_next"]
+    need_external_execution -> need_external_execution [label="f_next"]
+    need_external_return_next -> need_external_return_next [label="f_next"]
+    executed -> executed [label="f_next"]
+
+    //f_return_next
+    before_args_eval -> need_external_return_next [label="f_return_next"]
+    args_eval -> need_external_return_next [label="f_return_next"]
+    after_args_eval -> need_external_return_next [label="f_return_next"]
+    execution -> need_external_return_next [label="f_return_next"]
+
+    //f_eval_next
+    before_args_eval -> need_external_before_args_eval [label="f_eval_next"]
+    args_eval -> need_external_args_eval [label="f_eval_next"]
+    after_args_eval -> need_external_after_args_eval [label="f_eval_next"]
+    execution -> need_external_execution [label="f_eval_next"]
+
+    //f_eval_next_and_next
+    before_args_eval -> need_external_before_args_eval_plus_next [label="f_eval_next_and_next"]
+    args_eval -> need_external_args_eval_plus_next [label="f_eval_next_and_next"]
+    after_args_eval -> need_external_after_args_eval_plus_next [label="f_eval_next_and_next"]
+
+    //f_cycle
+    before_args_eval -> cycle_before_args_eval [label="f_cycle"]
+    args_eval -> cycle_args_eval [label="f_cycle"]
+    after_args_eval -> cycle_after_args_eval [label="f_cycle"]
+    execution -> cycle_execution [label="f_cycle"]
+
+    //f_return
+    before_args_eval -> executed [label="f_return"]
+    args_eval -> executed [label="f_return"]
+    after_args_eval -> executed [label="f_return"]
+    execution -> executed [label="f_return"]
+
+    //f_push_next
+    need_external_before_args_eval -> before_args_eval [label="f_push_next"]
+    need_external_args_eval -> args_eval [label="f_push_next"]
+    need_external_after_args_eval -> after_args_eval [label="f_push_next"]
+    need_external_before_args_eval_plus_next -> args_eval [label="f_push_next"]
+    need_external_args_eval_plus_next -> after_args_eval [label="f_push_next"]
+    need_external_after_args_eval_plus_next -> execution [label="f_push_next"]
+    need_external_execution -> execution [label="f_push_next"]
+    need_external_return_next -> executed [label="f_push_next"]
+}
