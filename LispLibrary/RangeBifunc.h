@@ -2,7 +2,7 @@
 #include "Func.h"
 
 class RangeBiFunc : public Func {
-	friend class FuncsEvaler;
+	friend class CoreEnvironment;
 public:
 	RangeBiFunc() = default;
 	RangeBiFunc(func_id id, CarCdrIterator beg_it, CarCdrIterator end_it, bool forse_noeval = false);

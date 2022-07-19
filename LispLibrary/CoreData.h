@@ -35,10 +35,9 @@ namespace CoreData {
 		template<class T>
 		using allocator = boost::pool_allocator<T, boost::default_user_allocator_new_delete, boost::details::pool::null_mutex>;
 
+
 		template<class T>
-		using ObjPoll = MPool<T>;
-
-
+		using ObjPNPoll = PNPool<T>;
 
 		template<class T>
 		inline void allocator_release_memory() {
@@ -50,10 +49,10 @@ namespace CoreData {
 		using allocator = boost::pool_allocator<T, boost::default_user_allocator_new_delete, boost::details::pool::default_mutex>;
 		
 		//template<class T>
-		//using ObjPoll = DebugPoolWMutex<T>;
+		//using ObjPNPoll = DebugPoolWMutex<T>;
 
 		template<class T>
-		using ObjPoll = MPoolWMutex<T>;
+		using ObjPNPoll = PoolWMutex<T, PNPool<T>>;
 
 
 		template<class T>
@@ -67,7 +66,7 @@ namespace CoreData {
 	struct throw_stop_helper :std::exception {};
 
 
-	typedef Cell(CoreEnvironment::* bifunc) (CarCdrIterator, CarCdrIterator);
+	typedef Cell(* bifunc) (CoreEnvironment&, CarCdrIterator, CarCdrIterator);
 
 
 	using bifuncs_array = std::array<std::pair<const char*, bifunc>, bifuncs_count>;
@@ -124,8 +123,13 @@ namespace CoreData {
 
 
 	template<class T>
-	ObjPoll<T>& get_pool();
+	ObjPNPoll<T>& get_pn_pool();
 
+	template<class T>
+	void pn_pool_free(T* obj);
+
+	template<class D, class T>
+	void pn_pool_free_derived(T* obj);
 
 
 
@@ -134,21 +138,36 @@ namespace CoreData {
 
 
 	template<class T>
-	ObjPoll<T> construct_pool() {
-		clear_pool_funcs().push_back([]() { get_pool<T>().clear_free(); });
-		return ObjPoll<T>();
+	ObjPNPoll<T> construct_pn_pool() {
+		clear_pool_funcs().push_back([]() { get_pn_pool<T>().clear_free(); });
+		return ObjPNPoll<T>();
 	}
 
 	template<class T>
-	ObjPoll<T>& get_pool()
+	ObjPNPoll<T>& get_pn_pool()
 	{
-		static auto p = construct_pool<T>();
+		static auto p = construct_pn_pool<T>();
 		return p;
 	}
+
+	template<class T>
+	void pn_pool_free(T* obj)
+	{
+		static auto& pool = get_pn_pool<T>();
+		pool.free(obj);
+	}
+
+	template<class D, class T>
+	void pn_pool_free_derived(T* obj)
+	{
+		static auto& pool = get_pn_pool<D>();
+		pool.free((D*)obj);
+	}
+
 	template<class T, class... Args>
 	CoreData::HolderPtr make_fnc(Args&&... args) {
-		auto* obj_ptr = CoreData::get_pool<T>().construct(std::forward<Args&&>(args)...);
-		return FuncHolder(obj_ptr);
+		static auto& pool = get_pn_pool<T>();
+		return FuncHolder(pool.construct(std::forward<Args&&>(args)...));
 	}
 
 }

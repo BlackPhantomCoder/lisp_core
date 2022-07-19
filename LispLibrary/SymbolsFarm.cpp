@@ -44,6 +44,28 @@ void SymbolsFarm::make_or_copy(Symbol& s, const std::string& str)
     s.t_data = symbol_core(it, *this);
 }
 
+SymbolsFarm::symbol_core SymbolsFarm::make_or_copy2(std::string&& str)
+{
+    auto [it, reason] = t_symbol_to_it_and_count.insert({ move(str), { end(t_oblist), 0 } });
+    if (reason) {
+        t_oblist.push_front(it->first);
+        it->second.first = begin(t_oblist);
+        it->second.second = 0;
+    }
+    return symbol_core(it, *this);
+}
+
+SymbolsFarm::symbol_core SymbolsFarm::make_or_copy2(const std::string& str)
+{
+    auto [it, reason] = t_symbol_to_it_and_count.insert({ str, { end(t_oblist), 0 } });
+    if (reason) {
+        t_oblist.push_front(it->first);
+        it->second.first = begin(t_oblist);
+        it->second.second = 0;
+    }
+    return symbol_core(it, *this);
+}
+
 void SymbolsFarm::del_symbol(symb_mp::iterator it)
 {
     t_oblist.erase(it->second.first);

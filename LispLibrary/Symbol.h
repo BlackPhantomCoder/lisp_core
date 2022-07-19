@@ -6,8 +6,9 @@ class Symbol : public SExpr {
     friend class SymbolsFarm;
     friend bool is_null_symbol(const Symbol& c);
 public:
-    Symbol();
-    ~Symbol();
+    Symbol(const SymbolsFarm::symbol_core& data);
+    Symbol(SymbolsFarm::symbol_core&& data);
+    ~Symbol() = default;
 
     Symbol(Symbol&& rh) noexcept = default;
     Symbol(const Symbol& rh) = default;
@@ -24,9 +25,6 @@ public:
     const char* to_string()const;
 
     bool empty() const;
-    void clear();
-private:
-    Symbol(const SymbolsFarm::symbol_core& data);
 private:
     SymbolsFarm::symbol_core t_data;
 };

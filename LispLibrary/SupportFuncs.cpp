@@ -98,7 +98,7 @@ void EvalLambda::execute(CoreEnvironment& env)
 }
 
 EvalQuote::EvalQuote(Cell& c) :
-    Func(func_id::evalquote),
+    Func(func_id::evalquote, true),
     t_arg(&c)
 {
 }
@@ -118,7 +118,7 @@ void EvalQuote::execute(CoreEnvironment& env)
     }
     else {
         return f_return(
-            env.support_funcs().eval_atom(*t_arg)
+            env.core_funcs().eval_atom(*t_arg)
         );
     }
 }
@@ -137,6 +137,26 @@ void EvalQuoteRange::execute(CoreEnvironment& env)
             return f_return(env.farm().make_empty_list_cell());
         }
         t_it = args_beg();
+        {
+            auto& c = *t_it++;
+            if (!is_list(c)) {
+                t_push_back_first(env, env.core_funcs().eval_atom(c));
+            }
+            else if (is_null_list(to_list(c))) {
+                t_push_back_first(env, c);
+            }
+            else {
+                t_stage = stage::func_evaled_first;
+                if (auto& cdr_buf = cdr(c); is_list(cdr_buf)) {
+                    return f_eval_next(make_fnc<EvalFunc>(car(c), begin(cdr_buf), end(cdr_buf)));
+                }
+                else {
+                    //if args is dotpair
+                    return f_eval_next(make_fnc<EvalFunc>(car(c), CarCdrIterator(), CarCdrIterator()));
+                }
+            }
+        }
+
         t_stage = stage::main;
         [[fallthrough]];
     case EvalQuoteRange::stage::main:
@@ -146,7 +166,7 @@ void EvalQuoteRange::execute(CoreEnvironment& env)
             while (t_it != args_end()) {
                 auto& c = *t_it++;
                 if (!is_list(c)) {
-                    t_push_back(env, env.support_funcs().eval_atom(c));
+                    t_push_back(env, env.core_funcs().eval_atom(c));
                 }
                 else if (is_null_list(to_list(c))) {
                     t_push_back(env, c);
@@ -172,21 +192,25 @@ void EvalQuoteRange::execute(CoreEnvironment& env)
         t_push_back(env, s_last_eval_val());
         t_stage = stage::main;
         return f_cycle();
+    case EvalQuoteRange::stage::func_evaled_first:
+        t_push_back_first(env, s_last_eval_val());
+        t_stage = stage::main;
+        return f_cycle();
     default:
         throw logic_error("EvalQuoteRange::execute: unknown stage");
     }
 }
 
+void EvalQuoteRange::t_push_back_first(CoreEnvironment& env, const Cell& c)
+{
+    t_result = env.farm().make_list_cell(c);
+    t_result_last = &t_result;
+}
+
 void EvalQuoteRange::t_push_back(CoreEnvironment& env, const Cell& c)
 {
-    if (t_result_last != nullptr) {
-        rplacd(to_list(*t_result_last), env.farm().make_list_cell(c));
-        t_result_last = &cdr(*t_result_last);
-    }
-    else {
-        t_result = env.farm().make_list_cell(c);
-        t_result_last = &t_result;
-    }
+    rplacd(to_list(*t_result_last), env.farm().make_list_cell(c));
+    t_result_last = &cdr(*t_result_last);
 }
 
 ImplicitCond::ImplicitCond( Cell& atom) :
@@ -249,16 +273,15 @@ void EvalFunc::execute(CoreEnvironment& env)
     {
     case 0:
     {
-        auto* fnc = get<Cell*>(t_buf);
+        auto*& fnc = get<Cell*>(t_buf);
         if (is_lambda_form(*fnc, env.farm())) {
-            t_buf = env.support_funcs().make_lambda_form(*fnc);
             return f_return_next(
                 make_fnc<EvalLambda>(
-                    get<lambda>(t_buf),
+                    env.core_funcs().make_lambda_form(*fnc),
                     t_args_beg,
                     t_args_end,
                     t_forse_noeval_func
-                    )
+                )
             );
         }
 
@@ -269,15 +292,15 @@ void EvalFunc::execute(CoreEnvironment& env)
                 using T = std::decay_t<decltype(arg)>;
                 if constexpr (std::is_same_v<T, FuncsStorage::bifunc>)
                 {
-                    t_buf = arg.ptr;
                     if (t_args_beg == t_args_end) {
-                        return f_return(((&env)->*(get<CoreData::bifunc>(t_buf)))(t_args_beg, t_args_end));
+                        return f_return(arg.ptr(env, t_args_beg, t_args_end));
                     }
+                    t_buf = arg.ptr;
                     return f_eval_next(make_fnc<EvalQuoteRange>(t_args_beg, t_args_end));
                 }
                 else if constexpr (std::is_same_v<T, FuncsStorage::nbifunc>)
                 {
-                    return f_return(((&env)->*(arg.ptr))(t_args_beg, t_args_end));
+                    return f_return(arg.ptr(env, t_args_beg, t_args_end));
                 }
                 else if constexpr (std::is_same_v<T, lambda>)
                 {
@@ -287,7 +310,7 @@ void EvalFunc::execute(CoreEnvironment& env)
                             t_args_beg,
                             t_args_end,
                             t_forse_noeval_func
-                            )
+                        )
                     );
                 }
                 else if constexpr (std::is_same_v<T, special_bifunc_make>)
@@ -302,10 +325,7 @@ void EvalFunc::execute(CoreEnvironment& env)
                 {
                     return f_return_next(arg(t_args_beg, t_args_end));
                 }
-                else {
-                    auto i = 0;
-                }
-                }, fnc_r->get());
+            }, fnc_r->get());
         }
         else {
             throw "eval_fnc error " + env.output_control().to_string(
@@ -318,7 +338,7 @@ void EvalFunc::execute(CoreEnvironment& env)
         // direct call bifunc
         auto c = s_last_eval_val();
         //cout << env.output_control().to_string(c) << endl;
-        return f_return(((&env)->*(get<CoreData::bifunc>(t_buf)))(begin(c), end(c)));
+        return f_return(get<CoreData::bifunc>(t_buf)(env, begin(c), end(c)));
     }
     default:
         throw logic_error("EvalFunc: execute");

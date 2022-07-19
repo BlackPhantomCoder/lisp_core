@@ -16,7 +16,7 @@ using namespace std;
 
 
 //количество доп потоков для асинхронных тестов (оптимально - по половине ядер -1 (или нет?))
-constexpr auto treads_count = 4;
+constexpr auto treads_count = 3;
 
 //Дебаг
 #ifdef _DEBUG

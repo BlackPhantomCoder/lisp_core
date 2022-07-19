@@ -42,6 +42,9 @@ public:
 
     void make_or_copy(Symbol& s, std::string&& str);
     void make_or_copy(Symbol& s, const std::string& str);
+
+    symbol_core make_or_copy2(std::string&& str);
+    symbol_core make_or_copy2(const std::string& str);
     void del_symbol(symb_mp::iterator);
 
     const oblist& get_lst() const;

@@ -8,6 +8,7 @@
 #include <iostream>
 #include <deque>
 #include <typeinfo>
+#include <type_traits>
 #include "boost/pool/pool_alloc.hpp"
 
 //
@@ -279,7 +280,7 @@ public:
 
     ~MPool() {
         clear_free();
-        //std::cout << typeid(T).name() << sizeof(T) << std::endl;
+        //std::cout << typeid(*this).name() << " blocks count: " << t_blocks.size() << std::endl;
     }
 private:
     T* t_get() {
@@ -318,6 +319,49 @@ private:
 };
 
 
+
+
+//placement new Пул
+template <class T, size_t new_block_size = 16384>
+class PNPool {
+    static_assert(!std::has_virtual_destructor<T>{});
+    using PNObject = char[sizeof(T)];
+public:
+    PNPool() {
+        //std::cout << typeid(T).name() << " size: " << sizeof(T) << std::endl;
+    }
+
+    template<class... Args>
+    T* construct(Args&&... args) {
+        auto* result = t_pool.get_default();
+        t_create(*result, std::forward<Args&&>(args)...);
+        return (T*)result;
+    }
+
+    void free(T* val) {
+        auto* pn = (PNObject*)val;
+        t_clear(*pn);
+        t_pool.free(pn);
+    }
+
+    void clear_free() {
+        t_pool.clear_free();
+    }
+private:
+    template<class... Args>
+    void t_create(PNObject& data, Args&&... args) {
+        new (&data) T(std::forward<Args&&>(args)...);
+    }
+
+    void t_clear(PNObject& data) {
+        ((T*)&data)->~T();
+    }
+private:
+    MPool<PNObject, new_block_size> t_pool;
+};
+
+
+
 template <class T, size_t new_block_size>
 typename FrameArrayIterator<T, new_block_size>::reference FrameArrayIterator<T, new_block_size>::operator*()
 {
@@ -334,32 +378,33 @@ typename const FrameArrayIterator<T, new_block_size>::reference  FrameArrayItera
 
 // Пул с мьютексом 
 //16384
-template<class T, size_t new_block_size = 16384>
-class MPoolWMutex : private MPool <T, new_block_size>{
+template<class T, class Pool>
+class PoolWMutex {
 public:
-    MPoolWMutex()
+    PoolWMutex()
     {
-        
+
     }
     template<class... Args>
     T* construct(Args&&... args) {
         std::lock_guard g(t_m);
-        return MPool<T, new_block_size>::construct(std::forward<Args&&>(args)...);
+        return t_pool.construct(std::forward<Args&&>(args)...);
     }
 
     T* get_default() {
         std::lock_guard g(t_m);
-        return MPool<T, new_block_size>::get_default();
+        return t_pool.get_default();
     }
     void free(T* val) {
         std::lock_guard g(t_m);
-        MPool<T, new_block_size>::free(val);
+        t_pool.free(val);
     }
     void clear_free() {
         std::lock_guard g(t_m);
-        MPool<T, new_block_size>::clear_free();
+        t_pool.clear_free();
     }
 private:
+    Pool t_pool;
     std::mutex t_m;
 };
 
@@ -383,14 +428,19 @@ public:
     template<class... Args>
     T* construct(Args&&... args) {
         std::lock_guard g(t_m);
-        T* result = t_get();
-        *result = T(std::forward<Args&&>(args)...);
-        return result;
+        if (auto ptr = t_get()) {
+            *ptr = T(std::forward<Args&&>(args)...);
+            return ptr;
+        }
+        return  new T(std::forward<Args&&>(args)...);
     }
 
     T* get_default() {
         std::lock_guard g(t_m);
-        return  t_get();
+        if (auto ptr = t_get()) {
+            return ptr;
+        }
+        return  new T();
     }
     void free(T* val) {
         std::lock_guard g(t_m);
@@ -412,7 +462,7 @@ private:
             return temp;
         }
         ++t_count;
-        return new T();
+        return nullptr;
     }
 private:
     size_t t_count = 0;

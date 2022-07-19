@@ -17,6 +17,8 @@ class CellEnvironment
 public:
 	using mp = std::unordered_map<Symbol, Cell>;
 	using frame = std::pair<std::pair<CarCdrIterator, CarCdrIterator>, std::pair<CarCdrIterator, CarCdrIterator>>;
+
+	using stack_elem_type = std::vector<std::pair<Symbol, Cell>, CoreData::allocator<std::pair<Symbol, Cell>>>;
 public:
 	CellEnvironment(CoreEnvironment& env);
 
@@ -45,7 +47,8 @@ public:
 private:
 	CoreEnvironment& t_env;
 	mp t_glonal;
-	std::vector< std::vector<std::pair<Symbol, Cell>>> t_stack;
-	std::unordered_map<Symbol, std::vector<std::pair<size_t, size_t>>> t_all_in_stack;
+	
+	std::vector<stack_elem_type, CoreData::allocator<stack_elem_type>> t_stack;
+	std::unordered_map<Symbol, std::vector<std::pair<size_t, size_t>, CoreData::allocator<std::pair<size_t, size_t>>>> t_all_in_stack;
 };
 

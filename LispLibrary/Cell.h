@@ -33,7 +33,8 @@ class Cell {
     
     friend Cell to_cell(SExprShare core);
 public:
-    Cell(SExprShare core = {});
+    Cell(SExprShare&& core = {});
+    Cell(const SExprShare& core);
      
     Cell(Cell&& rh) noexcept  = default;
     Cell(const Cell& rh) = default;

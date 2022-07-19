@@ -5,20 +5,11 @@
 #include "CoreEnv.h"
 #include "Funcs.h"
 
+#include "common_funcs.h"
 #include <array>
 using namespace std;
 
 namespace Func_transitions {
-
-    //make array filled with value
-    template<typename T, size_t N>
-    constexpr auto make_array(T value)
-    {
-        auto a = std::array<T, N>{};
-        for (auto& x : a)
-            x = value;
-        return a;
-    }
 
     constexpr auto f_next = []() {
         auto result = make_array<stages, unsigned(stages::unkwnown)>(stages::unkwnown);
@@ -108,19 +99,70 @@ namespace Func_transitions {
         result[unsigned(stages::need_external_args_eval_plus_next)] = stages::after_args_eval;
         result[unsigned(stages::need_external_after_args_eval_plus_next)] = stages::execution;
         result[unsigned(stages::need_external_execution)] = stages::execution;
-        result[unsigned(stages::need_external_return_next)] = stages::executed;
 
         return result;
     }();
 
 
-    
+    constexpr auto type = []() {
+        auto result = make_array<bool, unsigned(stages::unkwnown)>(false);
+
+        result[unsigned(stages::executed)] = true;
+        result[unsigned(stages::args_eval)] = true;
+        result[unsigned(stages::cycle_before_args_eval)] = true;
+        result[unsigned(stages::before_args_eval)] = true;
+        result[unsigned(stages::cycle_args_eval)] = true;
+        result[unsigned(stages::after_args_eval)] = true;
+        result[unsigned(stages::cycle_after_args_eval)] = true;
+        result[unsigned(stages::execution)] = true;
+        result[unsigned(stages::cycle_execution)] = true;
+
+        return result;
+    }();
 }
 
 Func::Func(func_id id, bool skip_eval_args):
     t_id(id),
-    t_stage((skip_eval_args) ? stages::execution : stages::before_args_eval)
+    t_stage((skip_eval_args) ? stages::execution : stages::before_args_eval),
+    t_bufs()
 {
+}
+
+Func::~Func()
+{
+    if (Func_transitions::type[unsigned(t_stage)]) {
+        t_bufs.cell.~Cell();
+    }
+    else {
+        t_bufs.next.~FuncHolder();
+    }
+}
+
+Func& Func::operator=(Func&& rh) noexcept
+{
+    if (this != &rh) {
+        if (Func_transitions::type[unsigned(t_stage)]) {
+            if (Func_transitions::type[unsigned(rh.t_stage)]) {
+                t_bufs.cell = std::move(rh.t_bufs.cell);
+            }
+            else {
+                t_bufs.cell.~Cell();
+                new (&t_bufs.next) CoreData::HolderPtr(move(rh.t_bufs.next));
+            }
+        }
+        else {
+            if (Func_transitions::type[unsigned(rh.t_stage)]) {
+                t_bufs.next.~FuncHolder();
+                new (&t_bufs.cell) Cell(move(rh.t_bufs.cell));
+            }
+            else {
+                t_bufs.next = std::move(rh.t_bufs.next);
+            }
+        }
+        t_stage = rh.t_stage;
+        t_id = rh.t_id;
+    }
+    return *this;
 }
 
 stages Func::stage() const
@@ -136,19 +178,22 @@ func_id Func::id() const
 void Func::f_return_next(CoreData::HolderPtr&& next)
 {
     t_stage = Func_transitions::f_return_next[unsigned(t_stage)];
-    t_bufs = move(next);
+    t_bufs.cell.~Cell();
+    new (&t_bufs.next) CoreData::HolderPtr(move(next));
 }
 
 void Func::f_eval_next(CoreData::HolderPtr&& next)
 {
     t_stage = Func_transitions::f_eval_next[unsigned(t_stage)];
-    t_bufs = move(next);
+    t_bufs.cell.~Cell();
+    new (&t_bufs.next) CoreData::HolderPtr(move(next));
 }
 
 void Func::f_eval_next_and_next(CoreData::HolderPtr&& next)
 {
     t_stage = Func_transitions::f_eval_next_and_next[unsigned(t_stage)];
-    t_bufs = move(next);
+    t_bufs.cell.~Cell();
+    new (&t_bufs.next) CoreData::HolderPtr(move(next));
 }
 
 void Func::f_cycle()
@@ -159,13 +204,14 @@ void Func::f_cycle()
 void Func::f_return(const Cell& result)
 {
     t_stage = Func_transitions::f_return[unsigned(t_stage)];
-    t_bufs = result;
+    t_bufs.cell = result;
 }
 
 void Func::f_push_next(const Cell& result)
 {
     t_stage = Func_transitions::f_push_next[unsigned(t_stage)];
-    t_bufs = result;
+    t_bufs.next.~FuncHolder();
+    new (&t_bufs.cell) Cell(result);
 }
 
 void Func::f_next()
@@ -175,14 +221,13 @@ void Func::f_next()
 
 Cell Func::s_last_eval_val()
 {
-    if (!holds_alternative<Cell>(t_bufs)) throw "Func::s_last_eval_val: empty";
     switch (t_stage)
     {
     case stages::before_args_eval:
     case stages::args_eval:
     case stages::after_args_eval:
     case stages::execution:
-        return get<Cell>(t_bufs);
+        return t_bufs.cell;
     default:
         throw "Func::s_last_eval_val: wrong stage";
     }
@@ -190,11 +235,10 @@ Cell Func::s_last_eval_val()
 
 Cell Func::s_result()
 {
-    if (!holds_alternative<Cell>(t_bufs)) throw "Func::s_result: empty";
     switch (t_stage)
     {
     case stages::executed:
-        return get<Cell>(t_bufs);
+        return std::move(t_bufs.cell);
     default:
         throw "Func::s_result: wrong stage";
     }
@@ -202,7 +246,6 @@ Cell Func::s_result()
 
 CoreData::HolderPtr Func::s_get_next()
 {
-    if (!holds_alternative<CoreData::HolderPtr>(t_bufs)) throw "Func::s_get_next: empty";
     switch (t_stage)
     {
     case stages::need_external_before_args_eval:
@@ -213,7 +256,7 @@ CoreData::HolderPtr Func::s_get_next()
     case stages::need_external_after_args_eval_plus_next:
     case stages::need_external_execution:
     case stages::need_external_return_next:
-        return move(get<CoreData::HolderPtr>(t_bufs));
+        return move(t_bufs.next);
     default:
         throw "Func::s_get_next: wrong stage";
     }

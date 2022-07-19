@@ -26,8 +26,9 @@ private:
 public:
     static unsigned epsilon;
 public:
-    Number();
-    ~Number();
+    Number(double val);
+    Number(const BigInt& val);
+    ~Number() = default;
 
     Number(Number&& rh)noexcept;
     Number(const Number& rh);
@@ -55,12 +56,6 @@ public:
 
     std::string to_string()const;
 
-    bool empty() const;
-    void clear();
-private:
-    Number(double val);
-    Number(const BigInt& val);
-
     bool t_is_integer() const;
     bool t_is_real() const;
 
@@ -70,8 +65,7 @@ private:
     Number::integer& to_integer() ;
     Number::real& to_real() ;
 private:
-
-    std::variant<integer, real, std::monostate> t_data = std::monostate{};
+    std::variant<integer, real> t_data;
 };
 
 bool is_integer(const Number& numb);

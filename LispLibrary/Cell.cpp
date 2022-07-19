@@ -13,8 +13,14 @@ cell_type type(const Cell& exp) {
 
 
 
-Cell::Cell(SExprShare core):
+
+Cell::Cell(SExprShare&& core):
     t_data(move(core))
+{
+}
+
+Cell::Cell(const SExprShare& core):
+    t_data(core)
 {
 }
 

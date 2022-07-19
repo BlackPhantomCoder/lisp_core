@@ -183,10 +183,16 @@
     <ClInclude Include="FuncsStorage.h">
       <Filter>Файлы заголовков\Core\Support</Filter>
     </ClInclude>
-    <ClInclude Include="FuncsEvaler.h">
+    <ClInclude Include="CellSerializer.h">
       <Filter>Файлы заголовков\Core\Support</Filter>
     </ClInclude>
+    <ClInclude Include="FuncHolder.h">
+      <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
+    </ClInclude>
     <ClInclude Include="Func.h">
+      <Filter>Файлы заголовков\Core\SpecialFuncs\BaseFuncs</Filter>
+    </ClInclude>
+    <ClInclude Include="FuncID.h">
       <Filter>Файлы заголовков\Core\SpecialFuncs\BaseFuncs</Filter>
     </ClInclude>
     <ClInclude Include="RangeBifunc.h">
@@ -195,14 +201,17 @@
     <ClInclude Include="RangeNBifunc.h">
       <Filter>Файлы заголовков\Core\SpecialFuncs\BaseFuncs</Filter>
     </ClInclude>
-    <ClInclude Include="CellSerializer.h">
-      <Filter>Файлы заголовков\Core\Support</Filter>
+    <ClInclude Include="common_funcs.h">
+      <Filter>Файлы заголовков\Tools</Filter>
     </ClInclude>
-    <ClInclude Include="FuncHolder.h">
-      <Filter>Файлы заголовков\Core\SpecialFuncs</Filter>
-    </ClInclude>
-    <ClInclude Include="FuncID.h">
+    <ClInclude Include="SimpleBifuncs.h">
       <Filter>Файлы заголовков\Core\SpecialFuncs\BaseFuncs</Filter>
+    </ClInclude>
+    <ClInclude Include="CoreFuncs.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="MakeSExprShare.h">
+      <Filter>Файлы заголовков\Core\Cell</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -269,9 +278,6 @@
     <ClCompile Include="OutputController.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="FuncsEvaler.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
     <ClCompile Include="Bifuncs.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
@@ -335,10 +341,13 @@
     <ClCompile Include="FuncHolder.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="RangeFunc.cpp">
+    <ClCompile Include="FuncID.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="FuncID.cpp">
+    <ClCompile Include="SimpleBifuncs.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="CoreFuncs.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>

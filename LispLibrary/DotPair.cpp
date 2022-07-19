@@ -14,11 +14,6 @@ DotPair::DotPair() : SExpr(SExpr::type::list)
 {
 }
 
-DotPair::~DotPair()
-{
-	clear();
-}
-
 
 DotPair::DotPair(const DotPair& rh):
 	SExpr(SExpr::type::list),
@@ -41,10 +36,8 @@ bool DotPair::empty() const{
 }
 
 void DotPair::clear() {
-	if (!empty()) {
-		t_first.clear();
-		t_second.clear();
-	}
+	t_first.clear();
+	t_second.clear();
 }
 
 DotPair& DotPair::operator=(DotPair&& rh)noexcept {

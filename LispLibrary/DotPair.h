@@ -19,7 +19,8 @@ class DotPair : public SExpr
     friend bool is_null_list(const DotPair& lst);
 public:
     DotPair();
-    ~DotPair();
+    DotPair(const Cell& f, const Cell& s);
+    ~DotPair() = default;
 
     DotPair(const DotPair& rh);
     DotPair(DotPair&& rh)noexcept;
@@ -28,9 +29,8 @@ public:
     DotPair& operator=(const DotPair& rh)noexcept;
 
     bool empty() const;
+
     void clear();
-private:
-    DotPair(const Cell& f, const Cell& s);
 private:
     Cell t_first;
     Cell t_second;

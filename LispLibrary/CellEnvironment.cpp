@@ -27,7 +27,7 @@ void CellEnvironment::push(const frame& rh)
 			++it_c;
 			continue;
 		}
-		t_stack.back().push_back({ to_symbol(*it_s++), *it_c++ });
+		t_stack.back().emplace_back(to_symbol(*it_s++), *it_c++);
 		t_all_in_stack[t_stack.back().back().first].push_back({ t_stack.size() - 1, t_stack.back().size() - 1});
 	}
 	while (it_s != end_s) {

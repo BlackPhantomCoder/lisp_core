@@ -31,77 +31,41 @@ const std::array<func_data, (unsigned char)func_id::end_id> func_table = []() {
 	return result;
 }();
 
+#include "common_funcs.h"
+constexpr auto free_func = []() {
+    using func_type = void (*) (Func*);
+    auto result = make_array<func_type, unsigned(func_id::end_id)>([](Func*) {});
+
+    result[(unsigned char)func_id::prog1] = CoreData::pn_pool_free_derived<Prog1>;
+    result[(unsigned char)func_id::progn] = CoreData::pn_pool_free_derived<ProgN>;
+    result[(unsigned char)func_id::eval] = CoreData::pn_pool_free_derived<Eval>;
+    result[(unsigned char)func_id::cond] = CoreData::pn_pool_free_derived<Cond>;
+    result[(unsigned char)func_id::append] = CoreData::pn_pool_free_derived<Append>;
+    result[(unsigned char)func_id::loop] = CoreData::pn_pool_free_derived<Loop>;
+    result[(unsigned char)func_id::apply] = CoreData::pn_pool_free_derived<Apply>;
+    result[(unsigned char)func_id::setq] = CoreData::pn_pool_free_derived<SetQ>;
+    result[(unsigned char)func_id::macroexpand1] = CoreData::pn_pool_free_derived<MacroExpand1>;
+    result[(unsigned char)func_id::macroexpand] = CoreData::pn_pool_free_derived<MacroExpand>;
+    result[(unsigned char)func_id::mapcar] = CoreData::pn_pool_free_derived<MapCar>;
+    result[(unsigned char)func_id::read] = CoreData::pn_pool_free_derived<Read>;
+    result[(unsigned char)func_id::peekchar] = CoreData::pn_pool_free_derived<PeekChar>;
+
+
+    result[(unsigned char)func_id::evallambda] = CoreData::pn_pool_free_derived<EvalLambda>;
+    result[(unsigned char)func_id::evalquote] = CoreData::pn_pool_free_derived<EvalQuote>;
+    result[(unsigned char)func_id::evalquoterange] = CoreData::pn_pool_free_derived<EvalQuoteRange>;
+    result[(unsigned char)func_id::implicitcond] = CoreData::pn_pool_free_derived<ImplicitCond>;
+    result[(unsigned char)func_id::evalfunc] = CoreData::pn_pool_free_derived<EvalFunc>;
+    result[(unsigned char)func_id::expandmacro] = CoreData::pn_pool_free_derived<ExpandMacro>;
+    result[(unsigned char)func_id::evalmacro] = CoreData::pn_pool_free_derived<EvalMacro>;
+
+    return result;
+}();
+
+
 void free_pool_by_funcid(Func* func)
 {
-    if (func) {
-        switch (func->id())
-        {
-        case func_id::prog1:
-            free_pool_func<Prog1>(func);
-            break;
-        case func_id::progn:
-            free_pool_func<ProgN>(func);
-            break;
-        case func_id::eval:
-            free_pool_func<Eval>(func);
-            break;
-        case func_id::cond:
-            free_pool_func<Cond>(func);
-            break;
-        case func_id::append:
-            free_pool_func<Append>(func);
-            break;
-        case func_id::loop:
-            free_pool_func<Loop>(func);
-            break;
-        case func_id::apply:
-            free_pool_func<Apply>(func);
-            break;
-        case func_id::setq:
-            free_pool_func<SetQ>(func);
-            break;
-        case func_id::macroexpand1:
-            free_pool_func<MacroExpand1>(func);
-            break;
-        case func_id::macroexpand:
-            free_pool_func<MacroExpand>(func);
-            break;
-        case func_id::mapcar:
-            free_pool_func<MapCar>(func);
-            break;
-        case func_id::read:
-            free_pool_func<Read>(func);
-            break;
-        case func_id::peekchar:
-            free_pool_func<PeekChar>(func);
-            break;
-        case func_id::evallambda:
-            free_pool_func<EvalLambda>(func);
-            break;
-        case func_id::evalquote:
-            free_pool_func<EvalQuote>(func);
-            break;
-        case func_id::evalquoterange:
-            free_pool_func<EvalQuoteRange>(func);
-            break;
-        case func_id::implicitcond:
-            free_pool_func<ImplicitCond>(func);
-            break;
-        case func_id::evalfunc:
-            free_pool_func<EvalFunc>(func);
-            break;
-        case func_id::expandmacro:
-            free_pool_func<ExpandMacro>(func);
-            break;
-        case func_id::evalmacro:
-            free_pool_func<EvalMacro>(func);
-            break;
-        case func_id::empty_id:
-        case func_id::end_id:
-        default:
-            throw logic_error("free_pool_by_funcid: unknown id");
-        }
-    }
+    free_func[unsigned(func->id())](func);
 }
 
 #define id_print(elem)\
@@ -142,5 +106,4 @@ std::ostream& operator<<(std::ostream& os, func_id id)
     }
     return os;
 }
-
 

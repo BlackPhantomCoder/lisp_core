@@ -3,14 +3,16 @@
 
 using namespace std;
 
-Symbol::Symbol(): SExpr(SExpr::type::symbol) 
+Symbol::Symbol(const SymbolsFarm::symbol_core& data) :
+    SExpr(SExpr::type::symbol),
+    t_data(data)
 {
-
 }
 
-Symbol::~Symbol()
+Symbol::Symbol(SymbolsFarm::symbol_core&& data) :
+    SExpr(SExpr::type::symbol),
+    t_data(move(data))
 {
-    clear();
 }
 
 bool Symbol::operator<(const Symbol& rh) const
@@ -43,16 +45,6 @@ bool Symbol::empty() const
     return t_data.empty();
 }
 
-void Symbol::clear()
-{
-    t_data.clear();
-}
-
-Symbol::Symbol(const SymbolsFarm::symbol_core& data) :
-    SExpr(SExpr::type::symbol),
-    t_data(data)
-{
-}
 
 bool operator==(const char* lh, const Symbol& rh)
 {

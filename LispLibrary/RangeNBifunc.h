@@ -17,6 +17,7 @@ public:
 	CarCdrConstIterator args_beg() const;
 	CarCdrConstIterator args_end() const;
 private:
-	std::pair<CarCdrIterator, CarCdrIterator> t_args;
+	CarCdrIterator t_args_beg;
+	CarCdrIterator t_args_end;
 };
 

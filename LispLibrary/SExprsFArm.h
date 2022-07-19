@@ -67,18 +67,6 @@ public:
 	// загрузка состояния 
 	void load_state(const nlohmann::json& j);
 private:
-	void t_init_list(DotPair& p, const Cell& f, const Cell& s);
-
-	void t_init_symb(Symbol& s, const std::string& data);
-	void t_init_symb(Symbol& s, std::string&& data);
-
-	void t_init_numb(Number& n, double val);
-	void t_init_numb(Number& n, const BigInt& val);
-
-	Cell make_cell_list_noinit();
-	Cell make_cell_symb_noinit();
-	Cell make_cell_numb_noinit();
-private:
 	CoreEnvironment& t_env;
 	SymbolsFarm t_symbols;
 

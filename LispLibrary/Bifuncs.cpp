@@ -283,7 +283,7 @@ void SetQ::execute(CoreEnvironment& env)
         [[fallthrough]];
     case SetQ::stage::repeat_start:
         if (next(t_it) == args_end()) {
-            env.support_funcs().set_value(*t_it, env.farm().nil());
+            env.core_funcs().set_value(*t_it, env.farm().nil());
             return f_return(env.farm().nil());
         }
         [[fallthrough]];
@@ -293,7 +293,7 @@ void SetQ::execute(CoreEnvironment& env)
     case SetQ::stage::ev:
         {
             auto t_val = s_last_eval_val();
-            env.support_funcs().set_value(*t_it, t_val);
+            env.core_funcs().set_value(*t_it, t_val);
             t_it = next(t_it, 2);
             if (t_it != args_end()) {
                 t_stage = stage::repeat_start;

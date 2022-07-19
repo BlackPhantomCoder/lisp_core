@@ -23,20 +23,11 @@ unsigned double_macheps()
 
 unsigned Number::epsilon = double_macheps();
 
-Number::Number(): SExpr(SExpr::type::number)
-{
-}
-
-Number::~Number()
-{
-    clear();
-}
 
 Number::Number(Number&& rh)noexcept:
     SExpr(SExpr::type::number),
     t_data(move(rh.t_data))
 {
-    rh.t_data = monostate{};
 }
 
 Number::Number(const Number& rh):
@@ -59,8 +50,9 @@ Number::Number(const BigInt& val) :
 
 Number& Number::operator=(Number&& rh)noexcept
 {
-    t_data = move(rh.t_data);
-    rh.t_data = monostate{};
+    if (&rh != this) {
+        t_data = move(rh.t_data);
+    }
     return *this;
 }
 
@@ -266,7 +258,7 @@ bool Number::operator>=(const Number& rh) const
 }
 
 // point must be Number::real
-void sum_double(std::variant<Number::integer, Number::real, monostate>& point, double rh) {
+void sum_double(std::variant<Number::integer, Number::real>& point, double rh) {
     double x = get<double>(point);
 
     int exponent1 = 0;
@@ -287,7 +279,7 @@ void sum_double(std::variant<Number::integer, Number::real, monostate>& point, d
 }
 
 // point must be Number::real
-void mul_double(std::variant<Number::integer, Number::real, monostate>& point, double rh) {
+void mul_double(std::variant<Number::integer, Number::real>& point, double rh) {
     double x = get<double>(point);
 
     int exponent1 = 0;
@@ -308,7 +300,7 @@ void mul_double(std::variant<Number::integer, Number::real, monostate>& point, d
 }
 
 // point must be Number::real
-void del_double(std::variant<Number::integer, Number::real, monostate>& point, double rh) {
+void del_double(std::variant<Number::integer, Number::real>& point, double rh) {
     double x = get<double>(point);
 
     int exponent1 = 0;
@@ -641,16 +633,6 @@ std::string Number::to_string() const
     else {
         return get<BigInt>(t_data).to_string();
     }
-}
-
-bool Number::empty()const
-{
-    return holds_alternative<monostate>(t_data);
-}
-
-void Number::clear()
-{
-    t_data = monostate{};
 }
 
 Number::integer& to_integer(Number& numb) {

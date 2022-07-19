@@ -33,6 +33,7 @@ enum class stages : unsigned char {
 
 	need_external_return_next,
 
+	// always last
 	unkwnown
 };
 
@@ -63,6 +64,7 @@ enum class func_id : unsigned char {
 	expandmacro,
 	evalmacro,
 
+	//always last
 	end_id
 };
 
@@ -78,6 +80,10 @@ class Func {
 public:
 	Func() = default;
 	Func(func_id id, bool skip_eval_args = false);
+
+	~Func();
+
+	Func& operator=(Func&& rh) noexcept;
 
 	stages stage() const;
 	func_id id() const;
@@ -111,12 +117,14 @@ public:
 	// получить последнюю выставленную через f_eval_next/f_return_next функцию
 	CoreData::HolderPtr s_get_next();
 private:
-
-	std::variant<
-		CoreData::HolderPtr,
-		Cell,
-		std::monostate
-	> t_bufs = std::monostate{};
+	union F
+	{
+		F() : cell() { }
+		~F() {}
+		Cell cell;
+		CoreData::HolderPtr next;
+	}  t_bufs;
+	
 	stages t_stage = stages::before_args_eval;
 	func_id t_id = func_id::empty_id;
 };

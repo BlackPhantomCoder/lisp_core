@@ -13,7 +13,8 @@ class SExpr
 	friend void intrusive_ptr_add_ref(SExpr* p);
 	friend void intrusive_ptr_release(SExpr* p);
 public:
-	enum class type {list, number, symbol, none};
+	//важен порядок
+	enum class type {list = 0, number = 1, symbol = 2, none};
 public:
 	SExpr(type type);
 	SExpr(SExpr&& rh) noexcept;
@@ -43,10 +44,3 @@ private:
 	type t_type;
 };
 
-SExprShare make_SExprShare_list_noinit();
-SExprShare make_SExprShare_symb_noinit();
-SExprShare make_SExprShare_numb_noinit();
-
-//void pool_delete_dp(SExpr* ptr);
-//void pool_delete_n(SExpr* ptr);
-//void pool_delete_s(SExpr* ptr);

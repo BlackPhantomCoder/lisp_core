@@ -5,30 +5,18 @@
 #include "Symbol.h"
 
 using namespace std;
+using namespace CoreData;
 
-
-auto& dp_pool = CoreData::get_pool<DotPair>();
-auto& n_pool = CoreData::get_pool<Number>();
-auto& s_pool = CoreData::get_pool<Symbol>();
-
-
-inline void pool_delete_dp(SExpr* ptr) {
-    auto* p = (DotPair*)(ptr);
-    p->clear();
-    dp_pool.free(p);
+void pn_pool_free_dpair(SExpr* obj)
+{
+    static auto& pool = get_pn_pool<DotPair>();
+    auto* dptr = (DotPair*)obj;
+    dptr->clear();
+    pool.free(dptr);
 }
 
-inline void pool_delete_n(SExpr* ptr) {
-    auto* p = (Number*)(ptr);
-    p->clear();
-    n_pool.free(p);
-}
-
-inline void pool_delete_s(SExpr* ptr) {
-    auto* p = (Symbol*)(ptr);
-    p->clear();
-    s_pool.free(p);
-}
+constexpr void (*intrusive_ptr_release_pool_free_mapper[]) (SExpr*) =
+{ pn_pool_free_dpair, pn_pool_free_derived<Number, SExpr>, pn_pool_free_derived<Symbol, SExpr> };
 
 
 void intrusive_ptr_add_ref(SExpr* p)
@@ -40,36 +28,8 @@ void intrusive_ptr_release(SExpr* p)
 {
     --p->t_count;
     if (p->t_count == 0) {
-        switch (p->t_type)
-        {
-            case SExpr::type::list:
-                pool_delete_dp(p);
-                break;
-            case SExpr::type::symbol:
-                pool_delete_s(p);
-                break;
-            case SExpr::type::number:
-                pool_delete_n(p);
-                break;
-        default:
-            throw logic_error("intrusive_ptr_release");
-        }
+        intrusive_ptr_release_pool_free_mapper[(unsigned)p->t_type](p);
     }
-}
-
-SExprShare make_SExprShare_list_noinit()
-{
-    return SExprShare(dp_pool.get_default());
-}
-
-SExprShare make_SExprShare_symb_noinit()
-{
-    return SExprShare(s_pool.get_default());
-}
-
-SExprShare make_SExprShare_numb_noinit()
-{
-    return SExprShare(n_pool.get_default());
 }
 
 bool SExpr::is_real() const

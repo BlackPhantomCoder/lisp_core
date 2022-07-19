@@ -149,9 +149,11 @@
     <ClInclude Include="Cell.h" />
     <ClInclude Include="CellEnvironment.h" />
     <ClInclude Include="CellSerializer.h" />
+    <ClInclude Include="common_funcs.h" />
     <ClInclude Include="Core.h" />
     <ClInclude Include="CoreEnv.h" />
     <ClInclude Include="CoreEnvStreamsProvider.h" />
+    <ClInclude Include="CoreFuncs.h" />
     <ClInclude Include="CoreStreamInt.h" />
     <ClInclude Include="DotPair.h" />
     <ClInclude Include="Errors.h" />
@@ -162,7 +164,6 @@
     <ClInclude Include="FuncID.h" />
     <ClInclude Include="Funcs.h" />
     <ClInclude Include="CoreData.h" />
-    <ClInclude Include="FuncsEvaler.h" />
     <ClInclude Include="FuncsStorage.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Input\FSM\FSM.h" />
@@ -172,10 +173,12 @@
     <ClInclude Include="Input\Scanner.h" />
     <ClInclude Include="Input\parser.tab.h" />
     <ClInclude Include="LambdaCell.h" />
+    <ClInclude Include="MakeSExprShare.h" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="ParserHelper.h" />
     <ClInclude Include="RangeBifunc.h" />
     <ClInclude Include="RangeNBifunc.h" />
+    <ClInclude Include="SimpleBifuncs.h" />
     <ClInclude Include="StdCoreInputArrayInput.h" />
     <ClInclude Include="SupportFuncs.h" />
     <ClInclude Include="MacroCell.h" />
@@ -196,6 +199,7 @@
   <ItemGroup>
     <ClCompile Include="ArgsCounter.cpp" />
     <ClCompile Include="CellSerializer.cpp" />
+    <ClCompile Include="CoreFuncs.cpp" />
     <ClCompile Include="Func.cpp" />
     <ClCompile Include="Bifuncs.cpp" />
     <ClCompile Include="BigInt.cpp" />
@@ -213,7 +217,6 @@
     <ClCompile Include="FuncHolder.cpp" />
     <ClCompile Include="FuncID.cpp" />
     <ClCompile Include="Funcs.cpp" />
-    <ClCompile Include="FuncsEvaler.cpp" />
     <ClCompile Include="FuncsStorage.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="Input\FSM_Num\FSM_Num.cpp" />
@@ -224,8 +227,8 @@
     <ClCompile Include="ParserHelper.cpp" />
     <ClCompile Include="parser_tokens.cpp" />
     <ClCompile Include="RangeBifunc.cpp" />
-    <ClCompile Include="RangeFunc.cpp" />
     <ClCompile Include="RangeNBifunc.cpp" />
+    <ClCompile Include="SimpleBifuncs.cpp" />
     <ClCompile Include="StdCoreInputArrayInput.cpp" />
     <ClCompile Include="SupportFuncs.cpp" />
     <ClCompile Include="MacroCell.cpp" />
@@ -246,14 +249,18 @@
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd $(ProjectDir)%(RelativeDir)
 $(SolutionDir)external_programs\gens\reflex.exe --graphs-file=%(Filename) %(FullPath)
+del /q $(ProjectDir)Input\for_gens\lex.yy.cpp
 cd $(ProjectDir)Input\FSM
-$(SolutionDir)external_programs\gens\dist\fsm_gen.exe $(ProjectDir)Input\for_gens\%(Filename).gv $(ProjectDir)Input\for_gens\%(Filename).l %(Filename).h %(Filename).gv %(Filename)</Command>
+$(SolutionDir)external_programs\gens\dist\fsm_gen.exe $(ProjectDir)Input\for_gens\%(Filename).gv $(ProjectDir)Input\for_gens\%(Filename).l %(Filename).h $(SolutionDir)docs\FSMs\%(Filename).gv %(Filename)
+del /q $(ProjectDir)Input\for_gens\%(Filename).gv</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Gen FSM: %(Filename)</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Input\FSM\%(Filename).h;%(Outputs)</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd $(ProjectDir)%(RelativeDir)
 $(SolutionDir)external_programs\gens\reflex.exe --graphs-file=%(Filename) %(FullPath)
+del /q $(ProjectDir)Input\for_gens\lex.yy.cpp
 cd $(ProjectDir)Input\FSM
-$(SolutionDir)external_programs\gens\dist\fsm_gen.exe $(ProjectDir)Input\for_gens\%(Filename).gv $(ProjectDir)Input\for_gens\%(Filename).l %(Filename).h %(Filename).gv %(Filename)</Command>
+$(SolutionDir)external_programs\gens\dist\fsm_gen.exe $(ProjectDir)Input\for_gens\%(Filename).gv $(ProjectDir)Input\for_gens\%(Filename).l %(Filename).h $(SolutionDir)docs\FSMs\%(Filename).gv %(Filename)
+del /q $(ProjectDir)Input\for_gens\%(Filename).gv</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Gen FSM: %(Filename)</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Input\FSM\%(Filename).h;%(Outputs)</Outputs>
     </CustomBuild>
@@ -262,14 +269,18 @@ $(SolutionDir)external_programs\gens\dist\fsm_gen.exe $(ProjectDir)Input\for_gen
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd $(ProjectDir)%(RelativeDir)
 $(SolutionDir)external_programs\gens\reflex.exe --graphs-file=%(Filename) %(FullPath)
+del /q $(ProjectDir)Input\for_gens\lex.yy.cpp
 cd $(ProjectDir)Input\FSM
-$(SolutionDir)external_programs\gens\dist\fsm_gen.exe $(ProjectDir)Input\for_gens\%(Filename).gv $(ProjectDir)Input\for_gens\%(Filename).l %(Filename).h %(Filename).gv %(Filename)</Command>
+$(SolutionDir)external_programs\gens\dist\fsm_gen.exe $(ProjectDir)Input\for_gens\%(Filename).gv $(ProjectDir)Input\for_gens\%(Filename).l %(Filename).h $(SolutionDir)docs\FSMs\%(Filename).gv %(Filename)
+del /q $(ProjectDir)Input\for_gens\%(Filename).gv</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Gen FSM: %(Filename)</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Input\FSM\%(Filename).h;%(Outputs)</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd $(ProjectDir)%(RelativeDir)
 $(SolutionDir)external_programs\gens\reflex.exe --graphs-file=%(Filename) %(FullPath)
+del /q $(ProjectDir)Input\for_gens\lex.yy.cpp
 cd $(ProjectDir)Input\FSM
-$(SolutionDir)external_programs\gens\dist\fsm_gen.exe $(ProjectDir)Input\for_gens\%(Filename).gv $(ProjectDir)Input\for_gens\%(Filename).l %(Filename).h %(Filename).gv %(Filename)</Command>
+$(SolutionDir)external_programs\gens\dist\fsm_gen.exe $(ProjectDir)Input\for_gens\%(Filename).gv $(ProjectDir)Input\for_gens\%(Filename).l %(Filename).h $(SolutionDir)docs\FSMs\%(Filename).gv %(Filename)
+del /q $(ProjectDir)Input\for_gens\%(Filename).gv</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Gen FSM: %(Filename)</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Input\FSM\%(Filename).h;%(Outputs)</Outputs>
     </CustomBuild>

@@ -18,7 +18,7 @@ digraph INITIAL {
     args_eval                      [label="args eval"];
     after_args_eval                [label="after args eval"];
     execution                      [label="execution"];
-    need_external_return_next                        [label="retrun next"];
+    need_external_return_next                        [label="retrun next",peripheries=2];
     executed                    [label="executed",peripheries=2];
 
     need_external_before_args_eval [label="need external\n before args eval"];
@@ -93,5 +93,4 @@ digraph INITIAL {
     need_external_args_eval_plus_next -> after_args_eval [label="f_push_next"]
     need_external_after_args_eval_plus_next -> execution [label="f_push_next"]
     need_external_execution -> execution [label="f_push_next"]
-    need_external_return_next -> executed [label="f_push_next"]
 }
